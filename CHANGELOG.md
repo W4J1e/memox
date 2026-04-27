@@ -1,5 +1,9 @@
 # Changelog
 
+## [v7.11.1](https://github.com/Crustack/NotallyX/tree/v7.11.1) (2026-04-27)
+
+[Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.11.0...v7.11.1)
+
 ## [v7.11.0](https://github.com/Crustack/NotallyX/tree/v7.11.0) (2026-04-26)
 
 [Full Changelog](https://github.com/Crustack/NotallyX/compare/v7.10.0...v7.11.0)
