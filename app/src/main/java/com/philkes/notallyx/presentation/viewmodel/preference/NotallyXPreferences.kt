@@ -91,33 +91,6 @@ class NotallyXPreferences private constructor(private val context: Context) {
             R.string.default_list_note_view_mode,
         )
 
-    val maxItems =
-        IntPreference(
-            "maxItemsToDisplayInList.v1",
-            preferences,
-            4,
-            0,
-            10,
-            R.string.max_items_to_display,
-        )
-    val maxLines =
-        IntPreference(
-            "maxLinesToDisplayInNote.v1",
-            preferences,
-            8,
-            0,
-            10,
-            R.string.max_lines_to_display,
-        )
-    val maxTitle =
-        IntPreference(
-            "maxLinesToDisplayInTitle",
-            preferences,
-            1,
-            1,
-            10,
-            R.string.max_lines_to_display_title,
-        )
     val labelsHidden = StringSetPreference("labelsHiddenInNavigation", preferences, setOf())
     val labelTagsHiddenInOverview =
         BooleanPreference(
@@ -125,13 +98,6 @@ class NotallyXPreferences private constructor(private val context: Context) {
             preferences,
             false,
             R.string.labels_hidden_in_overview_title,
-        )
-    val imagesHiddenInOverview =
-        BooleanPreference(
-            "imagesHiddenInOverview",
-            preferences,
-            false,
-            R.string.images_hidden_in_overview_title,
         )
     val alwaysShowSearchBar =
         BooleanPreference(
@@ -332,9 +298,6 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 notesView,
                 notesSorting,
                 listItemSorting,
-                maxItems,
-                maxLines,
-                maxTitle,
                 secureFlag,
                 labelsHidden,
                 labelTagsHiddenInOverview,
@@ -343,7 +306,6 @@ class NotallyXPreferences private constructor(private val context: Context) {
                 backupPassword,
                 backupOnSave,
                 autoSaveAfterIdleTime,
-                imagesHiddenInOverview,
                 autoRemoveDeletedNotesAfterDays,
                 editNoteActivityTopActions,
                 editNoteActivityBottomAction,

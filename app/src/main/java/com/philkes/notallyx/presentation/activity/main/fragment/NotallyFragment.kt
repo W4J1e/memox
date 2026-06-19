@@ -267,11 +267,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                     notesAdapterSortCallback(),
                     BaseNoteVHPreferences(
                         textSizeOverview.value,
-                        maxItems.value,
-                        maxLines.value,
-                        maxTitle.value,
                         labelTagsHiddenInOverview.value,
-                        imagesHiddenInOverview.value,
                         notesSorting.value.sortedBy,
                     ),
                     model.imageRoot,

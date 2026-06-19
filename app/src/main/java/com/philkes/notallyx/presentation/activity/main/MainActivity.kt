@@ -32,7 +32,6 @@ import com.google.android.material.transition.platform.MaterialFade
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.model.BaseNote
-import com.philkes.notallyx.data.model.Folder
 import com.philkes.notallyx.data.model.Label
 import com.philkes.notallyx.databinding.ActivityMainBinding
 import com.philkes.notallyx.presentation.activity.LockedActivity
@@ -54,6 +53,7 @@ import com.philkes.notallyx.presentation.viewmodel.progress.MigrationProgress
 import com.philkes.notallyx.utils.LATEST_DATA_SCHEMA
 import com.philkes.notallyx.utils.backup.exportNotes
 import com.philkes.notallyx.utils.runMigrations
+import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
 import kotlinx.coroutines.launch
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
@@ -62,6 +62,14 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private lateinit var configuration: AppBarConfiguration
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var identityVerifyActivityResultLauncher: ActivityResultLauncher<Intent>
+
+    /**
+     * Pending action to run once identity (biometric/PIN) verification succeeds. Used by
+     * [verifyIdentityThen] for the PIN-fallback path (API 21-22), where the result arrives via
+     * [identityVerifyActivityResultLauncher].
+     */
+    private var pendingIdentityVerifiedAction: (() -> Unit)? = null
 
     private var isStartViewFragment = false
     private val actionModeCancelCallback =
@@ -519,6 +527,45 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     }
                 }
             }
+        identityVerifyActivityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    pendingIdentityVerifiedAction?.invoke()
+                }
+                pendingIdentityVerifiedAction = null
+            }
+    }
+
+    /**
+     * Verifies the user's identity via biometric/device credential before running [action]. Used to
+     * guard destructive security operations performed from the selection action mode (e.g.
+     * unlocking notes), so that they cannot be triggered without authentication. This matches the
+     * gate used when opening a locked note
+     * ([com.philkes.notallyx.presentation.activity.note.EditActivity.showNoteLockScreen]): encrypt
+     * mode (no IV needed), the resulting cipher is unused.
+     */
+    fun verifyIdentityThen(action: () -> Unit) {
+        showBiometricOrPinPrompt(
+            isForDecrypt = false,
+            cipherIv = null,
+            activityResultLauncher = identityVerifyActivityResultLauncher,
+            titleResId = R.string.unlock,
+            descriptionResId = R.string.note_locked,
+            onSuccess = { _ -> action() },
+        ) { errorCode ->
+            // On any authentication error/cancel, do nothing (keep the notes locked). The only
+            // exception is "no biometrics enrolled / no hardware": in that case there is nothing to
+            // verify against, consistent with opening a locked note which offers to disable the
+            // lock ? so we proceed.
+            if (
+                errorCode ==
+                    android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_NO_BIOMETRICS ||
+                    errorCode ==
+                        android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_HW_NOT_PRESENT
+            ) {
+                action()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -588,6 +635,15 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         const val EXTRA_FRAGMENT_TO_OPEN = "notallyx.intent.extra.FRAGMENT_TO_OPEN"
         const val EXTRA_SKIP_START_VIEW_ON_BACK = "notallyx.intent.extra.SKIP_START_VIEW_ON_BACK"
         private const val ACTION_SEARCH = 1001
-        val ACTIVITES_WITHOUT_SEARCH = setOf(R.id.Settings, R.id.Reminders, R.id.Labels)
+        val ACTIVITES_WITHOUT_SEARCH =
+            setOf(
+                R.id.Settings,
+                R.id.SettingsAppearance,
+                R.id.SettingsBackup,
+                R.id.SettingsData,
+                R.id.SettingsAbout,
+                R.id.Reminders,
+                R.id.Labels,
+            )
     }
 }

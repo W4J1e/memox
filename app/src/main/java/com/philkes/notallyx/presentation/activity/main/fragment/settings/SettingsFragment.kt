@@ -1,8 +1,6 @@
 package com.philkes.notallyx.presentation.activity.main.fragment.settings
 
 import android.Manifest
-import android.app.Application
-import android.content.ActivityNotFoundException
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.Intent.ACTION_OPEN_DOCUMENT_TREE
@@ -25,6 +23,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.work.WorkManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
@@ -60,13 +59,8 @@ import com.philkes.notallyx.scheduleAutoRemoveOldDeletedNotes
 import com.philkes.notallyx.utils.MIME_TYPE_JSON
 import com.philkes.notallyx.utils.MIME_TYPE_ZIP
 import com.philkes.notallyx.utils.backup.exportPreferences
-import com.philkes.notallyx.utils.catchNoBrowserInstalled
 import com.philkes.notallyx.utils.getExtraBooleanFromBundleOrIntent
-import com.philkes.notallyx.utils.getLastExceptionLog
-import com.philkes.notallyx.utils.getLogFile
-import com.philkes.notallyx.utils.getUriForFile
 import com.philkes.notallyx.utils.log
-import com.philkes.notallyx.utils.reportBug
 import com.philkes.notallyx.utils.security.DecryptionException
 import com.philkes.notallyx.utils.security.EncryptionException
 import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
@@ -101,14 +95,61 @@ class SettingsFragment : Fragment() {
         val binding = FragmentSettingsBinding.inflate(inflater)
         model.preferences.apply {
             setupAppearance(binding)
-            setupContentDensity(binding)
             setupBackup(binding)
             setupAutoBackups(binding)
             setupSecurity(binding)
             setupSettings(binding)
         }
         setupAbout(binding)
+        applyCategory(binding)
         return binding.root
+    }
+
+    /**
+     * The settings screen is a landing page (category entries) plus several category sub-pages that
+     * share the same layout and setup code, toggling section visibility based on the [category]
+     * navigation argument. "root" shows the landing; otherwise only the matching section is shown.
+     */
+    private fun applyCategory(binding: FragmentSettingsBinding) {
+        val category = arguments?.getString(EXTRA_SETTINGS_CATEGORY) ?: CATEGORY_ROOT
+        when (category) {
+            CATEGORY_APPEARANCE -> showSection(binding, binding.SectionAppearance)
+            CATEGORY_BACKUP -> showSection(binding, binding.SectionBackup)
+            CATEGORY_DATA -> showSection(binding, binding.SectionData)
+            CATEGORY_ABOUT -> showSection(binding, binding.SectionAbout)
+            else -> {
+                // Root: show landing, hide all sections.
+                binding.SettingsLanding.visibility = View.VISIBLE
+                binding.SectionAppearance.visibility = View.GONE
+                binding.SectionBackup.visibility = View.GONE
+                binding.SectionData.visibility = View.GONE
+                binding.SectionAbout.visibility = View.GONE
+                binding.GoToAppearance.setOnClickListener {
+                    findNavController().navigate(R.id.SettingsAppearance)
+                }
+                binding.GoToBackup.setOnClickListener {
+                    findNavController().navigate(R.id.SettingsBackup)
+                }
+                binding.GoToData.setOnClickListener {
+                    findNavController().navigate(R.id.SettingsData)
+                }
+                binding.GoToAbout.setOnClickListener {
+                    findNavController().navigate(R.id.SettingsAbout)
+                }
+            }
+        }
+    }
+
+    private fun showSection(binding: FragmentSettingsBinding, section: View) {
+        binding.SettingsLanding.visibility = View.GONE
+        binding.SectionAppearance.visibility =
+            if (section === binding.SectionAppearance) View.VISIBLE else View.GONE
+        binding.SectionBackup.visibility =
+            if (section === binding.SectionBackup) View.VISIBLE else View.GONE
+        binding.SectionData.visibility =
+            if (section === binding.SectionData) View.VISIBLE else View.GONE
+        binding.SectionAbout.visibility =
+            if (section === binding.SectionAbout) View.VISIBLE else View.GONE
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -404,6 +445,18 @@ class SettingsFragment : Fragment() {
             model.savePreference(maxLabels, newValue)
         }
 
+        labelTagsHiddenInOverview.observe(viewLifecycleOwner) { value ->
+            binding.LabelsHiddenInOverview.setup(
+                labelTagsHiddenInOverview,
+                value,
+                requireContext(),
+                layoutInflater,
+                R.string.labels_hidden_in_overview,
+            ) { enabled ->
+                model.savePreference(labelTagsHiddenInOverview, enabled)
+            }
+        }
+
         startView.merge(model.labels).observe(viewLifecycleOwner) { (startViewValue, labelsValue) ->
             binding.StartView.setupStartView(
                 startView,
@@ -413,46 +466,6 @@ class SettingsFragment : Fragment() {
                 layoutInflater,
             ) { newValue ->
                 model.savePreference(startView, newValue)
-            }
-        }
-    }
-
-    private fun NotallyXPreferences.setupContentDensity(binding: FragmentSettingsBinding) {
-        binding.apply {
-            MaxTitle.setup(maxTitle, requireContext()) { newValue ->
-                model.savePreference(maxTitle, newValue)
-            }
-            MaxItems.setup(maxItems, requireContext()) { newValue ->
-                model.savePreference(maxItems, newValue)
-            }
-
-            MaxLines.setup(maxLines, requireContext()) { newValue ->
-                model.savePreference(maxLines, newValue)
-            }
-            MaxLabels.setup(maxLabels, requireContext()) { newValue ->
-                model.savePreference(maxLabels, newValue)
-            }
-            labelTagsHiddenInOverview.observe(viewLifecycleOwner) { value ->
-                binding.LabelsHiddenInOverview.setup(
-                    labelTagsHiddenInOverview,
-                    value,
-                    requireContext(),
-                    layoutInflater,
-                    R.string.labels_hidden_in_overview,
-                ) { enabled ->
-                    model.savePreference(labelTagsHiddenInOverview, enabled)
-                }
-            }
-            imagesHiddenInOverview.observe(viewLifecycleOwner) { value ->
-                binding.ImagesHiddenInOverview.setup(
-                    imagesHiddenInOverview,
-                    value,
-                    requireContext(),
-                    layoutInflater,
-                    R.string.images_hidden_in_overview,
-                ) { enabled ->
-                    model.savePreference(imagesHiddenInOverview, enabled)
-                }
             }
         }
     }
@@ -810,69 +823,6 @@ class SettingsFragment : Fragment() {
 
     private fun setupAbout(binding: FragmentSettingsBinding) {
         binding.apply {
-            SendFeedback.setOnClickListener {
-                val options =
-                    arrayOf(
-                        getString(R.string.report_bug),
-                        getString(R.string.make_feature_request),
-                        getString(R.string.send_feedback),
-                    )
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.send_feedback)
-                    .setItems(options) { _, which ->
-                        when (which) {
-                            0 -> {
-                                val app = requireContext().applicationContext as Application
-                                val logs = app.getLastExceptionLog()
-                                reportBug(logs)
-                            }
-
-                            1 ->
-                                requireContext().catchNoBrowserInstalled {
-                                    startActivity(
-                                        Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse(
-                                                    "https://github.com/Crustack/NotallyX/issues/new?labels=enhancement&template=feature_request.md"
-                                                ),
-                                            )
-                                            .wrapWithChooser(requireContext())
-                                    )
-                                }
-                            2 -> {
-                                val intent =
-                                    Intent(Intent.ACTION_SEND)
-                                        .apply {
-                                            selector =
-                                                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
-                                            putExtra(
-                                                Intent.EXTRA_EMAIL,
-                                                arrayOf("notallyx@yahoo.com"),
-                                            )
-                                            putExtra(Intent.EXTRA_SUBJECT, "NotallyX [Feedback]")
-                                            val app =
-                                                requireContext().applicationContext as Application
-                                            val log = app.getLogFile()
-                                            if (log.exists()) {
-                                                val uri = app.getUriForFile(log)
-                                                putExtra(Intent.EXTRA_STREAM, uri)
-                                            }
-                                        }
-                                        .wrapWithChooser(requireContext())
-                                try {
-                                    startActivity(intent)
-                                } catch (exception: ActivityNotFoundException) {
-                                    showToast(R.string.install_an_email)
-                                }
-                            }
-                        }
-                    }
-                    .setCancelButton()
-                    .show()
-            }
-            Rate.setOnClickListener {
-                openLink("https://play.google.com/store/apps/details?id=com.philkes.notallyx")
-            }
             Documentation.setOnClickListener { openLink("https://crustack.github.io/NotallyX") }
             SourceCode.setOnClickListener { openLink("https://github.com/Crustack/NotallyX") }
             Libraries.setOnClickListener {
@@ -917,7 +867,6 @@ class SettingsFragment : Fragment() {
                     .setCancelButton()
                     .show()
             }
-            Donate.setOnClickListener { openLink("https://ko-fi.com/crustack") }
             ViewLogs.setOnClickListener { (requireContext() as ContextWrapper).viewLogs() }
 
             try {
@@ -1084,5 +1033,12 @@ class SettingsFragment : Fragment() {
         private const val TAG = "SettingsFragment"
         const val EXTRA_SHOW_IMPORT_BACKUPS_FOLDER =
             "notallyx.intent.extra.SHOW_IMPORT_BACKUPS_FOLDER"
+
+        const val EXTRA_SETTINGS_CATEGORY = "category"
+        const val CATEGORY_ROOT = "root"
+        const val CATEGORY_APPEARANCE = "appearance"
+        const val CATEGORY_BACKUP = "backup"
+        const val CATEGORY_DATA = "data"
+        const val CATEGORY_ABOUT = "about"
     }
 }

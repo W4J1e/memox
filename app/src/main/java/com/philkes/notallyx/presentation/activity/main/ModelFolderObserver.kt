@@ -219,8 +219,10 @@ class ModelFolderObserver(
                         model.lockBaseNotes(true)
                     }
                 } else {
+                    // Unlocking removes a note's protection, so require identity verification first
+                    // (biometric/device credential). See MainActivity.verifyIdentityThen.
                     lock.setTitle(R.string.unlock_note).setIcon(R.drawable.lock_open).onClick {
-                        model.lockBaseNotes(false)
+                        activity.verifyIdentityThen { model.lockBaseNotes(false) }
                     }
                 }
             }
