@@ -26,7 +26,9 @@ $:
             echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> gradle.properties
             echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> gradle.properties
             echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> gradle.properties
-            ./gradlew assembleRelease -x test --no-daemon
+            ./gradlew assembleRelease -x test --no-daemon \
+              -Djavax.net.ssl.trustStoreType=JKS \
+              -Dhttps.protocols=TLSv1.2,TLSv1.3
         - name: upload-release-attachment
           image: cnbcool/attachments:latest
           settings:

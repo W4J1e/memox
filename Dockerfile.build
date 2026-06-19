@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
+# Fix TLS issue with Google Maven
+RUN sed -i '/jdk.tls.disabledAlgorithms/s/^/#/' ${JAVA_HOME}/conf/security/java.security
+
 ENV ANDROID_HOME=/opt/android-sdk
 
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
