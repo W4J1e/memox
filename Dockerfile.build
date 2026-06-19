@@ -10,15 +10,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
-RUN mkdir -p /opt/android-sdk/latest/cmdline-tools && \
+ENV ANDROID_HOME=/opt/android-sdk
+
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
     cd /tmp && \
     wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmd.zip && \
     unzip -q cmd.zip && \
-    mv cmdline-tools /opt/android-sdk/latest/cmdline-tools/cmdline-tools && \
+    mv cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
     rm cmd.zip
 
-ENV ANDROID_HOME=/opt/android-sdk/latest
-ENV PATH=$PATH:$ANDROID_HOME/latest/cmdline-tools/cmdline-tools/bin
+ENV PATH=$PATH:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools
 
 RUN yes | sdkmanager --licenses > /dev/null 2>&1 && \
     sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null 2>&1
