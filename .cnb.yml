@@ -1,24 +1,5 @@
 main:
   push:
-    - name: build-debug-apk
-      runner:
-        cpus: 8
-      docker:
-        build:
-          dockerfile: Dockerfile.build
-      stages:
-        - name: build-apk
-          script: |
-            echo "sdk.dir=$ANDROID_HOME" > local.properties
-            ./gradlew assembleDebug --no-daemon
-        - name: upload-commit-attachment
-          image: cnbcool/attachments:latest
-          settings:
-            attachments:
-              - "app/build/outputs/apk/debug/*.apk"
-
-$:
-  tag_push:
     - name: build-release-apk
       runner:
         cpus: 8
@@ -27,6 +8,36 @@ $:
           dockerfile: Dockerfile.build
       imports:
         # 从密钥仓库注入签名配置
+        - https://cnb.cool/hin/env/-/blob/main/signing.yml
+      stages:
+        - name: build-release
+          script: |
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
+            if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
+              echo "ERROR: RELEASE_KEYSTORE_BASE64 not set, please configure signing secrets"
+              exit 1
+            fi
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/memox-release.jks
+            echo "RELEASE_STORE_FILE=memox-release.jks" >> gradle.properties
+            echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> gradle.properties
+            echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> gradle.properties
+            echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> gradle.properties
+            ./gradlew assembleRelease --no-daemon
+        - name: upload-commit-attachment
+          image: cnbcool/attachments:latest
+          settings:
+            attachments:
+              - "app/build/outputs/apk/release/*.apk"
+
+$:
+  tag_push:
+    - name: release-apk
+      runner:
+        cpus: 8
+      docker:
+        build:
+          dockerfile: Dockerfile.build
+      imports:
         - https://cnb.cool/hin/env/-/blob/main/signing.yml
       stages:
         - name: create-release
@@ -41,7 +52,7 @@ $:
               echo "ERROR: RELEASE_KEYSTORE_BASE64 not set, please configure signing secrets"
               exit 1
             fi
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > memox-release.jks
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > app/memox-release.jks
             echo "RELEASE_STORE_FILE=memox-release.jks" >> gradle.properties
             echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> gradle.properties
             echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> gradle.properties
