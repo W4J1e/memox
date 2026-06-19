@@ -34,8 +34,8 @@ fun InputStream.readAsBackup(): Pair<List<BaseNote>, List<Label>> {
             when (parser.name) {
                 "notes" -> parser.parseBaseNoteList(parser.name, baseNotes, Folder.NOTES)
                 "deleted-notes" -> parser.parseBaseNoteList(parser.name, baseNotes, Folder.DELETED)
-                "archived-notes" ->
-                    parser.parseBaseNoteList(parser.name, baseNotes, Folder.ARCHIVED)
+                // "archived-notes" are imported as regular notes (the Archive feature was removed).
+                "archived-notes" -> parser.parseBaseNoteList(parser.name, baseNotes, Folder.NOTES)
                 "label" -> {
                     val value = parser.nextText()
                     // Initialize order based on current list size to maintain sequence

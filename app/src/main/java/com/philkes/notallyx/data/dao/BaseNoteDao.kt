@@ -290,7 +290,7 @@ interface BaseNoteDao {
      * directly on the LiveData to filter the results accordingly.
      */
     fun getBaseNotesByLabel(label: String): Flow<List<BaseNote>> {
-        val result = getBaseNotesByLabel(label, setOf(Folder.NOTES, Folder.ARCHIVED))
+        val result = getBaseNotesByLabel(label, setOf(Folder.NOTES))
         return result.map { list -> list.filter { baseNote -> baseNote.labels.contains(label) } }
     }
 

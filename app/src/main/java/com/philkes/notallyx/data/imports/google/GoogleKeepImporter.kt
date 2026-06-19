@@ -148,7 +148,6 @@ class GoogleKeepImporter : ExternalImporter {
             folder =
                 when {
                     googleKeepNote.isTrashed -> Folder.DELETED
-                    googleKeepNote.isArchived -> Folder.ARCHIVED
                     else -> Folder.NOTES
                 },
             color = BaseNote.COLOR_DEFAULT, // Ignoring color mapping

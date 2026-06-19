@@ -114,7 +114,7 @@ class BaseNoteVH(
             setTextSizeSp(preferences.textSize.displaySmallerSize)
         }
 
-        setImages(baseNote.images, imageRoot, baseNote.type == Type.NOTE && !baseNote.locked)
+        setImages(baseNote, imageRoot)
         setFiles(baseNote.files)
 
         binding.Title.apply {
@@ -129,13 +129,6 @@ class BaseNoteVH(
                     showSearchSnippet(snippet)
                 } else text = baseNote.title
             } else text = baseNote.title
-
-            setCompoundDrawablesWithIntrinsicBounds(
-                if (baseNote.locked) R.drawable.lock_big else 0,
-                0,
-                0,
-                0,
-            )
         }
 
         if (preferences.hideLabels) {
@@ -304,7 +297,7 @@ class BaseNoteVH(
         }
     }
 
-    private fun setImages(images: List<FileAttachment>, mediaRoot: File?, showThumbnail: Boolean) {
+    private fun setImages(baseNote: BaseNote, mediaRoot: File?) {
         binding.apply {
             // Always hide the legacy top gallery and its placeholders in the overview.
             ImageLayout.visibility = GONE
@@ -313,17 +306,29 @@ class BaseNoteVH(
             ImageView.visibility = GONE
             Glide.with(ImageView.context).clear(ImageView)
 
-            // Show the first image as a small thumbnail on the right of the card. Only for NOTE
-            // notes (LIST notes' item list is full-width and would overlap) and never for locked
-            // notes (which hide all content).
-            val firstImage = images.firstOrNull()
-            if (showThumbnail && firstImage != null && mediaRoot != null) {
-                val file = File(mediaRoot, firstImage.localName)
-                NoteThumbnail.visibility = VISIBLE
-                Glide.with(NoteThumbnail.context).load(file).centerCrop().into(NoteThumbnail)
-            } else {
-                NoteThumbnail.visibility = GONE
-                Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+            val showThumbnail = baseNote.type == Type.NOTE && !baseNote.locked
+            val firstImage = baseNote.images.firstOrNull()
+            when {
+                // Locked notes hide their body/list, so the thumbnail area is free: show a lock
+                // icon there (same 64dp box as the preview image) instead of a left title icon.
+                baseNote.locked -> {
+                    Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+                    NoteThumbnail.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                    NoteThumbnail.setPadding(8.dp, 8.dp, 8.dp, 8.dp)
+                    NoteThumbnail.setImageResource(R.drawable.lock_big)
+                    NoteThumbnail.visibility = VISIBLE
+                }
+                showThumbnail && firstImage != null && mediaRoot != null -> {
+                    val file = File(mediaRoot, firstImage.localName)
+                    NoteThumbnail.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                    NoteThumbnail.setPadding(0, 0, 0, 0)
+                    Glide.with(NoteThumbnail.context).load(file).centerCrop().into(NoteThumbnail)
+                    NoteThumbnail.visibility = VISIBLE
+                }
+                else -> {
+                    Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+                    NoteThumbnail.visibility = GONE
+                }
             }
         }
     }

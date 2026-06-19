@@ -4,8 +4,7 @@ import java.io.Serializable
 
 enum class Folder : Serializable {
     NOTES,
-    DELETED,
-    ARCHIVED;
+    DELETED;
 
     companion object {
         fun valueOfOrDefault(value: String) =

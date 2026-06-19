@@ -33,7 +33,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 12)
+@Database(entities = [BaseNote::class, Label::class], version = 13)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -164,6 +164,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration10,
                         Migration11,
                         Migration12,
+                        Migration13,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -335,6 +336,15 @@ abstract class NotallyDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `locked` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        object Migration13 : Migration(12, 13) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The "Archive" folder feature was removed. Move any archived notes back into the
+                // regular Notes folder so they stay reachable.
+                db.execSQL("UPDATE `BaseNote` SET `folder` = 'NOTES' WHERE `folder` = 'ARCHIVED'")
             }
         }
     }

@@ -400,7 +400,6 @@ fun View.getQuantityString(id: Int, quantity: Int, vararg formatArgs: Any): Stri
 fun Folder.movedToResId(): Int {
     return when (this) {
         Folder.DELETED -> R.plurals.deleted_selected_notes
-        Folder.ARCHIVED -> R.plurals.archived_selected_notes
         Folder.NOTES -> R.plurals.restored_selected_notes
     }
 }

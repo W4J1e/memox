@@ -58,7 +58,6 @@ class ModelFolderObserver(
         }
         when (value) {
             Folder.NOTES -> initNotesFolderMenu(lock)
-            Folder.ARCHIVED -> initArchivedFolderMenu(lock)
             Folder.DELETED -> initDeletedFolderMenu()
         }
     }
@@ -70,28 +69,11 @@ class ModelFolderObserver(
         menu.add(R.string.duplicate, R.drawable.content_copy) {
             baseModel.duplicateSelectedBaseNotes()
         }
-        menu.add(R.string.archive, R.drawable.archive) { moveNotes(Folder.ARCHIVED) }
         menu.addChangeColor()
         val pinnedToStatus = menu.addPinnedToStatus()
         val share = menu.addShare()
         menu.addExportMenu()
         model.actionMode.count.observeCountAndPinned(activity, share, pinned, pinnedToStatus, lock)
-    }
-
-    private fun initArchivedFolderMenu(lock: MenuItem?) {
-        menu.add(R.string.unarchive, R.drawable.unarchive, MenuItem.SHOW_AS_ACTION_ALWAYS) {
-            moveNotes(Folder.NOTES)
-        }
-        menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(R.string.duplicate, R.drawable.content_copy) {
-            baseModel.duplicateSelectedBaseNotes()
-        }
-        menu.addExportMenu(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        val pinned = menu.addPinned()
-        menu.addLabels()
-        menu.addChangeColor()
-        val share = menu.addShare()
-        model.actionMode.count.observeCountAndPinned(activity, share, pinned, null, lock)
     }
 
     private fun initDeletedFolderMenu() {

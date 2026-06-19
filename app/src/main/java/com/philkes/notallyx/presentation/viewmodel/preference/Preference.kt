@@ -502,7 +502,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     EXPORT(R.string.export, R.drawable.export),
     SHARE(R.string.share, R.drawable.share),
     DELETE(R.string.delete, R.drawable.delete),
-    ARCHIVE(R.string.archive, R.drawable.archive),
     TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
     CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
@@ -523,15 +522,11 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 PIN -> if (pinned) R.drawable.unpin else R.drawable.pin
                 PIN_TO_STATUS ->
                     if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
-                ARCHIVE ->
-                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.archive
-                RESTORE ->
-                    if (folder == Folder.ARCHIVED) R.drawable.unarchive else R.drawable.restore
+                RESTORE -> R.drawable.restore
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
                     else R.drawable.visibility
-                LOCK_NOTE ->
-                    if (isNoteLocked) R.drawable.lock_big else R.drawable.lock_open
+                LOCK_NOTE -> if (isNoteLocked) R.drawable.lock_big else R.drawable.lock_open
                 else -> drawableResId
             }
         val title =
@@ -540,15 +535,13 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 PIN_TO_STATUS ->
                     if (isPinnedToStatus) R.string.unpin_from_status_bar
                     else R.string.pin_to_status_bar
-                ARCHIVE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.archive
-                RESTORE -> if (folder == Folder.ARCHIVED) R.string.unarchive else R.string.restore
+                RESTORE -> R.string.restore
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
                 CONVERT ->
                     if (type == Type.LIST) R.string.convert_to_text_note
                     else R.string.convert_to_list_note
-                LOCK_NOTE ->
-                    if (isNoteLocked) R.string.unlock_note else R.string.lock_note
+                LOCK_NOTE -> if (isNoteLocked) R.string.unlock_note else R.string.lock_note
                 else -> textResId
             }
         return title to icon

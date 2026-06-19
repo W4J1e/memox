@@ -31,7 +31,6 @@ class SearchFragment : NotallyFragment() {
                 when (initialFolder ?: model.folder.value) {
                     Folder.NOTES -> R.id.Notes
                     Folder.DELETED -> R.id.Deleted
-                    Folder.ARCHIVED -> R.id.Archived
                 }
 
             binding?.ChipGroup?.apply {
@@ -39,7 +38,6 @@ class SearchFragment : NotallyFragment() {
                     when (checkedId.first()) {
                         R.id.Notes -> model.folder.value = Folder.NOTES
                         R.id.Deleted -> model.folder.value = Folder.DELETED
-                        R.id.Archived -> model.folder.value = Folder.ARCHIVED
                     }
                 }
                 check(checked)

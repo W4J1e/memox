@@ -102,7 +102,7 @@ class QuillpadImporterTest {
 
         assertThat(actual)
             .extracting("title", "folder")
-            .containsExactly("Archived Note", Folder.ARCHIVED)
+            .containsExactly("Archived Note", Folder.NOTES)
     }
 
     @Test
