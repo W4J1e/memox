@@ -275,6 +275,8 @@
     <string name="note_text_too_long_truncated">文本过长，缩短到了 %1$d 个字符</string>
     <string name="note_too_big_truncating">笔记过大无法保存。被缩短到 %1$s 个字符（先前为：%2$s 个）</string>
     <string name="notes">笔记</string>
+    <string name="navigation">导航</string>
+    <string name="data">数据</string>
     <plurals name="notes">
         <item quantity="one">笔记</item>
         <item quantity="other">笔记</item>
@@ -389,6 +391,7 @@
     <string name="unlock">通过生物特征/PIN解除锁定</string>
     <string name="unlock_with_biometrics_not_setup">你先前已启用了生物特征锁，但生物特征/PIN目前在你的设备上没有配置好。如果你希望停用生物特征锁，请按下“停用”，不然请为你的设备配置生物特征/PIN</string>
     <string name="unpin">取消固定</string>
+    <string name="lock_note_no_device_lock">要锁定笔记，你需要先在设备上设置屏幕锁（PIN码、图案或密码）。</string>
     <string name="unpin_from_status_bar">取消状态栏固定</string>
     <string name="upcoming">即将到来</string>
     <string name="updated_link">更新了链接</string>

@@ -110,7 +110,7 @@
     <string name="daily">Daily</string>
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
-    <string name="data">数据</string>
+    <string name="data">Data</string>
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/cool.hin.memox). In combination with file synchronization apps this can be used to synchronize memoX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
@@ -400,6 +400,7 @@
     <string name="unlabeled">Unlabeled</string>
     <string name="unlock">Unlock via Biometric/PIN</string>
     <string name="unlock_with_biometrics_not_setup">You have previously enabled biometric lock but Biometrics/PIN are not setup for your device anymore.\n\nIf you wish to disable biometric lock press Disable, otherwise setup Biometrics/PIN for your device</string>
+    <string name="lock_note_no_device_lock">To lock notes, you need to set up a screen lock (PIN, pattern, or password) on your device first.</string>
     <string name="unpin">Unpin</string>
     <string name="unpin_from_status_bar">Unpin from status bar</string>
     <string name="upcoming">Upcoming</string>

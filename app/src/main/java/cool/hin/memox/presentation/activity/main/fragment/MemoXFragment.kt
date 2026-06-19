@@ -269,6 +269,24 @@ abstract class MemoXFragment : Fragment(), ItemListener {
 
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
+        // Hide search bar on scroll up
+        binding?.MainListView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0) {
+                    val searchBar = binding?.EnterSearchKeywordLayout
+                    if (searchBar?.visibility == View.VISIBLE) {
+                        val navController = recyclerView.findNavController()
+                        if (navController.currentDestination?.id != R.id.Search) {
+                            searchBar.visibility = View.GONE
+                            binding?.EnterSearchKeyword?.setText("")
+                            binding?.EnterSearchKeyword?.clearFocus()
+                            activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
+                        }
+                    }
+                }
+            }
+        })
     }
 
     fun toggleSearchBar() {
