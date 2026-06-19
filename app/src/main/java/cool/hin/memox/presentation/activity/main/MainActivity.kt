@@ -66,7 +66,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     override fun onSupportNavigateUp(): Boolean {
         baseModel.keyword = ""
-        return navController.navigateUp(configuration)
+        return navController.navigateUp()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
