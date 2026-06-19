@@ -1,5 +1,6 @@
 package cool.hin.memox.presentation.view.note
 
+import android.text.Editable
 import android.text.Selection
 import android.text.Spannable
 import android.text.style.ClickableSpan
@@ -16,7 +17,7 @@ class CheckboxSpan(var isChecked: Boolean) : ClickableSpan() {
         const val UNCHECKED = '☐'
         const val CHECKED = '☑'
 
-        fun insertCheckbox(text: Spannable, position: Int): CheckboxSpan {
+        fun insertCheckbox(text: Editable, position: Int): CheckboxSpan {
             val span = CheckboxSpan(false)
             text.insert(position, UNCHECKED.toString() + " ")
             val start = position
