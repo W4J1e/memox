@@ -26,7 +26,7 @@ $:
             echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> gradle.properties
             echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> gradle.properties
             echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> gradle.properties
-            ./gradlew assembleRelease -x test -x testReleaseUnitTest -x compileReleaseUnitTestKotlin --no-daemon
+            ./gradlew assembleRelease -x test -x testReleaseUnitTest -x compileReleaseUnitTestKotlin -x generateChangelogs --no-daemon
         - name: upload-release-attachment
           image: cnbcool/attachments:latest
           settings:
