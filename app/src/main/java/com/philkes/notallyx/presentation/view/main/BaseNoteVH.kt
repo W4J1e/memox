@@ -1,16 +1,15 @@
 package com.philkes.notallyx.presentation.view.main
 
 import android.view.View.GONE
-import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
-import com.bumptech.glide.Glide
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -23,7 +22,6 @@ import com.philkes.notallyx.presentation.bindLabels
 import com.philkes.notallyx.presentation.displayFormattedTimestamp
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.extractColor
-import com.philkes.notallyx.presentation.getQuantityString
 import com.philkes.notallyx.presentation.setControlsContrastColorForAllViews
 import com.philkes.notallyx.presentation.setTextSizeSp
 import com.philkes.notallyx.presentation.setupReminderChip
@@ -37,6 +35,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.TimeFormat
 import com.philkes.notallyx.presentation.viewmodel.preference.displayBodySize
 import com.philkes.notallyx.presentation.viewmodel.preference.displaySmallerSize
 import com.philkes.notallyx.presentation.viewmodel.preference.displayTitleSize
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 import java.io.File
 
 data class BaseNoteVHPreferences(
@@ -182,7 +181,7 @@ class BaseNoteVH(
             return
         }
         binding.Note.apply {
-            val snippet = extractSearchSnippet(baseNote.body, keyword)
+            val snippet = extractSearchSnippet(baseNote.body.withoutImagePlaceholders(), keyword)
             if (snippet == null) {
                 bindNote(baseNote.body, baseNote.spans, baseNote.title.isEmpty())
             } else {
@@ -193,7 +192,9 @@ class BaseNoteVH(
 
     private fun bindNote(body: String, spans: List<SpanRepresentation>, isTitleEmpty: Boolean) {
         binding.Note.apply {
-            text = body.applySpans(spans)
+            // Strip inline image placeholders for the overview; spans auto-adjust to the remaining
+            // text. The full images are still shown via setImages(..) below.
+            text = body.applySpans(spans).withoutImagePlaceholders()
             if (preferences.maxLines < 1) {
                 isVisible = isTitleEmpty
                 maxLines = if (isTitleEmpty) 1 else preferences.maxLines

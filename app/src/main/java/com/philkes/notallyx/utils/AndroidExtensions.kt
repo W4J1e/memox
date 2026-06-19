@@ -44,6 +44,7 @@ import com.philkes.notallyx.presentation.setCancelButton
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
 import com.philkes.notallyx.presentation.viewmodel.ExportMimeType
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -406,7 +407,7 @@ fun Context.viewFile(uri: Uri, mimeType: String) {
 fun ContextWrapper.shareNote(note: BaseNote) {
     val body =
         when (note.type) {
-            Type.NOTE -> note.body
+            Type.NOTE -> note.body.withoutImagePlaceholders()
             Type.LIST -> note.items.toMutableList().toText()
         }
     val filesUris =

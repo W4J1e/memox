@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.text.Editable
 import android.text.Spanned
 import android.text.style.URLSpan
@@ -23,7 +24,6 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.VISIBLE
 import android.view.inputmethod.InputMethodManager
-import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -44,6 +44,7 @@ import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.generateBaseNote
 import com.philkes.notallyx.databinding.ActivityEditBinding
+import com.philkes.notallyx.presentation.IMAGE_PLACEHOLDER
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
@@ -99,6 +100,7 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEditBinding>() {
     private lateinit var audioAdapter: AudioAdapter
@@ -794,6 +796,41 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
+    /**
+     * Imports the picked image [uris] and inserts them inline into the note body at the current
+     * cursor position (or at the end if the body has no selection). Each image is represented by an
+     * [IMAGE_PLACEHOLDER] with an [com.philkes.notallyx.presentation.InlineImageSpan]; the
+     * resulting text change goes through the change history (undoable) and triggers
+     * [NotallyModel.syncImagesFromBody] to keep the `images` list in sync.
+     */
+    fun insertImagesInline(uris: Array<Uri>) {
+        notallyModel.importImages(uris) { attachments ->
+            if (attachments.isEmpty()) {
+                return@importImages
+            }
+            lifecycleScope.launch {
+                val startPos =
+                    binding.EnterBody.selectionStart.takeIf { it >= 0 }
+                        ?: binding.EnterBody.length()
+                val spans =
+                    withContext(Dispatchers.IO) {
+                        attachments.mapNotNull { notallyModel.loadInlineImageSpan(it) }
+                    }
+                if (spans.isEmpty()) {
+                    return@launch
+                }
+                binding.EnterBody.changeTextWithHistory { text ->
+                    var pos = startPos.coerceIn(0, text.length)
+                    spans.forEach { span ->
+                        text.insert(pos, IMAGE_PLACEHOLDER.toString())
+                        text.setSpan(span, pos, pos + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        pos += 1
+                    }
+                }
+            }
+        }
+    }
+
     private fun setupImages() {
         val imageAdapter =
             PreviewImageAdapter(notallyModel.imageRoot) { position ->
@@ -1060,8 +1097,12 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     private fun showNoteLockScreen() {
         binding.ScrollView.visibility = GONE
+        // The per-note lock is a biometric/PIN gate only: it does not decrypt any per-note
+        // ciphertext (note contents live in the database, not encrypted per-note). Therefore it
+        // must NOT run in decrypt mode, which requires a non-null cipher IV and would NPE here.
+        // Use encrypt mode (no IV needed); the resulting cipher is unused by onSuccess.
         showBiometricOrPinPrompt(
-            true,
+            false,
             null,
             noteLockActivityResultLauncher,
             R.string.unlock,
