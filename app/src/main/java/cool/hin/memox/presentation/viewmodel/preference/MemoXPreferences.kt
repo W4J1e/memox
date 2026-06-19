@@ -135,6 +135,26 @@ class MemoXPreferences private constructor(private val context: Context) {
         )
     }
 
+    // WebDAV sync preferences
+    val webdavUrl =
+        StringPreference("webdav_url", preferences, "", R.string.webdav_url)
+    val webdavUsername =
+        StringPreference("webdav_username", preferences, "", R.string.webdav_username)
+    val webdavPassword by lazy {
+        StringPreference(
+            "webdav_password",
+            encryptedPreferences,
+            "",
+            R.string.webdav_password,
+        )
+    }
+    val webdavSyncEnabled =
+        BooleanPreference("webdav_sync_enabled", preferences, false, R.string.webdav_sync_enabled)
+    val webdavAutoSync =
+        BooleanPreference("webdav_auto_sync", preferences, false, R.string.webdav_auto_sync)
+    val webdavLastSyncTime =
+        LongPreference("webdav_last_sync_time", preferences, 0L)
+
     val autoSaveAfterIdleTime =
         IntPreference(
             "autoSaveAfterIdleTime",

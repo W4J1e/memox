@@ -195,6 +195,11 @@
             <include
                 android:id="@+id/PeriodicBackupsMax"
                 layout="@layout/preference_stepper" />
+
+            <!-- WebDAV Sync -->
+            <include
+                layout="@layout/preference"
+                android:id="@+id/WebDavSync" />
         </LinearLayout>
 
         <!-- Data category (security + settings) -->

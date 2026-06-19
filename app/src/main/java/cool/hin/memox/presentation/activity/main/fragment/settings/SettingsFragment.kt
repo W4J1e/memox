@@ -97,6 +97,7 @@ class SettingsFragment : Fragment() {
             setupAppearance(binding)
             setupBackup(binding)
             setupAutoBackups(binding)
+            setupWebDav(binding)
             setupSecurity(binding)
             setupSettings(binding)
         }
@@ -486,6 +487,29 @@ class SettingsFragment : Fragment() {
             }
         }
         model.importProgress.setupImportProgressDialog(this@SettingsFragment)
+    }
+
+    private fun MemoXPreferences.setupWebDav(binding: FragmentSettingsBinding) {
+        binding.WebDavSync.Title.setText(R.string.webdav_sync)
+        binding.WebDavSync.setOnClickListener {
+            WebDavSettingsDialog()
+                .show(childFragmentManager, WebDavSettingsDialog.TAG)
+        }
+        webdavSyncEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.WebDavSync.Value.text =
+                if (enabled) {
+                    val lastSync = webdavLastSyncTime.value
+                    if (lastSync > 0) {
+                        val date = java.text.SimpleDateFormat.getDateTimeInstance()
+                            .format(java.util.Date(lastSync))
+                        getString(R.string.webdav_last_sync, date)
+                    } else {
+                        getString(R.string.webdav_last_sync_never)
+                    }
+                } else {
+                    getString(R.string.webdav_not_configured)
+                }
+        }
     }
 
     private fun MemoXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {
