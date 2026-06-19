@@ -818,50 +818,8 @@ class SettingsFragment : Fragment() {
 
     private fun setupAbout(binding: FragmentSettingsBinding) {
         binding.apply {
-            Documentation.setOnClickListener { openLink("https://crustack.github.io/memoX") }
-            SourceCode.setOnClickListener { openLink("https://github.com/Crustack/memoX") }
-            Libraries.setOnClickListener {
-                val libraries =
-                    arrayOf(
-                        "Glide",
-                        "Pretty Time",
-                        "SwipeDrawer",
-                        "Work Manager",
-                        "Subsampling Scale ImageView",
-                        "Material Components for Android",
-                        "SQLCipher",
-                        "Zip4J",
-                        "AndroidFastScroll",
-                        "ColorPickerView",
-                    )
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.libraries)
-                    .setItems(libraries) { _, which ->
-                        when (which) {
-                            0 -> openLink("https://github.com/bumptech/glide")
-                            1 -> openLink("https://github.com/ocpsoft/prettytime")
-                            2 -> openLink("https://leaqi.github.io/SwipeDrawer_en")
-                            3 ->
-                                openLink(
-                                    "https://developer.android.com/jetpack/androidx/releases/work"
-                                )
-                            4 ->
-                                openLink(
-                                    "https://github.com/davemorrissey/subsampling-scale-image-view"
-                                )
-                            5 ->
-                                openLink(
-                                    "https://github.com/material-components/material-components-android"
-                                )
-                            6 -> openLink("https://github.com/sqlcipher/sqlcipher")
-                            7 -> openLink("https://github.com/srikanth-lingala/zip4j")
-                            8 -> openLink("https://github.com/zhanghai/AndroidFastScroll")
-                            9 -> openLink("https://github.com/skydoves/ColorPickerView")
-                        }
-                    }
-                    .setCancelButton()
-                    .show()
-            }
+            AuthorLink.setOnClickListener { openLink("https://hin.cool") }
+            SourceCode.setOnClickListener { openLink("https://cnb.cool/hin/memoX") }
             ViewLogs.setOnClickListener { (requireContext() as ContextWrapper).viewLogs() }
 
             try {
