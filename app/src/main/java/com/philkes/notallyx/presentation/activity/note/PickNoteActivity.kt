@@ -55,11 +55,7 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
                     { adapter -> notesSorting.value.createCallback(adapter) },
                     BaseNoteVHPreferences(
                         textSizeOverview.value,
-                        maxItems.value,
-                        maxLines.value,
-                        maxTitle.value,
                         labelTagsHiddenInOverview.value,
-                        imagesHiddenInOverview.value,
                         notesSorting.value.sortedBy,
                     ),
                     application.getCurrentImagesDirectory(),

@@ -68,7 +68,52 @@
     <fragment
         android:id="@+id/Settings"
         android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
-        android:label="@string/settings" />
+        android:label="@string/settings">
+        <argument
+            android:name="category"
+            android:defaultValue="root"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsAppearance"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/appearance">
+        <argument
+            android:name="category"
+            android:defaultValue="appearance"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsBackup"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/backup">
+        <argument
+            android:name="category"
+            android:defaultValue="backup"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsData"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/data">
+        <argument
+            android:name="category"
+            android:defaultValue="data"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/SettingsAbout"
+        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:label="@string/about">
+        <argument
+            android:name="category"
+            android:defaultValue="about"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/Search"

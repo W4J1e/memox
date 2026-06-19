@@ -40,11 +40,7 @@ import java.io.File
 
 data class BaseNoteVHPreferences(
     val textSize: Float,
-    val maxItems: Int,
-    val maxLines: Int,
-    val maxTitleLines: Int,
     val hideLabels: Boolean,
-    val hideImages: Boolean,
     val sortedBy: NotesSortBy,
 )
 
@@ -71,8 +67,9 @@ class BaseNoteVH(
             Date.setTextSizeSp(bodyTextSize)
             Note.setTextSizeSp(bodyTextSize)
 
-            Title.maxLines = preferences.maxTitleLines
-            Note.maxLines = preferences.maxLines
+            // Overview is always condensed: one title line and one body line.
+            Title.maxLines = 1
+            Note.maxLines = 1
 
             root.setOnClickListener { listener.onClick(absoluteAdapterPosition) }
 
@@ -134,10 +131,7 @@ class BaseNoteVH(
             } else text = baseNote.title
 
             setCompoundDrawablesWithIntrinsicBounds(
-                if (baseNote.locked) R.drawable.lock_big
-                else if (baseNote.type == Type.LIST && preferences.maxItems < 1)
-                    R.drawable.checkbox_small
-                else 0,
+                if (baseNote.locked) R.drawable.lock_big else 0,
                 0,
                 0,
                 0,
@@ -195,16 +189,10 @@ class BaseNoteVH(
             // Strip inline image placeholders for the overview; spans auto-adjust to the remaining
             // text. The full images are still shown via setImages(..) below.
             text = body.applySpans(spans).withoutImagePlaceholders()
-            if (preferences.maxLines < 1) {
-                // "Hide body" preference: only show a single body line when the title is empty.
-                isVisible = isTitleEmpty
-                maxLines = if (isTitleEmpty) 1 else preferences.maxLines
-            } else {
-                // Always show exactly one line of body in the overview, regardless of how long the
-                // note is.
-                maxLines = 1
-                isVisible = body.isNotEmpty()
-            }
+            // Always show exactly one line of body in the overview, regardless of how long the
+            // note is.
+            maxLines = 1
+            isVisible = body.isNotEmpty()
         }
     }
 
@@ -276,14 +264,15 @@ class BaseNoteVH(
 
     private fun bindList(initializedItems: List<ListItem>, isTitleEmpty: Boolean, textSize: Float) {
         binding.apply {
-            bindItemsRemaining(initializedItems.size, preferences.maxItems)
+            // Overview is condensed: show at most one list item.
+            val maxItems = 1
+            bindItemsRemaining(initializedItems.size, maxItems)
             if (initializedItems.isEmpty()) {
                 LinearLayout.visibility = GONE
             } else {
                 LinearLayout.visibility = VISIBLE
-                val forceShowFirstItem = preferences.maxItems < 1 && isTitleEmpty
-                val filteredList =
-                    initializedItems.take(if (forceShowFirstItem) 1 else preferences.maxItems)
+                val forceShowFirstItem = isTitleEmpty
+                val filteredList = initializedItems.take(if (forceShowFirstItem) 1 else maxItems)
                 LinearLayout.children
                     .filterIsInstance(HighlightableTextView::class.java)
                     .forEachIndexed { index, view ->
@@ -348,8 +337,8 @@ class BaseNoteVH(
 
     private fun shouldOnlyDisplayTitle(baseNote: BaseNote) =
         when (baseNote.type) {
-            Type.NOTE -> preferences.maxLines < 1
-            Type.LIST -> preferences.maxItems < 1
+            Type.NOTE -> false
+            Type.LIST -> false
         }
 
     private fun BaseNote.isEmpty() = title.isBlank() && hasNoContents() && images.isEmpty()

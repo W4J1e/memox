@@ -109,6 +109,7 @@
     <string name="daily">Daily</string>
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
+    <string name="data">Data</string>
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
