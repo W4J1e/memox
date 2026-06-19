@@ -1,4 +1,4 @@
-dev:
+main:
   push:
     - name: build-debug-apk
       runner:
@@ -11,33 +11,11 @@ dev:
           script: |
             echo "sdk.dir=$ANDROID_HOME" > local.properties
             ./gradlew assembleDebug --no-daemon
-        - name: upload-apk
-          image: curlimages/curl:latest
-          script: |
-            APK_PATH=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -1)
-            echo "Found APK: $APK_PATH"
-            if [ -z "$APK_PATH" ]; then
-              echo "No APK found, aborting upload"
-              exit 1
-            fi
-            APK_NAME=$(basename "$APK_PATH")
-            APK_SIZE=$(wc -c < "$APK_PATH" | awk '{printf "%.2f MB", $1/1048576}')
-            echo "Uploading $APK_NAME ($APK_SIZE) to GoFile..."
-            RESPONSE=$(curl -s -X POST https://upload.gofile.io/uploadfile \
-              -F "file=@$APK_PATH")
-            DOWNLOAD_PAGE=$(echo "$RESPONSE" | grep -o '"downloadPage":"[^"]*"' | head -1 | cut -d'"' -f4)
-            FILE_ID=$(echo "$RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-            SERVER=$(echo "$RESPONSE" | grep -o '"servers":\["[^"]*"\]' | head -1 | grep -oP '"[^"]*"' | head -1 | cut -d'"' -f2)
-            if [ -z "$DOWNLOAD_PAGE" ]; then
-              echo "Failed to upload APK to GoFile"
-              exit 1
-            fi
-            echo "==========================================================="
-            echo "  APK download: $DOWNLOAD_PAGE"
-            if [ -n "$SERVER" ] && [ -n "$FILE_ID" ]; then
-              echo "  Direct link: https://$SERVER.gofile.io/download/$FILE_ID/$APK_NAME"
-            fi
-            echo "==========================================================="
+        - name: upload-commit-attachment
+          image: cnbcool/attachments:latest
+          settings:
+            attachments:
+              - "app/build/outputs/apk/debug/*.apk"
 
   tag_push:
     - name: build-release-apk
@@ -47,49 +25,24 @@ dev:
         build:
           dockerfile: Dockerfile.build
       imports:
-        # 引用密钥仓库中的签名配置文件
-        # 需要先在 CNB 创建密钥仓库，添加 signing.yml 文件
+        # 从密钥仓库注入签名配置
         - https://cnb.cool/hin/env/-/blob/main/signing.yml
       stages:
         - name: build-release
           script: |
             echo "sdk.dir=$ANDROID_HOME" > local.properties
-            # 从环境变量解码 keystore 文件
             if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
               echo "ERROR: RELEASE_KEYSTORE_BASE64 not set, please configure signing secrets"
               exit 1
             fi
             echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > memox-release.jks
-            # 写入 gradle.properties 签名配置
             echo "RELEASE_STORE_FILE=memox-release.jks" >> gradle.properties
             echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD" >> gradle.properties
             echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS" >> gradle.properties
             echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD" >> gradle.properties
             ./gradlew assembleRelease --no-daemon
-        - name: upload-release-apk
-          image: curlimages/curl:latest
-          script: |
-            APK_PATH=$(find app/build/outputs/apk/release/ -name "*.apk" | head -1)
-            echo "Found APK: $APK_PATH"
-            if [ -z "$APK_PATH" ]; then
-              echo "No APK found, aborting upload"
-              exit 1
-            fi
-            APK_NAME=$(basename "$APK_PATH")
-            APK_SIZE=$(wc -c < "$APK_PATH" | awk '{printf "%.2f MB", $1/1048576}')
-            echo "Uploading $APK_NAME ($APK_SIZE) to GoFile..."
-            RESPONSE=$(curl -s -X POST https://upload.gofile.io/uploadfile \
-              -F "file=@$APK_PATH")
-            DOWNLOAD_PAGE=$(echo "$RESPONSE" | grep -o '"downloadPage":"[^"]*"' | head -1 | cut -d'"' -f4)
-            FILE_ID=$(echo "$RESPONSE" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-            SERVER=$(echo "$RESPONSE" | grep -o '"servers":\["[^"]*"\]' | head -1 | grep -oP '"[^"]*"' | head -1 | cut -d'"' -f2)
-            if [ -z "$DOWNLOAD_PAGE" ]; then
-              echo "Failed to upload APK to GoFile"
-              exit 1
-            fi
-            echo "==========================================================="
-            echo "  Release APK download: $DOWNLOAD_PAGE"
-            if [ -n "$SERVER" ] && [ -n "$FILE_ID" ]; then
-              echo "  Direct link: https://$SERVER.gofile.io/download/$FILE_ID/$APK_NAME"
-            fi
-            echo "==========================================================="
+        - name: upload-release-attachment
+          image: cnbcool/attachments:latest
+          settings:
+            attachments:
+              - "app/build/outputs/apk/release/*.apk"
