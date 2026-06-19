@@ -4,6 +4,7 @@ import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
@@ -244,21 +245,29 @@ abstract class MemoXFragment : Fragment(), ItemListener {
             }
         }
         // Pull-down to reveal search bar
-        binding?.MainListView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-                val firstVisible = layoutManager.findFirstVisibleItemPosition()
-                if (firstVisible == 0) {
-                    val navController = recyclerView.findNavController()
-                    if (navController.currentDestination?.id != R.id.Search) {
-                        val searchLayout = binding?.EnterSearchKeywordLayout
-                        if (searchLayout?.visibility != View.VISIBLE && dy < 0) {
-                            searchLayout?.visibility = View.VISIBLE
+        binding?.MainListView?.addOnItemTouchListener(object :
+            RecyclerView.OnItemTouchListener {
+            private var startY = 0f
+
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.action) {
+                    MotionEvent.ACTION_DOWN -> startY = e.rawY
+                    MotionEvent.ACTION_MOVE -> {
+                        val dy = e.rawY - startY
+                        if (dy > 30 && !rv.canScrollVertically(-1)) {
+                            val navController = rv.findNavController()
+                            if (navController.currentDestination?.id != R.id.Search) {
+                                binding?.EnterSearchKeywordLayout?.visibility = View.VISIBLE
+                            }
                         }
                     }
                 }
+                return false
             }
+
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
     }
 
