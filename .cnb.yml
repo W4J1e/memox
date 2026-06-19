@@ -17,6 +17,7 @@ main:
             attachments:
               - "app/build/outputs/apk/debug/*.apk"
 
+$:
   tag_push:
     - name: build-release-apk
       runner:
@@ -28,6 +29,11 @@ main:
         # 从密钥仓库注入签名配置
         - https://cnb.cool/hin/env/-/blob/main/signing.yml
       stages:
+        - name: create-release
+          type: git:release
+          options:
+            title: memoX $CNB_BRANCH
+            description: memoX $CNB_BRANCH 自动构建发布
         - name: build-release
           script: |
             echo "sdk.dir=$ANDROID_HOME" > local.properties
