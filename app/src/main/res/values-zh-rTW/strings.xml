@@ -20,13 +20,13 @@
     <string name="audio_recordings">錄音</string>
     <string name="auto_backup">自動備份</string>
     <string name="auto_backup_error_message">自動備份期間發生錯誤: \'%1$s\' 請檢查您的設定或報告錯誤</string>
-    <string name="auto_backup_failed">NotallyX自動備份失敗</string>
+    <string name="auto_backup_failed">memoX自動備份失敗</string>
     <string name="auto_backup_last">最近的備份</string>
     <string name="auto_backup_on_save">筆記上的備份會自動儲存</string>
-    <string name="auto_backup_on_save_hint">透過啟用此功能，每當儲存筆記時，都會在選擇的\"備份資料夾\"中自動建立備份(\"NotallyX_AutoBackup.zip\")。\n請注意這可能會影響效能</string>
+    <string name="auto_backup_on_save_hint">透過啟用此功能，每當儲存筆記時，都會在選擇的\"備份資料夾\"中自動建立備份(\"MemoX_AutoBackup.zip\")。\n請注意這可能會影響效能</string>
     <string name="auto_backups_folder">備份資料夾</string>
     <string name="auto_backups_folder_hint">所有自動備份都儲存於其中的資料夾。</string>
-    <string name="auto_backups_folder_rechoose">您需要重新選擇備份資料夾，以便 NotallyX 有權限寫入該資料夾。\n您也可以按取消跳過匯入備份資料夾</string>
+    <string name="auto_backups_folder_rechoose">您需要重新選擇備份資料夾，以便 memoX 有權限寫入該資料夾。\n您也可以按取消跳過匯入備份資料夾</string>
     <string name="auto_backups_folder_set">首先設定上面的備份資料夾</string>
     <string name="auto_save_after_idle_time">在指定的空閒時間後自動儲存筆記</string>
     <string name="auto_sort_by_checked">將選取的項目排列到最後</string>
@@ -87,7 +87,7 @@
     <string name="daily">每天</string>
     <string name="dark">深色</string>
     <string name="data_in_public">將資料儲存在公共資料夾中</string>
-    <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫和附件將被移至應用程式的公開資料夾（Android/media/com.philkes.notallyx）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
+    <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫和附件將被移至應用程式的公開資料夾（Android/media/cool.hin.memox）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
     <string name="date_format_hint">在筆記概覽中套用選定的日期格式</string>
@@ -167,7 +167,7 @@
     <string name="import_other">從其他APP匯入筆記</string>
     <string name="import_settings">匯入設定</string>
     <string name="import_settings_failure">匯入設定失敗，您是否選擇了正確的檔案？</string>
-    <string name="import_settings_message">為了匯入設定，請選擇有效的 NotallyX 設定 JSON 檔案</string>
+    <string name="import_settings_message">為了匯入設定，請選擇有效的 memoX 設定 JSON 檔案</string>
     <string name="import_settings_success">成功匯入設定</string>
     <string name="imported_files">檔案已匯入</string>
     <string name="imported_notes">筆記已匯入</string>
@@ -236,10 +236,10 @@
     <string name="pinned">已置頂</string>
     <string name="plain_text_files">Markdown/純文字檔案</string>
     <string name="play">播放</string>
-    <string name="please_grant_notally_alarm">請授權 NotallyX 來傳送提醒</string>
-    <string name="please_grant_notally_audio">請授予 NotallyX 錄製音訊的權限。錄音永遠不會離開你的設備</string>
-    <string name="please_grant_notally_notification">請授予 NotallyX 傳送通知的權限</string>
-    <string name="please_grant_notally_notification_auto_backup">如果自動備份失敗，您將收到通知（如果您授予 NotallyX 發送通知的權限）</string>
+    <string name="please_grant_notally_alarm">請授權 memoX 來傳送提醒</string>
+    <string name="please_grant_notally_audio">請授予 memoX 錄製音訊的權限。錄音永遠不會離開你的設備</string>
+    <string name="please_grant_notally_notification">請授予 memoX 傳送通知的權限</string>
+    <string name="please_grant_notally_notification_auto_backup">如果自動備份失敗，您將收到通知（如果您授予 memoX 發送通知的權限）</string>
     <string name="previous">先前的</string>
     <string name="rate">評價此應用</string>
     <string name="read_only">唯讀</string>
@@ -266,7 +266,7 @@
     <string name="save_recording">保存錄音\?</string>
     <string name="save_to_device">保存到設備</string>
     <string name="saved_to_device">已保存到設備</string>
-    <string name="saved_to_notally">已保存到NotallyX</string>
+    <string name="saved_to_notally">已保存到memoX</string>
     <string name="search">搜尋</string>
     <string name="security">安全性</string>
     <string name="select_all">全選</string>
@@ -297,7 +297,7 @@
     <string name="theme">主題</string>
     <string name="theme_use_dynamic_colors">使用系統桌布配色</string>
     <string name="title">標題</string>
-    <string name="to_record_audio">要開始錄音，請允許 NotallyX存取您的麥克風。點擊“設定”&gt;“權限”，然後開啟“麥克風”</string>
+    <string name="to_record_audio">要開始錄音，請允許 memoX存取您的麥克風。點擊“設定”&gt;“權限”，然後開啟“麥克風”</string>
     <string name="unarchive">取消封存</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="one">還原了 %1$d 條已封存的筆記</item>

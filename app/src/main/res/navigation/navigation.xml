@@ -5,7 +5,7 @@
 
     <fragment
         android:id="@+id/Notes"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.NotesFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.NotesFragment"
         android:label="@string/notes">
 
         <action
@@ -19,7 +19,7 @@
 
     <fragment
         android:id="@+id/Labels"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.LabelsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.LabelsFragment"
         android:label="@string/labels">
 
         <action
@@ -34,7 +34,7 @@
 
     <fragment
         android:id="@+id/Deleted"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.DeletedFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DeletedFragment"
       android:label="@string/deleted" >
 
         <action
@@ -48,13 +48,13 @@
 
     <fragment
       android:id="@+id/Reminders"
-      android:name="com.philkes.notallyx.presentation.activity.main.fragment.RemindersFragment"
+      android:name="cool.hin.memox.presentation.activity.main.fragment.RemindersFragment"
       android:label="@string/reminders">
     </fragment>
 
     <fragment
         android:id="@+id/Settings"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
         android:label="@string/settings">
         <argument
             android:name="category"
@@ -64,7 +64,7 @@
 
     <fragment
         android:id="@+id/SettingsAppearance"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
         android:label="@string/appearance">
         <argument
             android:name="category"
@@ -74,7 +74,7 @@
 
     <fragment
         android:id="@+id/SettingsBackup"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
         android:label="@string/backup">
         <argument
             android:name="category"
@@ -84,7 +84,7 @@
 
     <fragment
         android:id="@+id/SettingsData"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
         android:label="@string/data">
         <argument
             android:name="category"
@@ -94,7 +94,7 @@
 
     <fragment
         android:id="@+id/SettingsAbout"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment"
         android:label="@string/about">
         <argument
             android:name="category"
@@ -104,20 +104,20 @@
 
     <fragment
         android:id="@+id/Search"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.SearchFragment">
+        android:name="cool.hin.memox.presentation.activity.main.fragment.SearchFragment">
         <argument
           android:name="initialFolder"
-          app:argType="com.philkes.notallyx.data.model.Folder" />
+          app:argType="cool.hin.memox.data.model.Folder" />
     </fragment>
 
     <fragment
         android:id="@+id/DisplayLabel"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.DisplayLabelFragment"
-        android:label="{notallyx.intent.extra.DISPLAYED_LABEL}" />
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment"
+        android:label="{memox.intent.extra.DISPLAYED_LABEL}" />
 
     <fragment
         android:id="@+id/Unlabeled"
-        android:name="com.philkes.notallyx.presentation.activity.main.fragment.UnlabeledFragment"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.UnlabeledFragment"
         android:label="@string/unlabeled" />
 
 </navigation>

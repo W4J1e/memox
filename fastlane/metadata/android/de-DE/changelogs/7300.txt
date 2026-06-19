@@ -4,7 +4,7 @@
 
 * Import von Notizen im JSON-Format
 
-* Bilder direkt mit NotallyX teilen
+* Bilder direkt mit memoX teilen
 
 * Konverieren zwischen Text- und Listen-Notiz
 

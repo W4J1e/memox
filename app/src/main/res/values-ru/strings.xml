@@ -23,13 +23,13 @@
     <string name="audio_recordings">Аудиозаписи</string>
     <string name="auto_backup">Автобэкапы</string>
     <string name="auto_backup_error_message">Ошибка при авторезервной копии: \n\'%1$s\'\nПроверьте настройки или сообщите об ошибке</string>
-    <string name="auto_backup_failed">Сбой авторезервирования NotallyX</string>
+    <string name="auto_backup_failed">Сбой авторезервирования memoX</string>
     <string name="auto_backup_last">Последняя резервная копия</string>
     <string name="auto_backup_on_save">Создавать резервную копию при выходе (авто)</string>
-    <string name="auto_backup_on_save_hint">При включении этой функции в папке резервных копий (Папка резервных копий) автоматически создаётся архив NotallyX_AutoBackup.zip при выходе из заметки.\nЭто может повлиять на производительность</string>
+    <string name="auto_backup_on_save_hint">При включении этой функции в папке резервных копий (Папка резервных копий) автоматически создаётся архив MemoX_AutoBackup.zip при выходе из заметки.\nЭто может повлиять на производительность</string>
     <string name="auto_backups_folder">Папка резервных копий</string>
     <string name="auto_backups_folder_hint">Папка, в которой будут храниться резервные копии</string>
-    <string name="auto_backups_folder_rechoose">Необходимо повторно указать папку для резервных копий для доступа NotallyX.\nМожно отменить и пропустить импорт папки резервных копий</string>
+    <string name="auto_backups_folder_rechoose">Необходимо повторно указать папку для резервных копий для доступа memoX.\nМожно отменить и пропустить импорт папки резервных копий</string>
     <string name="auto_backups_folder_set">Сначала укажите папку для резервных копий</string>
     <string name="auto_save_after_idle_time">Автосохранение заметки после указанного времени бездействия</string>
     <string name="auto_sort_by_checked">Сортировать отмеченные элементы в конец</string>
@@ -92,7 +92,7 @@
     <string name="daily">Дни</string>
     <string name="dark">Тёмная</string>
     <string name="data_in_public">Сохранять данные в общедоступной папке</string>
-    <string name="data_in_public_message">При включении этой функции внутренняя база данных приложения и прикрепленные файлы будут перенесены в его общедоступную папку (Android/media/com.philkes.notallyx). Это позволит синхронизировать данные NotallyX между устройствами с помощью приложений для синхронизации файлов.</string>
+    <string name="data_in_public_message">При включении этой функции внутренняя база данных приложения и прикрепленные файлы будут перенесены в его общедоступную папку (Android/media/cool.hin.memox). Это позволит синхронизировать данные memoX между устройствами с помощью приложений для синхронизации файлов.</string>
     <string name="date">Дата</string>
     <string name="date_format">Формат даты</string>
     <string name="date_format_hint">Применяет выбранный формат даты в общем списке заметок</string>
@@ -182,7 +182,7 @@
     <string name="import_other">Импорт заметок из других приложений</string>
     <string name="import_settings">Импорт настроек</string>
     <string name="import_settings_failure">Не удалось импортировать настройки. Вы выбрали правильный файл\?</string>
-    <string name="import_settings_message">Для импорта настроек выберите корректный JSON-файл настроек NotallyX. </string>
+    <string name="import_settings_message">Для импорта настроек выберите корректный JSON-файл настроек memoX. </string>
     <string name="import_settings_success">Настройки успешно импортированы</string>
     <string name="imported_files">Файлы импортированы</string>
     <string name="imported_notes">Заметки импортированы</string>
@@ -253,9 +253,9 @@
     <string name="pin">Закрепить</string>
     <string name="pinned">Закреплённые</string>
     <string name="plain_text_files">Markdown/Текстовые файлы</string>
-    <string name="plain_text_files_help">Для импорта заметок из текстовых файлов (отдельный файл или папка) нажмите \"Импорт\". Каждый файл станет отдельной заметкой — имя файла будет её заголовком. Если текст начинается с элементов списка (например, Markdown \"- [x]\", синтаксис NotallyX \"[~/\", или \"*\", ~), он преобразуется в заметку-список.</string>
+    <string name="plain_text_files_help">Для импорта заметок из текстовых файлов (отдельный файл или папка) нажмите \"Импорт\". Каждый файл станет отдельной заметкой — имя файла будет её заголовком. Если текст начинается с элементов списка (например, Markdown \"- [x]\", синтаксис memoX \"[~/\", или \"*\", ~), он преобразуется в заметку-список.</string>
     <string name="play">Играть</string>
-    <string name="please_grant_notally_alarm">Разрешите NotallyX отправлять напоминания</string>
+    <string name="please_grant_notally_alarm">Разрешите memoX отправлять напоминания</string>
     <string name="please_grant_notally_audio">Разрешите доступ к микрофону.\nЗаписи остаются на вашем устройстве</string>
     <string name="please_grant_notally_notification">Разрешите отправку уведомлений</string>
     <string name="please_grant_notally_notification_auto_backup">При сбое авторезервирования вы получите уведомление, если разрешите их отправку. </string>
@@ -289,7 +289,7 @@
     <string name="save_recording">Сохранить аудиозапись\?</string>
     <string name="save_to_device">Сохранить на устройстве</string>
     <string name="saved_to_device">Сохранено на устройстве</string>
-    <string name="saved_to_notally">Сохранено в NotallyX</string>
+    <string name="saved_to_notally">Сохранено в memoX</string>
     <string name="search">Поиск</string>
     <string name="security">Безопасность</string>
     <string name="select_all">Выбрать всё</string>
@@ -320,7 +320,7 @@
     <string name="theme">Тема</string>
     <string name="theme_use_dynamic_colors">Использовать цвета обоев</string>
     <string name="title">Заголовок</string>
-    <string name="to_record_audio">Чтобы записывать аудиозаписи, разрешите NotallyX доступ к микрофону</string>
+    <string name="to_record_audio">Чтобы записывать аудиозаписи, разрешите memoX доступ к микрофону</string>
     <string name="unarchive">Разархивировать</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="few">Извлечено %1$d заметки</item>

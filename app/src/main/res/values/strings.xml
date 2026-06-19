@@ -10,7 +10,7 @@
     <string name="all">All</string>
     <string name="always_show_search_bar">Always show search bar expanded</string>
     <string name="always_show_search_bar_hint">By enabling this, the search bar will always be shown in the layout instead of using a search icon in the top bar</string>
-    <string name="app_name" translatable="false">NotallyX</string>
+    <string name="app_name" translatable="false">memoX</string>
     <string name="appearance">Appearance</string>
     <string name="archive">Archive</string>
     <string name="archived">Archived</string>
@@ -27,14 +27,14 @@
     <string name="audio_recordings">Audio Recordings</string>
     <string name="auto_backup">Auto Backups</string>
     <string name="auto_backup_error_message">An error occurred during auto backup:\n\'%1$s\'\nPlease check your settings or report a bug</string>
-    <string name="auto_backup_failed">NotallyX Auto Backup failed</string>
+    <string name="auto_backup_failed">memoX Auto Backup failed</string>
     <string name="auto_backup_last">Last Backup</string>
     <string name="auto_backup_on_save">Backup on exit Note automatically</string>
-    <string name="auto_backup_on_save_hint">By enabling this, a backup (\"NotallyX_AutoBackup.zip\") is automatically created in the configured \"Backups Folder\" whenever a note is exited.\nBe aware this might affect performance</string>
+    <string name="auto_backup_on_save_hint">By enabling this, a backup (\"MemoX_AutoBackup.zip\") is automatically created in the configured \"Backups Folder\" whenever a note is exited.\nBe aware this might affect performance</string>
     <string name="auto_backup_skipped_files">Skipped %1$d missing attached files/images</string>
     <string name="auto_backups_folder">Backups Folder</string>
     <string name="auto_backups_folder_hint">Folder in which all auto backups will be stored in.\nIf you want to use Cloud-Storage/WebDAV for your backups, please read the docs (click \"%1$s\")</string>
-    <string name="auto_backups_folder_rechoose">You need to re-choose your Backups Folder so that NotallyX has permission to write to it.\nYou can also press cancel to skip importing Backups Folder value</string>
+    <string name="auto_backups_folder_rechoose">You need to re-choose your Backups Folder so that memoX has permission to write to it.\nYou can also press cancel to skip importing Backups Folder value</string>
     <string name="auto_backups_folder_set">Set up a Backups Folder above first</string>
     <string name="auto_remove_deleted_notes">Auto remove deleted Notes permanently after</string>
     <string name="auto_remove_deleted_notes_hint">By enabling this, Notes that were deleted will be permanently removed after X days</string>
@@ -110,7 +110,7 @@
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
     <string name="data">Data</string>
-    <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/com.philkes.notallyx). In combination with file synchronization apps this can be used to synchronize NotallyX data between multiple devices.</string>
+    <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/cool.hin.memox). In combination with file synchronization apps this can be used to synchronize memoX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
     <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
@@ -208,7 +208,7 @@
     <string name="import_other">Import Notes from other App</string>
     <string name="import_settings">Import Settings</string>
     <string name="import_settings_failure">Failed to import settings, did you choose the correct file\?</string>
-    <string name="import_settings_message">In order to import settings, please choose a valid NotallyX settings JSON file</string>
+    <string name="import_settings_message">In order to import settings, please choose a valid memoX settings JSON file</string>
     <string name="import_settings_success">Successfully imported settings</string>
     <string name="imported_files">Files imported</string>
     <string name="imported_notes">Notes imported</string>
@@ -305,12 +305,12 @@
     <string name="pin_to_status_bar">Pin to status bar</string>
     <string name="pinned">Pinned</string>
     <string name="plain_text_files">Markdown/Plain Text Files</string>
-    <string name="plain_text_files_help">In order to import your Notes from markdown/plain text files (single file or folder), click Import. Every file is imported as a separate note, the file’s name becomes the note’s title. If the text contents start with list syntax (e.g. Markdown ’- [x]’, NotallyX syntax ’[✓]’, or ’*’, ’-’) it will be converted to a List note.</string>
+    <string name="plain_text_files_help">In order to import your Notes from markdown/plain text files (single file or folder), click Import. Every file is imported as a separate note, the file’s name becomes the note’s title. If the text contents start with list syntax (e.g. Markdown ’- [x]’, memoX syntax ’[✓]’, or ’*’, ’-’) it will be converted to a List note.</string>
     <string name="play">Play</string>
-    <string name="please_grant_notally_alarm">Please grant NotallyX to send reminders</string>
-    <string name="please_grant_notally_audio">Please grant NotallyX the permission to record audio. Recordings never leave your device</string>
-    <string name="please_grant_notally_notification">Please grant NotallyX the permission to send notifications</string>
-    <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant NotallyX permission to send notifications</string>
+    <string name="please_grant_notally_alarm">Please grant memoX to send reminders</string>
+    <string name="please_grant_notally_audio">Please grant memoX the permission to record audio. Recordings never leave your device</string>
+    <string name="please_grant_notally_notification">Please grant memoX the permission to send notifications</string>
+    <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant memoX permission to send notifications</string>
     <string name="previous">Previous</string>
     <string name="quillpad" translatable="false">Quillpad</string>
     <string name="quillpad_help">In order to import your Notes from Quillpad you must export your Quillpad Notes as a .ZIP Backup file. To do that, open Quillpad, go to Settings &gt; Backup &gt; Create a backup, and save the .ZIP on your phone. \n\nIf you already have a Quillpad Backup .ZIP file, click Import and choose it.</string>
@@ -343,7 +343,7 @@
     <string name="save_recording">Save recording\?</string>
     <string name="save_to_device">Save to device</string>
     <string name="saved_to_device">Saved to device</string>
-    <string name="saved_to_notally">Saved to NotallyX</string>
+    <string name="saved_to_notally">Saved to memoX</string>
     <string name="search">Search</string>
     <string name="security">Security</string>
     <string name="select_all">Select All</string>
@@ -384,8 +384,8 @@
     <string name="time_format_note_view">Time format Note View</string>
     <string name="time_format_overview">Time format Overview</string>
     <string name="title">Title</string>
-    <string name="to_pin_note_status_bar">To pin a note to the status bar, allow NotallyX to send notifications. Tap Settings &gt; Permissions and allow Notifications</string>
-    <string name="to_record_audio">To record audio, allow NotallyX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
+    <string name="to_pin_note_status_bar">To pin a note to the status bar, allow memoX to send notifications. Tap Settings &gt; Permissions and allow Notifications</string>
+    <string name="to_record_audio">To record audio, allow memoX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>
     <string name="unarchive">Unarchive</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="one">Unarchived %1$d note</item>

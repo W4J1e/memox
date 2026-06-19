@@ -1,7 +1,7 @@
 <h2 align="center">
     <img src="fastlane/metadata/android/en-US/images/icon.png" alt="icon" width="90"/>
     <br />
-    <b><a href="https://crustack.github.io/NotallyX/">NotallyX | Minimalistic note taking app</a></b>
+    <b><a href="https://crustack.github.io/memoX/">memoX | Minimalistic note taking app</a></b>
     <p>
         <center>
             <a href="https://ko-fi.com/crustack"><img alt='Donate' height='30' src='documentation/static/img/kofi_donate.svg' /></a>
@@ -9,9 +9,9 @@
     </p>
     <p>
         <center>
-            <a href='https://play.google.com/store/apps/details?id=com.philkes.notallyx&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='80'/></a>
-            <a href="https://f-droid.org/en/packages/com.philkes.notallyx"><img alt='IzzyOnDroid' height='80' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' /></a>
-            <a href="https://apt.izzysoft.de/fdroid/index/apk/com.philkes.notallyx"><img alt='F-Droid' height='80' src='https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png' /></a>
+            <a href='https://play.google.com/store/apps/details?id=cool.hin.memox&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='80'/></a>
+            <a href="https://f-droid.org/en/packages/cool.hin.memox"><img alt='IzzyOnDroid' height='80' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' /></a>
+            <a href="https://apt.izzysoft.de/fdroid/index/apk/cool.hin.memox"><img alt='F-Droid' height='80' src='https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png' /></a>
         </center>
     </p>
 </h2>
@@ -32,7 +32,7 @@
 ### Features
 [Notally](https://github.com/OmGodse/Notally), but eXtended
 
-<h4><a href="https://crustack.github.io/NotallyX/">See Documentation</a></h4>
+<h4><a href="https://crustack.github.io/memoX/">See Documentation</a></h4>
 
 * Create **rich text** notes with support for bold, italics, mono space and strike-through
 * Create **task lists** and order them with subtasks (+ auto-sort checked items to the end)
@@ -57,17 +57,17 @@
 ---
 
 ### Bug Reports / Feature-Requests
-If you find any bugs or want to propose a new Feature/Enhancement, feel free to [create a new Issue](https://github.com/Crustack/NotallyX/issues/new/choose)
+If you find any bugs or want to propose a new Feature/Enhancement, feel free to [create a new Issue](https://github.com/Crustack/memoX/issues/new/choose)
 
-When using the app and an unknown error occurs, causing the app to crash you will see a dialog (see showcase video in https://github.com/Crustack/NotallyX/pull/171) from which you can immediately create a bug report on Github with the crash details pre-filled.
+When using the app and an unknown error occurs, causing the app to crash you will see a dialog (see showcase video in https://github.com/Crustack/memoX/pull/171) from which you can immediately create a bug report on Github with the crash details pre-filled.
 
 
 #### Beta Releases
 
 I occasionally release BETA versions of the app during development, since its very valuable for me to get feedback before publicly releasing a new version.
-These BETA releases have another `applicationId` as the release versions, thats why when you install a BETA version it will show up on your device as a separate app called `NotallyX BETA`.
-BETA versions also have their own data, they do not use the data of your NotallyX app
-You can download the most recent BETA release [here on Github](https://github.com/Crustack/NotallyX/releases/tag/beta)
+These BETA releases have another `applicationId` as the release versions, thats why when you install a BETA version it will show up on your device as a separate app called `memoX BETA`.
+BETA versions also have their own data, they do not use the data of your memoX app
+You can download the most recent BETA release [here on Github](https://github.com/Crustack/memoX/releases/tag/beta)
 
 #### APK Signing Certifcate Fingerprint
 
@@ -90,6 +90,6 @@ Before submitting your proposed changes as a Pull-Request, make sure all tests a
 ### Attribution
 The original Notally project was developed by [OmGodse](https://github.com/OmGodse) under the [GPL 3.0 License](https://github.com/OmGodse/Notally/blob/master/LICENSE.md).
 
-In accordance to GPL 3.0, this project is licensed under the same [GPL 3.0 License](https://github.com/Crustack/NotallyX/blob/master/LICENSE.md).
+In accordance to GPL 3.0, this project is licensed under the same [GPL 3.0 License](https://github.com/Crustack/memoX/blob/master/LICENSE.md).
 
 

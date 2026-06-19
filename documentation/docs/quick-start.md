@@ -5,11 +5,11 @@ sidebar_position: 1
 
 # Quick Start Guide
 
-This guide will help you get up and running with NotallyX quickly. We'll cover the basics of creating and managing notes, so you can start being productive right away.
+This guide will help you get up and running with memoX quickly. We'll cover the basics of creating and managing notes, so you can start being productive right away.
 
 ### Creating a Text Note
 
-<img src={require('/img/phoneScreenshots/3.png').default} width="32%" alt="NotallyX Text Note" />
+<img src={require('/img/phoneScreenshots/3.png').default} width="32%" alt="memoX Text Note" />
 
 1. Tap the **✏️** button on the lower right
 2. Write your note content
@@ -26,7 +26,7 @@ For more details see ✏️ [Rich Text Formatting](features/rich-text.mdx)
 
 ### Creating a List Note
 
-<img src={require('/img/phoneScreenshots/2.png').default} width="32%" alt="NotallyX List Note" />
+<img src={require('/img/phoneScreenshots/2.png').default} width="32%" alt="memoX List Note" />
 
 1. Tap the **List Note** option
 2. Enter a title for your list (optional)
@@ -42,7 +42,7 @@ For more details see ✅ [Task Lists and Subtasks](features/task-lists.mdx)
 
 ## Organizing Your Notes
 
-<img src={require('/img/phoneScreenshots/1.png').default} width="32%" alt="NotallyX Organization" />
+<img src={require('/img/phoneScreenshots/1.png').default} width="32%" alt="memoX Organization" />
 
 ### Pinning Important Notes
 
@@ -72,8 +72,8 @@ To visually distinguish notes:
 
 1. Tap the search icon in the top bar
 2. Enter your search term
-3. NotallyX will show all notes containing that text
+3. memoX will show all notes containing that text
 
 ## Next Steps
 
-Now that you know the basics, explore the [Features Overview](./category/features) to learn about more advanced capabilities of NotallyX.
+Now that you know the basics, explore the [Features Overview](./category/features) to learn about more advanced capabilities of memoX.

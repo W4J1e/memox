@@ -177,7 +177,7 @@
     <string name="pin">Vastmaken</string>
     <string name="pinned">Vastgemaakt</string>
     <string name="play">Afspelen</string>
-    <string name="please_grant_notally_audio">Geef NotallyX toestemming om audio op te nemen. Opnames verlaten nooit je apparaat</string>
+    <string name="please_grant_notally_audio">Geef memoX toestemming om audio op te nemen. Opnames verlaten nooit je apparaat</string>
     <string name="rate">Beoordeel deze app</string>
     <string name="ready_to_record">Klaar om op te nemen</string>
     <string name="record_audio">Audio opnemen</string>
@@ -195,7 +195,7 @@
     <string name="save_recording">Opname opslaan\?</string>
     <string name="save_to_device">Opslaan op apparaat</string>
     <string name="saved_to_device">Opgeslagen op apparaat</string>
-    <string name="saved_to_notally">Opgeslagen in NotallyX</string>
+    <string name="saved_to_notally">Opgeslagen in memoX</string>
     <string name="search">Zoeken</string>
     <string name="security">Beveiliging</string>
     <string name="select_labels">Selecteer labels</string>
@@ -219,7 +219,7 @@
     <string name="text_size_overview">Tekstgrootte (overzicht)</string>
     <string name="theme">Thema</string>
     <string name="title">Titel</string>
-    <string name="to_record_audio">Om audio op te nemen, geef NotallyX toegang tot je microfoon. Tik op Instellingen &gt; Machtigingen en zet Microfoon aan</string>
+    <string name="to_record_audio">Om audio op te nemen, geef memoX toegang tot je microfoon. Tik op Instellingen &gt; Machtigingen en zet Microfoon aan</string>
     <string name="unarchive">De-archiveren</string>
     <plurals name="unarchived_selected_notes">
         <item quantity="one">De-gearchiveerde %1$d notitie</item>
