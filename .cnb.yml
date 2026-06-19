@@ -12,7 +12,7 @@ dev:
             echo "sdk.dir=$ANDROID_HOME" > local.properties
             ./gradlew assembleDebug --no-daemon
         - name: upload-apk
-          image: cnb/ubuntu:22.04
+          image: cnbcool/default-build-env
           script: |
             APK_PATH=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -1)
             echo "Found APK: $APK_PATH"
