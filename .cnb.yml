@@ -4,15 +4,15 @@ dev:
       runner:
         cpus: 8
       docker:
-        image: cimg/android:2024.06
+        image: ghcr.io/android-gradle/android-gradle:latest
       stages:
         - name: setup-sdk
           script: |
             yes | sdkmanager --licenses 2>/dev/null || true
-            sdkmanager "platforms;android-36" "build-tools;36.0.0"
-            echo "sdk.dir=$ANDROID_HOME" > local.properties
+            sdkmanager "platforms;android-36" "build-tools;36.0.0" 2>/dev/null || true
+            echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
         - name: build-apk
-          script: ./gradlew assembleDebug --no-daemon
+          script: ./gradlew assembleDebug --no-daemon 2>&1
         - name: upload-apk
           script: |
             APK_PATH=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -1)
