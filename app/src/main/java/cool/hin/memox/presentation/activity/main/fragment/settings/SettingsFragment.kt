@@ -381,17 +381,6 @@ class SettingsFragment : Fragment() {
                 model.savePreference(textSizeOverview, newValue)
             }
         }
-        alwaysShowSearchBar.observe(viewLifecycleOwner) { value ->
-            binding.ShowSearchInTopBar.setup(
-                alwaysShowSearchBar,
-                value,
-                requireContext(),
-                layoutInflater,
-                R.string.always_show_search_bar_hint,
-            ) { enabled ->
-                model.savePreference(alwaysShowSearchBar, enabled)
-            }
-        }
         notesSorting.observe(viewLifecycleOwner) { notesSort ->
             binding.NotesSortOrder.setup(
                 notesSorting,
@@ -739,6 +728,12 @@ class SettingsFragment : Fragment() {
 
     private fun MemoXPreferences.setupSettings(binding: FragmentSettingsBinding) {
         binding.apply {
+            GoToDeleted.setOnClickListener {
+                findNavController().navigate(R.id.Deleted)
+            }
+            GoToReminders.setOnClickListener {
+                findNavController().navigate(R.id.Reminders)
+            }
             ImportSettings.setOnClickListener {
                 showDialog(
                     R.string.import_settings_message,

@@ -5,50 +5,38 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.view.Menu
-import android.view.Menu.CATEGORY_CONTAINER
-import android.view.Menu.CATEGORY_SYSTEM
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.children
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.transition.platform.MaterialFade
 import cool.hin.memox.R
-import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.model.BaseNote
-import cool.hin.memox.data.model.Label
 import cool.hin.memox.databinding.ActivityMainBinding
 import cool.hin.memox.presentation.activity.LockedActivity
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
 import cool.hin.memox.presentation.activity.main.fragment.MemoXFragment
-import cool.hin.memox.presentation.activity.main.fragment.SearchFragment
 import cool.hin.memox.presentation.activity.note.EditListActivity
 import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.activity.note.NoteActionHandler
 import cool.hin.memox.presentation.activity.note.handleRejection
 import cool.hin.memox.presentation.dp
 import cool.hin.memox.presentation.setupProgressDialog
-import cool.hin.memox.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_EMPTY
-import cool.hin.memox.presentation.viewmodel.BaseNoteModel.Companion.CURRENT_LABEL_NONE
+import cool.hin.memox.presentation.viewmodel.BaseNoteModel
 import cool.hin.memox.presentation.viewmodel.ExportMimeType
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_DEFAULT
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_UNLABELED
 import cool.hin.memox.presentation.viewmodel.progress.MigrationProgress
 import cool.hin.memox.utils.LATEST_DATA_SCHEMA
 import cool.hin.memox.utils.backup.exportNotes
@@ -64,11 +52,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var identityVerifyActivityResultLauncher: ActivityResultLauncher<Intent>
 
-    /**
-     * Pending action to run once identity (biometric/PIN) verification succeeds. Used by
-     * [verifyIdentityThen] for the PIN-fallback path (API 21-22), where the result arrives via
-     * [identityVerifyActivityResultLauncher].
-     */
     private var pendingIdentityVerifiedAction: (() -> Unit)? = null
 
     private var isStartViewFragment = false
@@ -94,13 +77,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         configureEdgeToEdgeInsets()
 
         setupFAB()
-        setupMenu()
         setupActionMode()
         setupNavigation()
 
         setupActivityResultLaunchers()
-
-        preferences.alwaysShowSearchBar.observe(this) { invalidateOptionsMenu() }
 
         checkForMigrations(savedInstanceState)
 
@@ -152,7 +132,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     private fun checkForMigrations(savedInstanceState: Bundle?) {
-        // Run migrations first (blocking dialog), then proceed with initial navigation
         val proceed: () -> Unit = {
             baseModel.startObserving()
             val fragmentIdToLoad = intent.getIntExtra(EXTRA_FRAGMENT_TO_OPEN, -1)
@@ -166,14 +145,12 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             val migrationProgress = MutableLiveData<MigrationProgress>()
             migrationProgress.setupProgressDialog(this)
             lifecycleScope.launch {
-                // Initial title
                 migrationProgress.postValue(
                     MigrationProgress(R.string.migrating_data, indeterminate = true)
                 )
                 application.runMigrations { titleId ->
                     migrationProgress.postValue(MigrationProgress(titleId, indeterminate = true))
                 }
-                // Dismiss
                 migrationProgress.postValue(
                     MigrationProgress(R.string.migrating_data, inProgress = false)
                 )
@@ -191,8 +168,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
 
-            // Apply padding to the main content views
-            // Top margin for the Toolbar to avoid being under the status bar
             binding.Toolbar.apply {
                 (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
                 requestLayout()
@@ -203,13 +178,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 requestLayout()
             }
 
-            // Apply padding to the navigationview top header
-            binding.NavigationView.getHeaderView(0).apply {
-                (layoutParams as ViewGroup.MarginLayoutParams).topMargin = systemBarsInsets.top
-                requestLayout()
-            }
-
-            // TakeNote FAB is at the very bottom
             binding.TakeNote.apply {
                 val marginLayoutParams = layoutParams as ViewGroup.MarginLayoutParams
                 marginLayoutParams.bottomMargin = 16.dp + systemBarsInsets.bottom + imeInsets.bottom
@@ -217,13 +185,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 requestLayout()
             }
 
-            // The ActionMode toolbar's position will naturally be below the Toolbar,
-            // so its top offset is handled by the Toolbar's adjustment.
-
-            // The main content (NavHostFragment) needs bottom padding to avoid
-            // being obscured by the system navigation bar and the keyboard.
-            // If NavHostFragment contains a ScrollView/RecyclerView, you might apply
-            // this padding to that scrollable view instead for better behavior.
             navHostFragment.apply {
                 setPadding(
                     paddingLeft,
@@ -239,7 +200,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private fun getStartViewNavigation(): Pair<Int, Bundle> {
         return when (val startView = preferences.startView.value) {
             START_VIEW_DEFAULT -> Pair(R.id.Notes, Bundle())
-            START_VIEW_UNLABELED -> Pair(R.id.Unlabeled, Bundle())
             else -> {
                 val bundle = Bundle().apply { putString(EXTRA_DISPLAYED_LABEL, startView) }
                 Pair(R.id.DisplayLabel, bundle)
@@ -276,107 +236,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             } ?: intent
     }
 
-    private var labelsMenuItems: List<MenuItem> = listOf()
-    private var labelsMoreMenuItem: MenuItem? = null
-    private var labels: List<Label> = listOf()
-    private var labelsLiveData: LiveData<List<Label>>? = null
-
-    private fun setupMenu() {
-        binding.NavigationView.menu.apply {
-            add(0, R.id.Notes, 0, R.string.notes).setCheckable(true).setIcon(R.drawable.home)
-
-            addStaticLabelsMenuItems()
-            MemoXDatabase.getDatabase(application).observe(this@MainActivity) { database ->
-                labelsLiveData?.removeObservers(this@MainActivity)
-                labelsLiveData =
-                    database.getLabelDao().getAll().also {
-                        it.observe(this@MainActivity) { labels ->
-                            this@MainActivity.labels = labels
-                            setupLabelsMenuItems(labels, preferences.maxLabels.value)
-                        }
-                    }
-            }
-
-            add(2, R.id.Deleted, CATEGORY_SYSTEM + 1, R.string.deleted)
-                .setCheckable(true)
-                .setIcon(R.drawable.delete)
-            add(3, R.id.Reminders, CATEGORY_SYSTEM + 3, R.string.reminders)
-                .setCheckable(true)
-                .setIcon(R.drawable.notifications)
-            add(3, R.id.Settings, CATEGORY_SYSTEM + 4, R.string.settings)
-                .setCheckable(true)
-                .setIcon(R.drawable.settings)
-        }
-        baseModel.preferences.labelsHidden.observe(this) { hiddenLabels ->
-            hideLabelsInNavigation(hiddenLabels, baseModel.preferences.maxLabels.value)
-        }
-        baseModel.preferences.maxLabels.observe(this) { maxLabels ->
-            binding.NavigationView.menu.setupLabelsMenuItems(labels, maxLabels)
-        }
-    }
-
-    private fun Menu.addStaticLabelsMenuItems() {
-        add(1, R.id.Unlabeled, CATEGORY_CONTAINER + 1, R.string.unlabeled)
-            .setCheckable(true)
-            .setChecked(baseModel.currentLabel == CURRENT_LABEL_NONE)
-            .setIcon(R.drawable.label_off)
-        add(1, R.id.Labels, CATEGORY_CONTAINER + 2, R.string.labels)
-            .setCheckable(true)
-            .setIcon(R.drawable.label_more)
-    }
-
-    private fun Menu.setupLabelsMenuItems(labels: List<Label>, maxLabelsToDisplay: Int) {
-        removeGroup(1)
-        addStaticLabelsMenuItems()
-        labelsMenuItems =
-            labels
-                .mapIndexed { index, label ->
-                    add(1, R.id.DisplayLabel, CATEGORY_CONTAINER + index + 3, label.value)
-                        .setCheckable(true)
-                        .setChecked(baseModel.currentLabel == label.value)
-                        .setVisible(index < maxLabelsToDisplay)
-                        .setIcon(R.drawable.label)
-                        .setOnMenuItemClickListener {
-                            navigateToLabel(label.value)
-                            false
-                        }
-                }
-                .toList()
-
-        labelsMoreMenuItem =
-            if (labelsMenuItems.size > maxLabelsToDisplay) {
-                add(
-                        1,
-                        R.id.Labels,
-                        CATEGORY_CONTAINER + labelsMenuItems.size + 2,
-                        getString(R.string.more, labelsMenuItems.size - maxLabelsToDisplay),
-                    )
-                    .setCheckable(true)
-                    .setIcon(R.drawable.label)
-            } else null
-        configuration = AppBarConfiguration(binding.NavigationView.menu, binding.DrawerLayout)
-        setupActionBarWithNavController(navController, configuration)
-        hideLabelsInNavigation(baseModel.preferences.labelsHidden.value, maxLabelsToDisplay)
-    }
-
-    private fun navigateToLabel(label: String) {
-        val bundle = Bundle().apply { putString(EXTRA_DISPLAYED_LABEL, label) }
-        navController.navigate(R.id.DisplayLabel, bundle)
-    }
-
-    private fun hideLabelsInNavigation(hiddenLabels: Set<String>, maxLabelsToDisplay: Int) {
-        var visibleLabels = 0
-        labelsMenuItems.forEach { menuItem ->
-            val visible =
-                !hiddenLabels.contains(menuItem.title) && visibleLabels < maxLabelsToDisplay
-            menuItem.setVisible(visible)
-            if (visible) {
-                visibleLabels++
-            }
-        }
-        labelsMoreMenuItem?.setTitle(getString(R.string.more, labels.size - visibleLabels))
-    }
-
     private fun setupActionMode() {
         binding.ActionMode.setNavigationOnClickListener { baseModel.actionMode.close(true) }
 
@@ -387,7 +246,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 excludeChildren(binding.NavHostFragment, true)
                 excludeTarget(binding.TakeNote, true)
                 excludeTarget(binding.MakeList, true)
-                excludeTarget(binding.NavigationView, true)
             }
 
         baseModel.actionMode.enabled.observe(this) { enabled ->
@@ -395,11 +253,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             if (enabled) {
                 binding.Toolbar.visibility = View.GONE
                 binding.ActionMode.visibility = View.VISIBLE
-                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
             } else {
                 binding.Toolbar.visibility = View.VISIBLE
                 binding.ActionMode.visibility = View.GONE
-                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED)
             }
             actionModeCancelCallback.isEnabled = enabled
         }
@@ -424,59 +280,25 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.NavHostFragment) as NavHostFragment
         navController = navHostFragment.navController
-        configuration = AppBarConfiguration(binding.NavigationView.menu, binding.DrawerLayout)
+        configuration = AppBarConfiguration(setOf(R.id.Notes))
         setupActionBarWithNavController(navController, configuration)
 
-        var fragmentIdToLoad: Int? = null
-        binding.NavigationView.setNavigationItemSelectedListener { item ->
-            fragmentIdToLoad = item.itemId
-            binding.DrawerLayout.closeDrawer(GravityCompat.START)
-            return@setNavigationItemSelectedListener true
-        }
-
-        binding.DrawerLayout.addDrawerListener(
-            object : DrawerLayout.SimpleDrawerListener() {
-
-                override fun onDrawerClosed(drawerView: View) {
-                    if (
-                        fragmentIdToLoad != null &&
-                            navController.currentDestination?.id != fragmentIdToLoad
-                    ) {
-                        navigateWithAnimation(
-                            requireNotNull(fragmentIdToLoad, { "fragmentIdToLoad is null" })
-                        )
-                    }
-                }
-            }
-        )
-
         navController.addOnDestinationChangedListener { _, destination, bundle ->
-            fragmentIdToLoad = destination.id
-            when (fragmentIdToLoad) {
+            when (destination.id) {
                 R.id.DisplayLabel ->
                     bundle?.getString(EXTRA_DISPLAYED_LABEL)?.let {
                         baseModel.currentLabel = it
-                        binding.NavigationView.menu.children
-                            .find { menuItem -> menuItem.title == it }
-                            ?.let { menuItem -> menuItem.isChecked = true }
                     }
-                R.id.Unlabeled -> {
-                    baseModel.currentLabel = CURRENT_LABEL_NONE
-                    binding.NavigationView.setCheckedItem(destination.id)
-                }
                 else -> {
-                    baseModel.currentLabel = CURRENT_LABEL_EMPTY
-                    binding.NavigationView.setCheckedItem(destination.id)
+                    baseModel.currentLabel = BaseNoteModel.CURRENT_LABEL_EMPTY
                 }
             }
             when (destination.id) {
                 R.id.Notes,
-                R.id.DisplayLabel,
-                R.id.Unlabeled -> {
+                R.id.DisplayLabel -> {
                     binding.TakeNote.show()
                     binding.MakeList.show()
                 }
-
                 else -> {
                     binding.TakeNote.hide()
                     binding.MakeList.hide()
@@ -533,14 +355,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
     }
 
-    /**
-     * Verifies the user's identity via biometric/device credential before running [action]. Used to
-     * guard destructive security operations performed from the selection action mode (e.g.
-     * unlocking notes), so that they cannot be triggered without authentication. This matches the
-     * gate used when opening a locked note
-     * ([cool.hin.memox.presentation.activity.note.EditActivity.showNoteLockScreen]): encrypt
-     * mode (no IV needed), the resulting cipher is unused.
-     */
     fun verifyIdentityThen(action: () -> Unit) {
         showBiometricOrPinPrompt(
             isForDecrypt = false,
@@ -550,10 +364,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             descriptionResId = R.string.note_locked,
             onSuccess = { _ -> action() },
         ) { errorCode ->
-            // On any authentication error/cancel, do nothing (keep the notes locked). The only
-            // exception is "no biometrics enrolled / no hardware": in that case there is nothing to
-            // verify against, consistent with opening a locked note which offers to disable the
-            // lock ? so we proceed.
             if (
                 errorCode ==
                     android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_NO_BIOMETRICS ||
@@ -566,62 +376,38 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Only show search icon if preference is not enabled and not in Reminders or Settings
-        // fragments
         val currentDestinationId = navController.currentDestination?.id
-        if (
-            !preferences.alwaysShowSearchBar.value &&
-                !ACTIVITES_WITHOUT_SEARCH.contains(currentDestinationId)
-        ) {
-
-            // If in Search fragment, show X icon instead of search icon
-            val isInSearchFragment = currentDestinationId == R.id.Search
-            val iconRes = if (isInSearchFragment) R.drawable.close else R.drawable.search
-            val titleRes = if (isInSearchFragment) R.string.cancel else R.string.search
-
-            menu
-                .add(Menu.NONE, ACTION_SEARCH, Menu.NONE, titleRes)
-                .setIcon(iconRes)
+        if (!ACTIVITES_WITHOUT_TOOLBAR_ICONS.contains(currentDestinationId)) {
+            menu.add(Menu.NONE, ACTION_SEARCH, Menu.NONE, R.string.search)
+                .setIcon(R.drawable.search)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            menu.add(Menu.NONE, ACTION_LABELS, Menu.NONE, R.string.labels)
+                .setIcon(R.drawable.label_more)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            menu.add(Menu.NONE, ACTION_SETTINGS, Menu.NONE, R.string.settings)
+                .setIcon(R.drawable.settings)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
-
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             ACTION_SEARCH -> {
-                val isInSearchFragment = navController.currentDestination?.id == R.id.Search
-
-                if (isInSearchFragment) {
-                    // If in Search fragment, navigate back to cancel search
-                    baseModel.keyword = ""
-                    navController.popBackStack()
-                } else {
-                    // Navigate to search fragment
-                    val currentFragment =
-                        supportFragmentManager
-                            .findFragmentById(R.id.NavHostFragment)
-                            ?.childFragmentManager
-                            ?.fragments
-                            ?.firstOrNull()
-
-                    if (currentFragment is MemoXFragment) {
-                        navController.navigate(
-                            R.id.Search,
-                            Bundle().apply {
-                                putSerializable(
-                                    SearchFragment.EXTRA_INITIAL_FOLDER,
-                                    baseModel.folder.value,
-                                )
-                                putSerializable(
-                                    SearchFragment.EXTRA_INITIAL_LABEL,
-                                    baseModel.currentLabel,
-                                )
-                            },
-                        )
-                    }
+                // Toggle search bar visibility in the current fragment
+                val fragment = supportFragmentManager.findFragmentById(R.id.NavHostFragment)
+                    ?.childFragmentManager?.fragments?.firstOrNull()
+                if (fragment is MemoXFragment) {
+                    fragment.toggleSearchBar()
                 }
+                true
+            }
+            ACTION_LABELS -> {
+                navController.navigate(R.id.Labels)
+                true
+            }
+            ACTION_SETTINGS -> {
+                navController.navigate(R.id.Settings)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -631,16 +417,18 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     companion object {
         const val EXTRA_FRAGMENT_TO_OPEN = "memox.intent.extra.FRAGMENT_TO_OPEN"
         const val EXTRA_SKIP_START_VIEW_ON_BACK = "memox.intent.extra.SKIP_START_VIEW_ON_BACK"
-        private const val ACTION_SEARCH = 1001
-        val ACTIVITES_WITHOUT_SEARCH =
+        private const val ACTION_SEARCH = 1000
+        private const val ACTION_LABELS = 1001
+        private const val ACTION_SETTINGS = 1002
+        val ACTIVITES_WITHOUT_TOOLBAR_ICONS =
             setOf(
                 R.id.Settings,
                 R.id.SettingsAppearance,
                 R.id.SettingsBackup,
                 R.id.SettingsData,
                 R.id.SettingsAbout,
-                R.id.Reminders,
                 R.id.Labels,
+                R.id.Search,
             )
     }
 }

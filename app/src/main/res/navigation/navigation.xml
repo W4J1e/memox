@@ -6,7 +6,7 @@
     <fragment
         android:id="@+id/Notes"
         android:name="cool.hin.memox.presentation.activity.main.fragment.NotesFragment"
-        android:label="@string/notes">
+        android:label="@string/app_name">
 
         <action
             android:id="@+id/NotesToSearch"

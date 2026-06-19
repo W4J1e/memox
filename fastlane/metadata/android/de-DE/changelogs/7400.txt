@@ -1,8 +1,0 @@
-* Möglichkeit Screenshots zu verbieten
-
-* Fix Android 7 Kompatibilität
-
-* Fix Links öffnen
-
-* Fix abgehakte Elemente löschen
-

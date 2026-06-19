@@ -211,10 +211,8 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                     activity?.showKeyboard(this)
                     notesAdapter?.setSearchKeyword(model.keyword)
                 } else {
-                    // In other fragments, respect the preference
-                    val alwaysShowSearchBar = model.preferences.alwaysShowSearchBar.value
-                    binding?.EnterSearchKeywordLayout?.visibility =
-                        if (alwaysShowSearchBar) View.VISIBLE else View.GONE
+                    // Hide search bar by default on other fragments
+                    binding?.EnterSearchKeywordLayout?.visibility = View.GONE
                     setText("")
                     clearFocus()
                     activity?.hideKeyboard(this)
@@ -243,6 +241,21 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                 this@MemoXFragment.binding?.MainListView?.apply {
                     postOnAnimationDelayed({ scrollToPosition(0) }, 10)
                 }
+            }
+        }
+    }
+
+    fun toggleSearchBar() {
+        binding?.EnterSearchKeywordLayout?.let { searchBar ->
+            if (searchBar.visibility == View.VISIBLE) {
+                searchBar.visibility = View.GONE
+                binding?.EnterSearchKeyword?.setText("")
+                binding?.EnterSearchKeyword?.clearFocus()
+                activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
+            } else {
+                searchBar.visibility = View.VISIBLE
+                binding?.EnterSearchKeyword?.requestFocus()
+                activity?.showKeyboard(binding?.EnterSearchKeyword ?: return)
             }
         }
     }

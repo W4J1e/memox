@@ -1,2 +1,0 @@
-- Fix export to PDF
-- Fix notes cut off at bottom when using gesture navigation

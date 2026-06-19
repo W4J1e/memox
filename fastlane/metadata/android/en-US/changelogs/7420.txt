@@ -1,2 +1,0 @@
-- Migrate to target version Android 15
-- Fix delete all checked items

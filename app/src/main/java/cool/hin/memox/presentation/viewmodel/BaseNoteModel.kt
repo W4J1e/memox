@@ -57,7 +57,6 @@ import cool.hin.memox.presentation.viewmodel.preference.BiometricLock
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_DEFAULT
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_UNLABELED
 import cool.hin.memox.presentation.viewmodel.preference.Theme
 import cool.hin.memox.presentation.viewmodel.progress.ExportNotesProgress
 import cool.hin.memox.utils.ActionMode
@@ -917,7 +916,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private fun refreshStartView(startView: String, oldStartView: String) {
-        if (startView in setOf(START_VIEW_DEFAULT, START_VIEW_UNLABELED)) {
+        if (startView == START_VIEW_DEFAULT) {
             savePreference(preferences.startView, startView)
         } else {
             viewModelScope.launch {

@@ -1,4 +1,0 @@
-* Fix search navigate up loop
-
-* Fix navigate label crash
-

@@ -99,13 +99,6 @@ class MemoXPreferences private constructor(private val context: Context) {
             false,
             R.string.labels_hidden_in_overview_title,
         )
-    val alwaysShowSearchBar =
-        BooleanPreference(
-            "alwaysShowSearchBar",
-            preferences,
-            false,
-            R.string.always_show_search_bar,
-        )
     val maxLabels =
         IntPreference(
             "maxLabelsInNavigation",

@@ -241,7 +241,7 @@ class ModelFolderObserver(
             val ids =
                 baseModel.moveBaseNotes(folderTo) { baseModel.actionMode.loading.postValue(false) }
             Snackbar.make(
-                    activity.findViewById(R.id.DrawerLayout),
+                    activity.findViewById(R.id.RelativeLayout),
                     activity.getQuantityString(folderTo.movedToResId(), ids.size),
                     Snackbar.LENGTH_SHORT,
                 )
@@ -265,7 +265,7 @@ class ModelFolderObserver(
                 activity.lifecycleScope.launch {
                     val deletedNotes = baseModel.deleteSelectedBaseNotes()
                     Snackbar.make(
-                            activity.findViewById(R.id.DrawerLayout),
+                            activity.findViewById(R.id.RelativeLayout),
                             activity.getQuantityString(
                                 R.plurals.deleted_selected_notes,
                                 removedNotes.size,

@@ -49,7 +49,6 @@ import cool.hin.memox.presentation.viewmodel.preference.FloatPreference
 import cool.hin.memox.presentation.viewmodel.preference.IntPreference
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_DEFAULT
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_UNLABELED
 import cool.hin.memox.presentation.viewmodel.preference.NotesSort
 import cool.hin.memox.presentation.viewmodel.preference.NotesSortBy
 import cool.hin.memox.presentation.viewmodel.preference.NotesSortPreference
@@ -674,11 +673,9 @@ fun PreferenceBinding.setupStartView(
     Title.setText(preference.titleResId!!)
 
     val notesText = "${context.getText(R.string.notes)} (${context.getText(R.string.text_default)})"
-    val unlabeledText = context.getText(R.string.unlabeled).toString()
     val textValue =
         when (value) {
             START_VIEW_DEFAULT -> notesText
-            START_VIEW_UNLABELED -> unlabeledText
             else -> value
         }
     Value.text = textValue
@@ -687,7 +684,7 @@ fun PreferenceBinding.setupStartView(
         val layout = DialogSelectionBoxBinding.inflate(layoutInflater, null, false)
         layout.Message.setText(R.string.start_view_hint)
         val values =
-            mutableListOf(notesText to START_VIEW_DEFAULT, unlabeledText to START_VIEW_UNLABELED)
+            mutableListOf(notesText to START_VIEW_DEFAULT)
                 .apply { labels?.forEach { add(it to it) } }
         var selected = values.indexOfFirst { it.first == textValue }
         layout.SelectionBox.apply {

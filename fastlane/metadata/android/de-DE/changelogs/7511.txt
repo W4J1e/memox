@@ -1,3 +1,0 @@
-- Fix für den gleichzeitigen Export vieler Notizen
-- Fix duplizierte Backup Logdateien
-- Dokumentation für  Verwendung von WebDAV hinzugefügt

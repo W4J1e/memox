@@ -185,10 +185,6 @@ autoTranslate {
     translateStringsXml {
         enabled = false
     }
-    translateFastlane {
-        enabled = true
-        targetLanguages = setOf("de-DE", "ru-RU")
-    }
 }
 
 tasks.register<KtfmtFormatTask>("ktfmtPrecommit") {

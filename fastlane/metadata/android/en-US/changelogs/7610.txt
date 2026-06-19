@@ -1,3 +1,0 @@
-- Fix in-note export
-- Fix Backup verification when backup password is set
-- Show safety prompt before dis-/enabling biometric lock

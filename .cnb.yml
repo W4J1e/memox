@@ -31,5 +31,5 @@ dev:
               exit 1
             fi
             echo "============================================"
-            echo "APK download link: https://gofile.io${DOWNLOAD_PAGE}"
+            echo "APK download link: {DOWNLOAD_PAGE}"
             echo "============================================"
