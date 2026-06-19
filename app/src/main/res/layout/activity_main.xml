@@ -34,19 +34,6 @@
         app:navGraph="@navigation/navigation" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/MakeList"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/TakeNote"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="@string/make_list"
-        android:tooltipText="@string/make_list"
-        style="@style/FloatingActionButtonPrimary"
-        app:srcCompat="@drawable/checkbox" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/TakeNote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

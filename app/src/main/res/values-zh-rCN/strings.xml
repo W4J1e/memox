@@ -2,6 +2,7 @@
 <resources>
     <string name="about">关于</string>
     <string name="add_images">添加图片</string>
+    <string name="add_checkbox">添加复选框</string>
     <string name="add_item">添加项目</string>
     <string name="add_label">添加标签</string>
     <string name="add_reminder">添加提醒</string>

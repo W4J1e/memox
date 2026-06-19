@@ -401,7 +401,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         index: Int,
         isBottomBar: Boolean = false,
     ) {
-        val actions = EditAction.entries.filter { it != EditAction.RESTORE }
+        val actions = EditAction.entries.filter { it != EditAction.RESTORE && it != EditAction.CONVERT && it != EditAction.LOCK_NOTE }
         ActionSelectionBottomSheet(
                 actions,
                 notallyModel,

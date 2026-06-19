@@ -1,5 +1,6 @@
 package cool.hin.memox.presentation.activity.note
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
@@ -11,6 +12,7 @@ import cool.hin.memox.presentation.hideKeyboardOnFocusedItem
 import cool.hin.memox.presentation.setOnNextAction
 import cool.hin.memox.presentation.showKeyboardOnFocusedItem
 import cool.hin.memox.presentation.view.note.action.MoreListBottomSheet
+import cool.hin.memox.presentation.viewmodel.preference.EditAction
 import cool.hin.memox.presentation.view.note.listitem.HighlightText
 import cool.hin.memox.presentation.view.note.listitem.ListManager
 import cool.hin.memox.presentation.view.note.listitem.adapter.CheckedListItemAdapter
@@ -86,6 +88,41 @@ class EditListActivity : EditActivity(Type.LIST) {
                 NoteViewMode.EDIT -> View.VISIBLE
                 else -> View.GONE
             }
+    }
+
+    override fun initBottomMenu() {
+        binding.BottomAppBarCenter.visibility = GONE
+        binding.BottomAppBarLeft.apply {
+            removeAllViews()
+            updateLayoutParams<androidx.constraintlayout.widget.ConstraintLayout.LayoutParams> { endToStart = -1 }
+            // Image
+            addIconButton(R.string.add_images, R.drawable.add_images, colorInt, marginStart = 0) {
+                actionHandler.addImages()
+            }
+            // Recording
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                addIconButton(R.string.record_audio, R.drawable.record_audio, colorInt) {
+                    actionHandler.recordAudio()
+                }
+            }
+        }
+        // Right side: view/edit, lock, more
+        binding.BottomAppBarRight.apply {
+            removeAllViews()
+            addBottomAction(preferences.editNoteActivityBottomAction.value)
+            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
+                actionHandler.handleAction(EditAction.LOCK_NOTE)
+            }
+            addIconButton(
+                R.string.tap_for_more_options,
+                R.drawable.more_vert,
+                colorInt,
+                marginStart = 0,
+            ) {
+                openMoreOptionsBottomSheet()
+            }
+        }
+        setBottomAppBarColor(colorInt)
     }
 
     override fun openMoreOptionsBottomSheet() {

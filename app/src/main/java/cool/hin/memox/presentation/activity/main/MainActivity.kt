@@ -28,7 +28,6 @@ import cool.hin.memox.databinding.ActivityMainBinding
 import cool.hin.memox.presentation.activity.LockedActivity
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
 import cool.hin.memox.presentation.activity.main.fragment.MemoXFragment
-import cool.hin.memox.presentation.activity.note.EditListActivity
 import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.activity.note.NoteActionHandler
 import cool.hin.memox.presentation.activity.note.handleRejection
@@ -218,10 +217,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private fun setupFAB() {
         binding.TakeNote.setOnClickListener {
             val intent = Intent(this, EditNoteActivity::class.java)
-            startActivity(prepareNewNoteIntent(intent))
-        }
-        binding.MakeList.setOnClickListener {
-            val intent = Intent(this, EditListActivity::class.java)
             startActivity(prepareNewNoteIntent(intent))
         }
     }
