@@ -15,7 +15,7 @@ function HomepageHeader() {
     <header className={clsx('hero', styles.heroBanner)}>
       <div className="container">
         <div className="text--center">
-          <img src={image} alt="NotallyX Logo" />
+          <img src={image} alt="memoX Logo" />
         </div>
         <Heading as="h1" className="hero__title">
           {siteConfig.title}
@@ -29,13 +29,13 @@ function HomepageHeader() {
           </Link>
         </div>
         <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', marginTop: '20px'}}>
-          <a href='https://play.google.com/store/apps/details?id=com.philkes.notallyx&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1' style={{margin: '10px'}}>
+          <a href='https://play.google.com/store/apps/details?id=cool.hin.memox&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1' style={{margin: '10px'}}>
             <img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' style={{height: '80px'}}/>
           </a>
-          <a href="https://f-droid.org/en/packages/com.philkes.notallyx" style={{margin: '10px'}}>
+          <a href="https://f-droid.org/en/packages/cool.hin.memox" style={{margin: '10px'}}>
             <img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' style={{height: '80px'}} />
           </a>
-          <a href="https://apt.izzysoft.de/fdroid/index/apk/com.philkes.notallyx" style={{margin: '10px'}}>
+          <a href="https://apt.izzysoft.de/fdroid/index/apk/cool.hin.memox" style={{margin: '10px'}}>
             <img alt='Get it on IzzyOnDroid' src='https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png' style={{height: '80px'}} />
           </a>
         </div>
@@ -48,7 +48,7 @@ export default function Home(): ReactNode {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      description="NotallyX - A simple and minimalistic open source notes app">
+      description="memoX - A simple and minimalistic open source notes app">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

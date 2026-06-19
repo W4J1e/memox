@@ -17,11 +17,11 @@ plugins {
 }
 
 android {
-    namespace = "com.philkes.notallyx"
+    namespace = "cool.hin.memox"
     compileSdk = 36
     ndkVersion = "29.0.13113456"
     defaultConfig {
-        applicationId = "com.philkes.notallyx"
+        applicationId = "cool.hin.memox"
         minSdk = 21
         targetSdk = 36
         versionCode = project.findProperty("app.versionCode").toString().toInt()
@@ -55,7 +55,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
-            resValue("string", "app_name", "NotallyX DEBUG")
+            resValue("string", "app_name", "memoX DEBUG")
         }
         release {
             isCrunchPngs = false
@@ -71,7 +71,7 @@ android {
             initWith(getByName("release"))
             applicationIdSuffix = ".beta"
             versionNameSuffix = "-BETA"
-            resValue("string", "app_name", "NotallyX BETA")
+            resValue("string", "app_name", "memoX BETA")
         }
     }
 
@@ -79,7 +79,7 @@ android {
         this.outputs
             .map { it as com.android.build.gradle.internal.api.ApkVariantOutputImpl }
             .forEach { output ->
-                output.outputFileName = "NotallyX-$versionName.apk"
+                output.outputFileName = "memoX-$versionName.apk"
             }
 
         if (buildType.isMinifyEnabled) {

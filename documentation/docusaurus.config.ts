@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'NotallyX',
+  title: 'memoX',
   tagline: 'A simple and minimalistic open source notes app',
   favicon: 'img/favicon.ico',
 
@@ -13,12 +13,12 @@ const config: Config = {
   url: 'https://github.com',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/NotallyX/',
+  baseUrl: '/memoX/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'Crustack', // Usually your GitHub org/user name.
-  projectName: 'NotallyX', // Usually your repo name.
+  projectName: 'memoX', // Usually your repo name.
   deploymentBranch: 'gh-pages', // Usually your repo name.
 
   onBrokenLinks: 'throw',
@@ -41,7 +41,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/Crustack/NotallyX/blob/main/documentation',
+            'https://github.com/Crustack/memoX/blob/main/documentation',
         },
         blog: {
           showReadingTime: true,
@@ -69,9 +69,9 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/featureGraphic.png',
     navbar: {
-      title: 'NotallyX',
+      title: 'memoX',
       logo: {
-        alt: 'NotallyX Logo',
+        alt: 'memoX Logo',
         src: 'img/logo.png',
       },
       items: [
@@ -93,7 +93,7 @@ const config: Config = {
           className: "header--kofi-link",
         },
         {
-          href: 'https://github.com/Crustack/NotallyX',
+          href: 'https://github.com/Crustack/memoX',
           position: 'right',
           className: "header--github-link",
           "aria-label": "GitHub repository",
@@ -103,7 +103,7 @@ const config: Config = {
     footer: {
       style: 'dark',
       links: [],
-      copyright: `Copyright © ${new Date().getFullYear()} NotallyX, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} memoX, Inc. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

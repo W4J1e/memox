@@ -1,4 +1,4 @@
-NotallyX ist eine minimalistische Notiz-App mit einfachen Design und nützlichen Funktionen.
+memoX ist eine minimalistische Notiz-App mit einfachen Design und nützlichen Funktionen.
 
 <b>Organisation</b>
 
@@ -50,5 +50,5 @@ Es gibt keine Werbung, Tracker oder Analytics jeglicher Art. Alle Notizen werden
 
 Aufgrund eines Bugs seitens Xiaomi könnten einige MiUI-Geräte möglicherweise nicht auf die Textformatierungsoptionen zugreifen.
 
-https://github.com/Crustack/NotallyX
+https://github.com/Crustack/memoX
 
