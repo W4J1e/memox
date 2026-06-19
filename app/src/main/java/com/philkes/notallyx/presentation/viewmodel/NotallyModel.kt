@@ -83,6 +83,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     var title = String()
     var pinned = false
     var isPinnedToStatus = false
+    var locked = false
     var timestamp = System.currentTimeMillis()
     var modifiedTimestamp = System.currentTimeMillis()
 
@@ -258,6 +259,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 reminders.value = baseNote.reminders
                 viewMode.value = baseNote.viewMode
                 isPinnedToStatus = baseNote.isPinnedToStatus
+                locked = baseNote.locked
             } else {
                 originalNote = createBaseNote(createInDb)
                 app.showToast(R.string.cant_find_note)
@@ -367,6 +369,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             reminders.value,
             viewMode.value,
             isPinnedToStatus,
+            locked,
         )
     }
 

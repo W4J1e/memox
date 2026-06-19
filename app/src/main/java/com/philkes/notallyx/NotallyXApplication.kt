@@ -2,15 +2,11 @@ package com.philkes.notallyx
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.lifecycle.Observer
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
@@ -20,8 +16,6 @@ import com.philkes.notallyx.NotallyXApplication.Companion.AUTO_REMOVE_DELETED_NO
 import com.philkes.notallyx.NotallyXApplication.Companion.TAG
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.presentation.setEnabledSecureFlag
-import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
-import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
 import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
 import com.philkes.notallyx.presentation.viewmodel.preference.Theme
@@ -41,7 +35,6 @@ import com.philkes.notallyx.utils.backup.scheduleAutoBackup
 import com.philkes.notallyx.utils.backup.updateAutoBackup
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.observeOnce
-import com.philkes.notallyx.utils.security.UnlockReceiver
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,11 +44,7 @@ import kotlinx.coroutines.withContext
 
 class NotallyXApplication : Application(), Application.ActivityLifecycleCallbacks {
 
-    private lateinit var biometricLockObserver: Observer<BiometricLock>
     private lateinit var preferences: NotallyXPreferences
-    private var unlockReceiver: UnlockReceiver? = null
-
-    val locked = NotNullLiveData(true)
 
     override fun onCreate() {
         super.onCreate()
@@ -85,10 +74,7 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
                     )
             }
             if (oldTheme != null) {
-                WidgetProvider.updateWidgets(
-                    this,
-                    locked = preferences.isLockEnabled && locked.value,
-                )
+                WidgetProvider.updateWidgets(this)
             }
         }
 
@@ -107,28 +93,6 @@ class NotallyXApplication : Application(), Application.ActivityLifecycleCallback
         }
         preferences.autoRemoveDeletedNotesAfterDays.observeForever { value ->
             checkUpdateAutoRemoveOldDeletedNotes(value)
-        }
-
-        val filter = IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF) }
-        biometricLockObserver = Observer { biometricLock ->
-            if (biometricLock == BiometricLock.ENABLED) {
-                unlockReceiver = UnlockReceiver(this)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    registerReceiver(unlockReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-                } else {
-                    registerReceiver(unlockReceiver, filter)
-                }
-            } else {
-                unlockReceiver?.let { unregisterReceiver(it) }
-                if (locked.value) {
-                    locked.postValue(false)
-                }
-            }
-        }
-        preferences.biometricLock.observeForever(biometricLockObserver)
-
-        locked.observeForever { isLocked ->
-            WidgetProvider.updateWidgets(this, locked = preferences.isLockEnabled && isLocked)
         }
 
         preferences.backupPassword.observeForeverWithPrevious {

@@ -246,11 +246,17 @@ class NoteActionHandler(
             EditAction.CONVERT -> convertTo()
             EditAction.DELETE_FOREVER -> deleteForever()
             EditAction.RESTORE -> restore()
+            EditAction.LOCK_NOTE -> toggleNoteLock()
         }
     }
 
     private fun pin() {
         notallyModel.pinned = !notallyModel.pinned
+        activity.bindPinned()
+    }
+
+    private fun toggleNoteLock() {
+        notallyModel.locked = !notallyModel.locked
         activity.bindPinned()
     }
 

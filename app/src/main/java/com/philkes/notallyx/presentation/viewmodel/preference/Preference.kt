@@ -507,7 +507,8 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
     RESTORE(R.string.restore, R.drawable.restore),
-    PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard);
+    PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard),
+    LOCK_NOTE(R.string.lock_note, R.drawable.lock_big);
 
     fun getTitleAndIcon(
         pinned: Boolean,
@@ -515,6 +516,7 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
         folder: Folder? = null,
         type: Type? = null,
         isPinnedToStatus: Boolean = false,
+        isNoteLocked: Boolean = false,
     ): Pair<Int, Int> {
         val icon =
             when (this) {
@@ -528,6 +530,8 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
                     else R.drawable.visibility
+                LOCK_NOTE ->
+                    if (isNoteLocked) R.drawable.lock_big else R.drawable.lock_open
                 else -> drawableResId
             }
         val title =
@@ -543,6 +547,8 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 CONVERT ->
                     if (type == Type.LIST) R.string.convert_to_text_note
                     else R.string.convert_to_list_note
+                LOCK_NOTE ->
+                    if (isNoteLocked) R.string.unlock_note else R.string.lock_note
                 else -> textResId
             }
         return title to icon

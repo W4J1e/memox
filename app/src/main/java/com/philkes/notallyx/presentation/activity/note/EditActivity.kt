@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
+import android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_HW_NOT_PRESENT
+import android.hardware.biometrics.BiometricPrompt.BIOMETRIC_ERROR_NO_BIOMETRICS
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,6 +22,9 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewGroup.VISIBLE
 import android.view.inputmethod.InputMethodManager
+import android.provider.Settings
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
@@ -86,6 +91,7 @@ import com.philkes.notallyx.utils.isInLandscapeMode
 import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.mergeSkipFirst
 import com.philkes.notallyx.utils.observeSkipFirst
+import com.philkes.notallyx.utils.security.showBiometricOrPinPrompt
 import com.philkes.notallyx.utils.textMaxLengthFilter
 import com.philkes.notallyx.utils.wrapWithChooser
 import java.io.File
@@ -109,6 +115,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     internal var colorInt: Int = -1
     protected var inputMethodManager: InputMethodManager? = null
+
+    private lateinit var noteLockActivityResultLauncher: ActivityResultLauncher<Intent>
 
     protected val canEdit
         get() = notallyModel.viewMode.value == NoteViewMode.EDIT
@@ -183,6 +191,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         setContentView(binding.root)
         configureEdgeToEdgeInsets()
 
+        noteLockActivityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    unlockNoteContent()
+                }
+            }
+
         initChangeHistory()
         lifecycleScope.launch {
             val persistedId = savedInstanceState?.getLong("id")
@@ -239,7 +254,11 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
         }
         if (initListeners) configureUI()
-        binding.ScrollView.visibility = VISIBLE
+        if (notallyModel.locked) {
+            showNoteLockScreen()
+        } else {
+            binding.ScrollView.visibility = VISIBLE
+        }
         setupEditNoteReminderChip()
     }
 
@@ -644,6 +663,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 notallyModel.folder,
                 notallyModel.type,
                 notallyModel.isPinnedToStatus,
+                notallyModel.locked,
             )
         val button = addIconButton(title, icon, colorInt) { actionHandler.handleAction(action) }
 
@@ -1001,6 +1021,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                         notallyModel.folder,
                         notallyModel.type,
                         notallyModel.isPinnedToStatus,
+                        notallyModel.locked,
                     )
                 add(title, icon, MenuItem.SHOW_AS_ACTION_ALWAYS, itemId = idx) {
                     actionHandler.handleAction(action)
@@ -1034,6 +1055,52 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 startActivity(intent)
             }
         }
+    }
+
+    private fun showNoteLockScreen() {
+        binding.ScrollView.visibility = GONE
+        showBiometricOrPinPrompt(
+            true,
+            null,
+            noteLockActivityResultLauncher,
+            R.string.unlock,
+            R.string.note_locked,
+            onSuccess = { _ -> unlockNoteContent() },
+        ) { errorCode ->
+            when (errorCode) {
+                BIOMETRIC_ERROR_NO_BIOMETRICS -> {
+                    MaterialAlertDialogBuilder(this)
+                        .setMessage(R.string.unlock_with_biometrics_not_setup)
+                        .setPositiveButton(R.string.disable) { _, _ ->
+                            lifecycleScope.launch {
+                                notallyModel.locked = false
+                                unlockNoteContent()
+                            }
+                        }
+                        .setNegativeButton(R.string.tap_to_set_up) { _, _ ->
+                            val intent =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                    Intent(Settings.ACTION_BIOMETRIC_ENROLL)
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    Intent(Settings.ACTION_FINGERPRINT_ENROLL)
+                                } else {
+                                    Intent(Settings.ACTION_SECURITY_SETTINGS)
+                                }
+                            startActivity(intent)
+                        }
+                        .show()
+                }
+                BIOMETRIC_ERROR_HW_NOT_PRESENT -> {
+                    notallyModel.locked = false
+                    unlockNoteContent()
+                }
+                else -> finish()
+            }
+        }
+    }
+
+    private fun unlockNoteContent() {
+        binding.ScrollView.visibility = VISIBLE
     }
 
     data class Search(

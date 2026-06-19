@@ -48,11 +48,7 @@ class WidgetProvider : AppWidgetProvider() {
                 val preferences = NotallyXPreferences.getInstance(context)
                 val noteIds = intent.getLongArrayExtra(EXTRA_MODIFIED_NOTES)
                 if (noteIds != null) {
-                    updateWidgets(
-                        context,
-                        noteIds,
-                        locked = preferences.isLockEnabled && app.locked.value,
-                    )
+                    updateWidgets(context, noteIds)
                 }
             }
             ACTION_OPEN_NOTE -> openActivity(context, intent, EditNoteActivity::class.java)
@@ -98,7 +94,6 @@ class WidgetProvider : AppWidgetProvider() {
                     updateWidgets(
                         context,
                         longArrayOf(noteId),
-                        locked = preferences.isLockEnabled && app.locked.value,
                     )
                     pendingResult.finish()
                 }
@@ -161,14 +156,13 @@ class WidgetProvider : AppWidgetProvider() {
                 id,
                 noteId,
                 noteType,
-                locked = preferences.isLockEnabled && app.locked.value,
             )
         }
     }
 
     companion object {
 
-        fun updateWidgets(context: Context, noteIds: LongArray? = null, locked: Boolean) {
+        fun updateWidgets(context: Context, noteIds: LongArray? = null) {
             val app = context.applicationContext as Application
             val preferences = NotallyXPreferences.getInstance(app)
 
@@ -182,7 +176,6 @@ class WidgetProvider : AppWidgetProvider() {
                     id,
                     noteId,
                     preferences.getWidgetNoteType(id),
-                    locked = locked,
                 )
             }
         }
@@ -193,7 +186,6 @@ class WidgetProvider : AppWidgetProvider() {
             id: Int,
             noteId: Long,
             noteType: Type?,
-            locked: Boolean = false,
         ) {
             // Widgets displaying the same note share the same factory since only the noteId is
             // embedded
@@ -232,59 +224,39 @@ class WidgetProvider : AppWidgetProvider() {
                     manager.notifyAppWidgetViewDataChanged(id, R.id.ListView)
                     return@launch
                 }
-                if (!locked) {
-                    val view =
-                        RemoteViews(context.packageName, R.layout.widget).apply {
-                            setRemoteAdapter(R.id.ListView, intent)
-                            setEmptyView(R.id.ListView, R.id.Empty)
+                val view =
+                    RemoteViews(context.packageName, R.layout.widget).apply {
+                        setRemoteAdapter(R.id.ListView, intent)
+                        setEmptyView(R.id.ListView, R.id.Empty)
+                        setOnClickPendingIntent(
+                            R.id.Empty,
+                            Intent(context, WidgetProvider::class.java)
+                                .apply {
+                                    action = ACTION_SELECT_NOTE
+                                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                                }
+                                .asPendingIntent(context),
+                        )
+                        setPendingIntentTemplate(
+                            R.id.ListView,
+                            Intent(context, WidgetProvider::class.java).asPendingIntent(context),
+                        )
+
+                        noteType?.let {
                             setOnClickPendingIntent(
-                                R.id.Empty,
+                                R.id.Layout,
                                 Intent(context, WidgetProvider::class.java)
-                                    .apply {
-                                        action = ACTION_SELECT_NOTE
-                                        data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-                                    }
+                                    .setOpenNoteIntent(noteType, noteId)
                                     .asPendingIntent(context),
                             )
-                            setPendingIntentTemplate(
-                                R.id.ListView,
-                                Intent(context, WidgetProvider::class.java).asPendingIntent(context),
-                            )
-
-                            noteType?.let {
-                                setOnClickPendingIntent(
-                                    R.id.Layout,
-                                    Intent(context, WidgetProvider::class.java)
-                                        .setOpenNoteIntent(noteType, noteId)
-                                        .asPendingIntent(context),
-                                )
-                            }
-                            val preferences = NotallyXPreferences.getInstance(context)
-                            val (backgroundColor, _) =
-                                context.extractWidgetColors(color, preferences)
-                            setInt(R.id.Layout, "setBackgroundColor", backgroundColor)
                         }
-                    manager.updateAppWidget(id, view)
-                    manager.notifyAppWidgetViewDataChanged(id, R.id.ListView)
-                } else {
-                    val view =
-                        RemoteViews(context.packageName, R.layout.widget_locked).apply {
-                            noteType?.let {
-                                val lockedPendingIntent =
-                                    context.getOpenNotePendingIntent(noteId, noteType)
-                                setOnClickPendingIntent(R.id.Layout, lockedPendingIntent)
-                                setOnClickPendingIntent(R.id.Text, lockedPendingIntent)
-                            }
-                            setTextViewCompoundDrawablesRelative(
-                                R.id.Text,
-                                0,
-                                R.drawable.lock_big,
-                                0,
-                                0,
-                            )
-                        }
-                    manager.updateAppWidget(id, view)
-                }
+                        val preferences = NotallyXPreferences.getInstance(context)
+                        val (backgroundColor, _) =
+                            context.extractWidgetColors(color, preferences)
+                        setInt(R.id.Layout, "setBackgroundColor", backgroundColor)
+                    }
+                manager.updateAppWidget(id, view)
+                manager.notifyAppWidgetViewDataChanged(id, R.id.ListView)
             }
         }
 

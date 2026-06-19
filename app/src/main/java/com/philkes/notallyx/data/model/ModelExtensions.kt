@@ -136,6 +136,7 @@ fun String.toBaseNote(): BaseNote {
     val audios = Converters.jsonToAudios(jsonObject.getArrayOrEmpty("audios"))
     val reminders = Converters.jsonToReminders(jsonObject.getArrayOrEmpty("reminders"))
     val viewMode = NoteViewMode.valueOfOrDefault(jsonObject.getStringOrDefault("viewMode", ""))
+    val locked = jsonObject.getBooleanOrDefault("locked", false)
     return BaseNote(
         id,
         type,
@@ -155,6 +156,7 @@ fun String.toBaseNote(): BaseNote {
         reminders,
         viewMode,
         pinnedToStatusBar,
+        locked,
     )
 }
 

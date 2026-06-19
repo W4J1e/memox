@@ -1,7 +1,7 @@
 package com.philkes.notallyx.presentation.view.main
 
-import android.graphics.drawable.Drawable
 import android.view.View.GONE
+import android.view.View.INVISIBLE
 import android.view.View.VISIBLE
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -10,13 +10,6 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.data.model.FileAttachment
@@ -128,7 +121,7 @@ class BaseNoteVH(
         setFiles(baseNote.files)
 
         binding.Title.apply {
-            isVisible = baseNote.title.isNotEmpty()
+            isVisible = baseNote.title.isNotEmpty() || baseNote.locked
             updatePadding(
                 bottom =
                     if (baseNote.hasNoContents() || shouldOnlyDisplayTitle(baseNote)) 0 else 8.dp
@@ -141,7 +134,8 @@ class BaseNoteVH(
             } else text = baseNote.title
 
             setCompoundDrawablesWithIntrinsicBounds(
-                if (baseNote.type == Type.LIST && preferences.maxItems < 1)
+                if (baseNote.locked) R.drawable.lock_big
+                else if (baseNote.type == Type.LIST && preferences.maxItems < 1)
                     R.drawable.checkbox_small
                 else 0,
                 0,
@@ -177,6 +171,11 @@ class BaseNoteVH(
 
     private fun bindNote(baseNote: BaseNote, keyword: String) {
         binding.LinearLayout.visibility = GONE
+        if (baseNote.locked) {
+            // For locked notes, only show title - hide body content
+            binding.Note.visibility = GONE
+            return
+        }
         if (keyword.isBlank()) {
             bindNote(baseNote.body, baseNote.spans, baseNote.title.isEmpty())
             return
@@ -239,6 +238,11 @@ class BaseNoteVH(
 
     private fun bindList(baseNote: BaseNote, keyword: String) {
         binding.Note.visibility = GONE
+        if (baseNote.locked) {
+            // For locked notes, only show title - hide list items
+            binding.LinearLayout.visibility = GONE
+            return
+        }
         val initializedItems = baseNote.items.init()
         if (baseNote.items.isEmpty()) {
             binding.LinearLayout.visibility = GONE
@@ -307,83 +311,19 @@ class BaseNoteVH(
 
     private fun setImages(images: List<FileAttachment>, mediaRoot: File?) {
         binding.apply {
-            if (images.isNotEmpty() && !preferences.hideImages) {
-                ImageLayout.visibility = VISIBLE
-                val image = images[0]
-                val file = if (mediaRoot != null) File(mediaRoot, image.localName) else null
-                if (file?.exists() == true) {
-                    ImageView.visibility = VISIBLE
-                    Message.visibility = GONE
-                    Glide.with(ImageView.context)
-                        .load(file)
-                        .centerCrop()
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                        .listener(
-                            object : RequestListener<Drawable> {
-
-                                override fun onLoadFailed(
-                                    e: GlideException?,
-                                    model: Any?,
-                                    target: Target<Drawable>?,
-                                    isFirstResource: Boolean,
-                                ): Boolean {
-                                    Message.visibility = VISIBLE
-                                    ImageView.visibility = GONE
-                                    return false
-                                }
-
-                                override fun onResourceReady(
-                                    resource: Drawable?,
-                                    model: Any?,
-                                    target: Target<Drawable>?,
-                                    dataSource: DataSource?,
-                                    isFirstResource: Boolean,
-                                ): Boolean {
-                                    return false
-                                }
-                            }
-                        )
-                        .into(ImageView)
-                } else {
-                    Glide.with(ImageView.context).clear(ImageView)
-                    ImageView.visibility = GONE
-                    Message.visibility = VISIBLE
-                }
-                if (images.size > 1) {
-                    ImageViewMore.apply {
-                        text = images.size.toString()
-                        visibility = VISIBLE
-                    }
-                } else {
-                    ImageViewMore.visibility = GONE
-                }
-            } else {
-                ImageLayout.visibility = GONE
-                Message.visibility = GONE
-                ImageViewMore.visibility = GONE
-                ImageView.visibility = GONE
-                Glide.with(ImageView.context).clear(ImageView)
-            }
+            // Always hide images in overview to avoid OBJ icon display issue
+            ImageLayout.visibility = GONE
+            Message.visibility = GONE
+            ImageViewMore.visibility = GONE
+            ImageView.visibility = GONE
+            Glide.with(ImageView.context).clear(ImageView)
         }
     }
 
     private fun setFiles(files: List<FileAttachment>) {
         binding.apply {
-            if (files.isNotEmpty()) {
-                FileViewLayout.visibility = VISIBLE
-                FileView.text = files[0].originalName
-                if (files.size > 1) {
-                    FileViewMore.apply {
-                        text = getQuantityString(R.plurals.more_files, files.size - 1)
-                        visibility = VISIBLE
-                    }
-                } else {
-                    FileViewMore.visibility = GONE
-                }
-            } else {
-                FileViewLayout.visibility = GONE
-            }
+            // Always hide files in overview to avoid OBJ icon display issue
+            FileViewLayout.visibility = GONE
         }
     }
 

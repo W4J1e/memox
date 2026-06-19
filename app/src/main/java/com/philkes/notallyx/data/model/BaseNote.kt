@@ -27,6 +27,7 @@ data class BaseNote(
     val reminders: List<Reminder>,
     val viewMode: NoteViewMode,
     val isPinnedToStatus: Boolean,
+    val locked: Boolean = false,
 ) : Item {
 
     companion object {
@@ -57,6 +58,7 @@ data class BaseNote(
         if (reminders != other.reminders) return false
         if (viewMode != other.viewMode) return false
         if (isPinnedToStatus != other.isPinnedToStatus) return false
+        if (locked != other.locked) return false
 
         return true
     }
@@ -88,6 +90,7 @@ data class BaseNote(
         result = 31 * result + reminders.hashCode()
         result = 31 * result + viewMode.hashCode()
         result = 31 * result + isPinnedToStatus.hashCode()
+        result = 31 * result + locked.hashCode()
         return result
     }
 }
@@ -101,5 +104,6 @@ fun BaseNote.deepCopy(): BaseNote {
         files = files.map { it.copy() }.toMutableList(),
         audios = audios.map { it.copy() }.toMutableList(),
         reminders = reminders.map { it.copy() }.toMutableList(),
+        locked = locked,
     )
 }

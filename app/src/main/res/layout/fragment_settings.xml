@@ -190,10 +190,6 @@
             android:text="@string/security" />
 
         <include
-            android:id="@+id/BiometricLock"
-            layout="@layout/preference" />
-
-        <include
           android:id="@+id/BackupPassword"
           layout="@layout/preference" />
 

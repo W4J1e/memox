@@ -247,6 +247,10 @@
     <string name="list">List</string>
     <string name="list_item_auto_sort">Sort List items</string>
     <string name="locked">Locked</string>
+    <string name="lock_note">Lock Note</string>
+    <string name="unlock_note">Unlock Note</string>
+    <string name="note_locked">This note is locked. Authenticate to view it.</string>
+    <string name="lock_note_title">Lock/Unlock Note via Biometric/PIN</string>
     <string name="make_default">Make default</string>
     <string name="make_feature_request">Make a feature request</string>
     <string name="make_list">Make list</string>

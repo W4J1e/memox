@@ -704,18 +704,6 @@ class SettingsFragment : Fragment() {
     }
 
     private fun NotallyXPreferences.setupSecurity(binding: FragmentSettingsBinding) {
-        biometricLock.observe(viewLifecycleOwner) { value ->
-            binding.BiometricLock.setup(
-                biometricLock,
-                value,
-                requireContext(),
-                model,
-                ::showEnableBiometricLock,
-                ::showDisableBiometricLock,
-                ::showBiometricsNotSetupDialog,
-            )
-        }
-
         backupPassword.observe(viewLifecycleOwner) { value ->
             binding.BackupPassword.setupBackupPassword(
                 backupPassword,
