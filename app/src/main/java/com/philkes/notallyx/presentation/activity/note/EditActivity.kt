@@ -40,11 +40,13 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.philkes.notallyx.R
+import com.philkes.notallyx.data.model.FileAttachment
 import com.philkes.notallyx.data.model.NoteViewMode
 import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.generateBaseNote
 import com.philkes.notallyx.databinding.ActivityEditBinding
 import com.philkes.notallyx.presentation.IMAGE_PLACEHOLDER
+import com.philkes.notallyx.presentation.InlineImageSpan
 import com.philkes.notallyx.presentation.activity.LockedActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity
 import com.philkes.notallyx.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
@@ -827,6 +829,40 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                         pos += 1
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Removes the inline image placeholders (and their [InlineImageSpan]s) whose attachment matches
+     * one of [attachments] from the note body. The change goes through the change history
+     * (undoable) and triggers [NotallyModel.syncImagesFromBody] so the `images` list and database
+     * stay in sync. Used when an image is deleted from the full-screen viewer for NOTE-type notes.
+     * The actual image files are cleaned up later by the missing-attachments worker (so undo can
+     * re-attach).
+     */
+    fun deleteInlineImages(attachments: List<FileAttachment>) {
+        if (attachments.isEmpty()) {
+            return
+        }
+        val localNames = attachments.map { it.localName }.toSet()
+        binding.EnterBody.changeTextWithHistory { text ->
+            // Collect placeholder indices to remove, then delete from the end so earlier indices
+            // stay valid.
+            val toRemove = ArrayList<Int>()
+            for (i in 0 until text.length) {
+                if (text[i] == IMAGE_PLACEHOLDER) {
+                    val span = text.getSpans(i, i + 1, InlineImageSpan::class.java).firstOrNull()
+                    if (span != null && span.attachment.localName in localNames) {
+                        toRemove.add(i)
+                    }
+                }
+            }
+            for (idx in toRemove.asReversed()) {
+                text.getSpans(idx, idx + 1, InlineImageSpan::class.java).forEach {
+                    text.removeSpan(it)
+                }
+                text.delete(idx, idx + 1)
             }
         }
     }
