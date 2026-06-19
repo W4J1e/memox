@@ -315,7 +315,7 @@ class MemoXPreferences private constructor(private val context: Context) {
         const val START_VIEW_UNLABELED = "cool.hin.memox.startview.UNLABELED"
 
         val DEFAULT_EDIT_NOTE_TOP_ACTIONS =
-            listOf(EditAction.SEARCH, EditAction.LABELS, EditAction.SHARE, EditAction.PIN)
+            listOf(EditAction.SEARCH, EditAction.LABELS, EditAction.SHARE)
         val DEFAULT_EDIT_NOTE_BOTTOM_ACTION = EditAction.TOGGLE_VIEW_MODE
 
         @Volatile private var instance: MemoXPreferences? = null

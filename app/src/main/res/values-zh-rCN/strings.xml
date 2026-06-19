@@ -151,7 +151,7 @@
     <string name="documentation">文档</string>
     <string name="donate">捐赠</string>
     <string name="drag_handle">拖动处理</string>
-    <string name="duplicate">重复项</string>
+    <string name="duplicate">复制笔记</string>
     <plurals name="duplicates">
         <item quantity="one">%1$d 个重复项</item>
         <item quantity="other">%1$d 个重复项</item>
