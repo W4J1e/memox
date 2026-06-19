@@ -91,7 +91,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                     if (baseModel.actionMode.enabled.value) {
                         return
                     }
-                    if (
+                    // Let Navigation handle back first (e.g. Settings sub-page -> Settings root)
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else if (
                         !isStartViewFragment &&
                             !intent.getBooleanExtra(EXTRA_SKIP_START_VIEW_ON_BACK, false)
                     ) {
@@ -378,9 +381,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val currentDestinationId = navController.currentDestination?.id
         if (!ACTIVITES_WITHOUT_TOOLBAR_ICONS.contains(currentDestinationId)) {
-            menu.add(Menu.NONE, ACTION_SEARCH, Menu.NONE, R.string.search)
-                .setIcon(R.drawable.search)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             menu.add(Menu.NONE, ACTION_LABELS, Menu.NONE, R.string.labels)
                 .setIcon(R.drawable.label_more)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -393,15 +393,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            ACTION_SEARCH -> {
-                // Toggle search bar visibility in the current fragment
-                val fragment = supportFragmentManager.findFragmentById(R.id.NavHostFragment)
-                    ?.childFragmentManager?.fragments?.firstOrNull()
-                if (fragment is MemoXFragment) {
-                    fragment.toggleSearchBar()
-                }
-                true
-            }
             ACTION_LABELS -> {
                 navController.navigate(R.id.Labels)
                 true
@@ -417,7 +408,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     companion object {
         const val EXTRA_FRAGMENT_TO_OPEN = "memox.intent.extra.FRAGMENT_TO_OPEN"
         const val EXTRA_SKIP_START_VIEW_ON_BACK = "memox.intent.extra.SKIP_START_VIEW_ON_BACK"
-        private const val ACTION_SEARCH = 1000
         private const val ACTION_LABELS = 1001
         private const val ACTION_SETTINGS = 1002
         val ACTIVITES_WITHOUT_TOOLBAR_ICONS =

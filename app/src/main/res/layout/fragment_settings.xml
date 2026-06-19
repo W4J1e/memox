@@ -302,27 +302,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:gravity="center_horizontal"
             android:visibility="gone">
 
-            <TextView
-                style="@style/PreferenceHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/about" />
+            <ImageView
+                android:id="@+id/AboutAppIcon"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginTop="32dp"
+                android:src="@mipmap/memox"
+                android:contentDescription="@string/app_name" />
 
             <TextView
                 android:id="@+id/VersionText"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:padding="16dp" />
+                android:textColor="?android:attr/textColorSecondary" />
 
             <TextView
-                android:id="@+id/Documentation"
+                android:id="@+id/AuthorLink"
                 style="@style/Preference"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/documentation" />
+                android:layout_marginTop="24dp"
+                android:text="@string/about_author" />
 
             <TextView
                 android:id="@+id/SourceCode"
@@ -330,13 +335,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/source_code" />
-
-            <TextView
-                android:id="@+id/Libraries"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/libraries" />
 
             <TextView
                 android:id="@+id/ViewLogs"

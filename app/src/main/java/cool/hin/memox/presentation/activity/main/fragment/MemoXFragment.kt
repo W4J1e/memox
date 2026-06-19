@@ -243,6 +243,23 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                 }
             }
         }
+        // Pull-down to reveal search bar
+        binding?.MainListView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                val firstVisible = layoutManager.findFirstVisibleItemPosition()
+                if (firstVisible == 0) {
+                    val navController = findNavController()
+                    if (navController.currentDestination?.id != R.id.Search) {
+                        val searchLayout = binding?.EnterSearchKeywordLayout
+                        if (searchLayout?.visibility != View.VISIBLE && dy < 0) {
+                            searchLayout?.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+        })
     }
 
     fun toggleSearchBar() {
