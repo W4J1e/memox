@@ -1,4 +1,0 @@
-* Fix Suche zurück Button
-
-* Fix Absturz bei Label Öffnen
-

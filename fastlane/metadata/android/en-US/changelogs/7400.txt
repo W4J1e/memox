@@ -1,8 +1,0 @@
-* Add disallow screenshots security setting
-
-* Fix Android 7 compatibility issues
-
-* Fix opening links
-
-* Fix delete checked items crash
-

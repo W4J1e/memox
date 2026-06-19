@@ -1,2 +1,0 @@
-Fehlerbehebung bei den Aktionen „Markieren“, „Beschriften“ und „Archivieren“ in der Notizansicht
-Fehlerbehebung beim Cursor-Verhalten bei „Rückgängig“ und „Wiederherstellen“

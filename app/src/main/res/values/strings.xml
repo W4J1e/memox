@@ -109,7 +109,7 @@
     <string name="daily">Daily</string>
     <string name="dark">Dark</string>
     <string name="data_in_public">Store data in public folder</string>
-    <string name="data">Data</string>
+    <string name="data">数据</string>
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/cool.hin.memox). In combination with file synchronization apps this can be used to synchronize memoX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
@@ -275,6 +275,7 @@
         <item quantity="other">…%1$d more files</item>
     </plurals>
     <string name="new_color">New Color</string>
+    <string name="navigation">Navigation</string>
     <string name="next">Next</string>
     <string name="no_auto_sort">No Autosort</string>
     <string name="none">None</string>

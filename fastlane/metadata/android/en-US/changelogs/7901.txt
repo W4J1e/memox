@@ -1,1 +1,0 @@
-- Restore Save buttons when editing txt files

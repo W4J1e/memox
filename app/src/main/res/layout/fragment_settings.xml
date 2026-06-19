@@ -82,10 +82,6 @@
                 android:id="@+id/TextSizeOverview"
                 layout="@layout/preference_seekbar" />
 
-            <include
-                android:id="@+id/ShowSearchInTopBar"
-                layout="@layout/preference" />
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -208,6 +204,35 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
+
+            <TextView
+                style="@style/PreferenceHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/navigation" />
+
+            <TextView
+                android:id="@+id/GoToDeleted"
+                style="@style/Preference"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/deleted"
+                android:drawableStart="@drawable/delete"
+                android:drawablePadding="16dp" />
+
+            <TextView
+                android:id="@+id/GoToReminders"
+                style="@style/Preference"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/reminders"
+                android:drawableStart="@drawable/notifications"
+                android:drawablePadding="16dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
 
             <TextView
                 style="@style/PreferenceHeader"

@@ -1,3 +1,0 @@
-- Auto Backup Fixes
-- Fix Widget gesperrt nach Neustart
-- Fix Widget Farbe passt sich System Theme an

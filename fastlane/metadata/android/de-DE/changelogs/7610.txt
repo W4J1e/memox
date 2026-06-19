@@ -1,3 +1,0 @@
-- Fix einzelne Notiz Export
-- Fix Backup Validierung wenn Backup-Passwort gesetzt ist
-- Sicherheitshinweis beim De-/Aktivieren der biometrischen Sperre
