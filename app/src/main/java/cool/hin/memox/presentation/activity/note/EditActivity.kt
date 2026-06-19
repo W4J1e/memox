@@ -1133,10 +1133,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     private fun showNoteLockScreen() {
         binding.ScrollView.visibility = GONE
-        // The per-note lock is a biometric/PIN gate only: it does not decrypt any per-note
-        // ciphertext (note contents live in the database, not encrypted per-note). Therefore it
-        // must NOT run in decrypt mode, which requires a non-null cipher IV and would NPE here.
-        // Use encrypt mode (no IV needed); the resulting cipher is unused by onSuccess.
         showBiometricOrPinPrompt(
             false,
             null,

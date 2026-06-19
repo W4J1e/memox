@@ -261,6 +261,23 @@ class NoteActionHandler(
     }
 
     private fun toggleNoteLock() {
+        if (!notallyModel.locked) {
+            // Locking the note: check if device has secure lock screen
+            val keyguardManager =
+                activity.getSystemService(Activity.KEYGUARD_SERVICE)
+                    as? android.app.KeyguardManager
+            if (keyguardManager?.isDeviceSecure == false) {
+                MaterialAlertDialogBuilder(activity)
+                    .setMessage(R.string.lock_note_no_device_lock)
+                    .setPositiveButton(R.string.tap_to_set_up) { _, _ ->
+                        val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
+                        activity.startActivity(intent)
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+                return
+            }
+        }
         notallyModel.locked = !notallyModel.locked
         activity.bindPinned()
     }
