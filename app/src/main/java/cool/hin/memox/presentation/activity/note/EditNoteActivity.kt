@@ -32,6 +32,7 @@ import cool.hin.memox.presentation.showKeyboard
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.note.TextFormattingAdapter
 import cool.hin.memox.presentation.viewmodel.preference.EditAction
+import cool.hin.memox.presentation.view.note.CheckboxSpan
 import cool.hin.memox.utils.LinkMovementMethod
 import cool.hin.memox.utils.copyToClipBoard
 import cool.hin.memox.utils.findAllOccurrences
@@ -187,20 +188,20 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     actionHandler.recordAudio()
                 }
             }
-            // Text format
-            textFormatMenu =
-                addIconButton(R.string.edit, R.drawable.text_format, colorInt) {
-                        initBottomTextFormattingMenu()
-                    }
-                    .apply { isEnabled = binding.EnterBody.isActionModeOn }
-            // Checkbox (insert list item)
+            // Checkbox (insert interactive checkbox)
             addIconButton(R.string.add_checkbox, R.drawable.checkbox, colorInt) {
                 insertCheckboxAtCursor()
             }
         }
-        // Right side: view/edit, lock, more
+        // Right side: text format, view/edit, lock, more
         binding.BottomAppBarRight.apply {
             removeAllViews()
+            // Text format
+            textFormatMenu =
+                addIconButton(R.string.edit, R.drawable.text_format, colorInt, marginStart = 0) {
+                        initBottomTextFormattingMenu()
+                    }
+                    .apply { isEnabled = binding.EnterBody.isActionModeOn }
             addBottomAction(preferences.editNoteActivityBottomAction.value)
             addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
                 actionHandler.handleAction(EditAction.LOCK_NOTE)
@@ -221,21 +222,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         val body = binding.EnterBody
         val text = body.text ?: return
         val selStart = body.selectionStart.coerceAtLeast(0)
-        val selEnd = body.selectionEnd.coerceAtLeast(0)
-        val checkboxText = "- [ ] "
-        // Find the start of the current line
         val lineStart = text.substring(0, selStart).lastIndexOf('\n') + 1
-        // Insert checkbox at line start if not already present
-        val lineContent = text.substring(lineStart, selEnd.coerceAtLeast(lineStart))
-        if (lineContent.trimStart().startsWith("- [") || lineContent.trimStart().startsWith("[✓]")) {
-            // Already a list item, add a new line with checkbox
-            text.insert(selEnd, "\n- [ ] ")
-            body.setSelection(selEnd + 6)
-        } else {
-            // Insert checkbox at beginning of current line
-            text.insert(lineStart, checkboxText)
-            body.setSelection(lineStart + checkboxText.length + (selEnd - selStart))
-        }
+        CheckboxSpan.insertCheckbox(text, lineStart)
+        body.setSelection(lineStart + 2)
     }
 
     private fun initBottomTextFormattingMenu() {

@@ -507,7 +507,9 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
     RESTORE(R.string.restore, R.drawable.restore),
     PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard),
-    LOCK_NOTE(R.string.lock_note, R.drawable.lock_big);
+    LOCK_NOTE(R.string.lock_note, R.drawable.lock_big),
+    ATTACH_FILE(R.string.attach_file, R.drawable.text_file),
+    LINK_NOTE(R.string.link_note, R.drawable.notebook);
 
     fun getTitleAndIcon(
         pinned: Boolean,

@@ -252,6 +252,8 @@ class NoteActionHandler(
             EditAction.DELETE_FOREVER -> deleteForever()
             EditAction.RESTORE -> restore()
             EditAction.LOCK_NOTE -> toggleNoteLock()
+            EditAction.ATTACH_FILE -> attachFiles()
+            EditAction.LINK_NOTE -> addNoteLink()
         }
     }
 
