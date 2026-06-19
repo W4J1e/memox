@@ -4,12 +4,12 @@ dev:
       runner:
         cpus: 8
       docker:
-        image: bitnami/android-sdk:latest
+        build:
+          dockerfile: Dockerfile.build
       stages:
         - name: build-apk
           script: |
-            export JAVA_HOME=/opt/bitnami/java
-            echo "sdk.dir=$ANDROID_SDK_HOME" > local.properties
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
             ./gradlew assembleDebug --no-daemon
         - name: upload-apk
           script: |

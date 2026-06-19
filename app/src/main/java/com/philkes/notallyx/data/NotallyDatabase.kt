@@ -163,7 +163,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                         Migration9,
                         Migration10,
                         Migration11,
-                        Migration12
+                        Migration12,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -334,9 +334,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         object Migration12 : Migration(11, 12) {
 
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL(
-                    "ALTER TABLE `BaseNote` ADD COLUMN `locked` INTEGER NOT NULL DEFAULT 0"
-                )
+                db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `locked` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }
