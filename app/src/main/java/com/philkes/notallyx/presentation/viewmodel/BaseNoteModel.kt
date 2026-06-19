@@ -605,6 +605,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(ids, pinned) }
     }
 
+    fun lockBaseNotes(locked: Boolean) {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLocked(ids, locked) }
+    }
+
     fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusBar: Boolean) {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)

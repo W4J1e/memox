@@ -22,6 +22,7 @@ import com.philkes.notallyx.data.model.getNoteTypeFromUrl
 import com.philkes.notallyx.data.model.isNoteUrl
 import com.philkes.notallyx.databinding.BottomTextFormattingMenuBinding
 import com.philkes.notallyx.databinding.RecyclerToggleBinding
+import com.philkes.notallyx.presentation.InlineImageSpan
 import com.philkes.notallyx.presentation.addIconButton
 import com.philkes.notallyx.presentation.dp
 import com.philkes.notallyx.presentation.hideKeyboard
@@ -228,52 +229,69 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     }
 
     private fun setupMovementMethod() {
-        val movementMethod = LinkMovementMethod { span ->
-            val items =
-                if (span.url.isNoteUrl()) {
-                    if (canEdit) {
-                        arrayOf(
-                            getString(R.string.open_note),
-                            getString(R.string.remove_link),
-                            getString(R.string.change_note),
-                            getString(R.string.edit),
-                        )
-                    } else arrayOf(getString(R.string.open_note))
-                } else {
-                    if (canEdit) {
-                        arrayOf(
-                            getString(R.string.open_link),
-                            getString(R.string.copy),
-                            getString(R.string.remove_link),
-                            getString(R.string.edit),
-                        )
-                    } else arrayOf(getString(R.string.open_link), getString(R.string.copy))
-                }
-            MaterialAlertDialogBuilder(this)
-                .setTitle(
-                    if (span.url.isNoteUrl())
-                        "${getString(R.string.note)}: ${
+        val movementMethod =
+            LinkMovementMethod(
+                onClick = { span ->
+                    val items =
+                        if (span.url.isNoteUrl()) {
+                            if (canEdit) {
+                                arrayOf(
+                                    getString(R.string.open_note),
+                                    getString(R.string.remove_link),
+                                    getString(R.string.change_note),
+                                    getString(R.string.edit),
+                                )
+                            } else arrayOf(getString(R.string.open_note))
+                        } else {
+                            if (canEdit) {
+                                arrayOf(
+                                    getString(R.string.open_link),
+                                    getString(R.string.copy),
+                                    getString(R.string.remove_link),
+                                    getString(R.string.edit),
+                                )
+                            } else arrayOf(getString(R.string.open_link), getString(R.string.copy))
+                        }
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle(
+                            if (span.url.isNoteUrl())
+                                "${getString(R.string.note)}: ${
                             binding.EnterBody.getSpanText(span)
                         }"
-                    else span.url
-                )
-                .setItems(items) { _, which ->
-                    when (which) {
-                        0 -> openLink(span)
-                        1 ->
-                            if (span.url.isNoteUrl()) {
-                                removeLink(span)
-                            } else copyLink(span)
-                        2 ->
-                            if (span.url.isNoteUrl()) {
-                                actionHandler.updateNoteLink(span)
-                            } else removeLink(span)
-                        3 -> editLink(span)
-                    }
-                }
-                .show()
-        }
+                            else span.url
+                        )
+                        .setItems(items) { _, which ->
+                            when (which) {
+                                0 -> openLink(span)
+                                1 ->
+                                    if (span.url.isNoteUrl()) {
+                                        removeLink(span)
+                                    } else copyLink(span)
+                                2 ->
+                                    if (span.url.isNoteUrl()) {
+                                        actionHandler.updateNoteLink(span)
+                                    } else removeLink(span)
+                                3 -> editLink(span)
+                            }
+                        }
+                        .show()
+                },
+                onImageClick = { span -> openInlineImage(span) },
+            )
         binding.EnterBody.movementMethod = movementMethod
+    }
+
+    private fun openInlineImage(span: InlineImageSpan) {
+        val position =
+            notallyModel.images.value
+                .indexOfFirst { it.localName == span.attachment.localName }
+                .coerceAtLeast(0)
+        val intent =
+            Intent(this, ViewImageActivity::class.java).apply {
+                putExtra(ViewImageActivity.EXTRA_POSITION, position)
+                putExtra(EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
+            }
+        actionHandler.viewImagesActivityResultLauncher.launch(intent)
     }
 
     private fun openLink(span: URLSpan) {

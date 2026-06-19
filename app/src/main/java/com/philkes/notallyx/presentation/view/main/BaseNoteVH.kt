@@ -117,7 +117,7 @@ class BaseNoteVH(
             setTextSizeSp(preferences.textSize.displaySmallerSize)
         }
 
-        setImages(baseNote.images, imageRoot)
+        setImages(baseNote.images, imageRoot, baseNote.type == Type.NOTE && !baseNote.locked)
         setFiles(baseNote.files)
 
         binding.Title.apply {
@@ -196,9 +196,13 @@ class BaseNoteVH(
             // text. The full images are still shown via setImages(..) below.
             text = body.applySpans(spans).withoutImagePlaceholders()
             if (preferences.maxLines < 1) {
+                // "Hide body" preference: only show a single body line when the title is empty.
                 isVisible = isTitleEmpty
                 maxLines = if (isTitleEmpty) 1 else preferences.maxLines
             } else {
+                // Always show exactly one line of body in the overview, regardless of how long the
+                // note is.
+                maxLines = 1
                 isVisible = body.isNotEmpty()
             }
         }
@@ -311,14 +315,27 @@ class BaseNoteVH(
         }
     }
 
-    private fun setImages(images: List<FileAttachment>, mediaRoot: File?) {
+    private fun setImages(images: List<FileAttachment>, mediaRoot: File?, showThumbnail: Boolean) {
         binding.apply {
-            // Always hide images in overview to avoid OBJ icon display issue
+            // Always hide the legacy top gallery and its placeholders in the overview.
             ImageLayout.visibility = GONE
             Message.visibility = GONE
             ImageViewMore.visibility = GONE
             ImageView.visibility = GONE
             Glide.with(ImageView.context).clear(ImageView)
+
+            // Show the first image as a small thumbnail on the right of the card. Only for NOTE
+            // notes (LIST notes' item list is full-width and would overlap) and never for locked
+            // notes (which hide all content).
+            val firstImage = images.firstOrNull()
+            if (showThumbnail && firstImage != null && mediaRoot != null) {
+                val file = File(mediaRoot, firstImage.localName)
+                NoteThumbnail.visibility = VISIBLE
+                Glide.with(NoteThumbnail.context).load(file).centerCrop().into(NoteThumbnail)
+            } else {
+                NoteThumbnail.visibility = GONE
+                Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+            }
         }
     }
 

@@ -42,6 +42,13 @@ class ModelFolderObserver(
         menu.clear()
         model.actionMode.count.removeObservers(activity)
 
+        // Lock toggle, placed left of "select all". Available everywhere except the trash, where
+        // locking a deleted note does not make sense.
+        val lock: MenuItem? =
+            if (value != Folder.DELETED) {
+                menu.add(R.string.lock_note, R.drawable.lock_big, MenuItem.SHOW_AS_ACTION_ALWAYS) {}
+            } else null
+
         menu.add(
             R.string.select_all,
             R.drawable.select_all,
@@ -50,13 +57,13 @@ class ModelFolderObserver(
             activity.getCurrentFragmentNotes?.invoke()?.let { model.actionMode.add(it) }
         }
         when (value) {
-            Folder.NOTES -> initNotesFolderMenu()
-            Folder.ARCHIVED -> initArchivedFolderMenu()
+            Folder.NOTES -> initNotesFolderMenu(lock)
+            Folder.ARCHIVED -> initArchivedFolderMenu(lock)
             Folder.DELETED -> initDeletedFolderMenu()
         }
     }
 
-    private fun initNotesFolderMenu() {
+    private fun initNotesFolderMenu(lock: MenuItem?) {
         val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -68,10 +75,10 @@ class ModelFolderObserver(
         val pinnedToStatus = menu.addPinnedToStatus()
         val share = menu.addShare()
         menu.addExportMenu()
-        model.actionMode.count.observeCountAndPinned(activity, share, pinned, pinnedToStatus)
+        model.actionMode.count.observeCountAndPinned(activity, share, pinned, pinnedToStatus, lock)
     }
 
-    private fun initArchivedFolderMenu() {
+    private fun initArchivedFolderMenu(lock: MenuItem?) {
         menu.add(R.string.unarchive, R.drawable.unarchive, MenuItem.SHOW_AS_ACTION_ALWAYS) {
             moveNotes(Folder.NOTES)
         }
@@ -84,7 +91,7 @@ class ModelFolderObserver(
         menu.addLabels()
         menu.addChangeColor()
         val share = menu.addShare()
-        model.actionMode.count.observeCountAndPinned(activity, share, pinned, null)
+        model.actionMode.count.observeCountAndPinned(activity, share, pinned, null, lock)
     }
 
     private fun initDeletedFolderMenu() {
@@ -193,6 +200,7 @@ class ModelFolderObserver(
         share: MenuItem,
         pinned: MenuItem,
         pinnedToStatus: MenuItem?,
+        lock: MenuItem? = null,
     ) {
         observeCount(lifecycleOwner, share) {
             val baseNotes = model.actionMode.selectedNotes.values
@@ -203,6 +211,17 @@ class ModelFolderObserver(
             } else {
                 pinned.setTitle(R.string.unpin).setIcon(R.drawable.unpin).onClick {
                     model.pinBaseNotes(false)
+                }
+            }
+            lock?.let {
+                if (baseNotes.any { !it.locked }) {
+                    lock.setTitle(R.string.lock_note).setIcon(R.drawable.lock_big).onClick {
+                        model.lockBaseNotes(true)
+                    }
+                } else {
+                    lock.setTitle(R.string.unlock_note).setIcon(R.drawable.lock_open).onClick {
+                        model.lockBaseNotes(false)
+                    }
                 }
             }
             pinnedToStatus?.let {

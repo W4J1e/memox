@@ -106,7 +106,13 @@ class NoteActionHandler(
                             )
                         }
                     if (!list.isNullOrEmpty()) {
-                        notallyModel.deleteImages(list)
+                        if (notallyModel.type == Type.NOTE) {
+                            // NOTE-type notes keep images inline in the body: removing an image
+                            // from the full-screen viewer must also drop its placeholder.
+                            activity.deleteInlineImages(list)
+                        } else {
+                            notallyModel.deleteImages(list)
+                        }
                     }
                 }
             }
