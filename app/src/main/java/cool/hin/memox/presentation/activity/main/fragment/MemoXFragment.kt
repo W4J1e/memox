@@ -250,7 +250,7 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                 val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
                 val firstVisible = layoutManager.findFirstVisibleItemPosition()
                 if (firstVisible == 0) {
-                    val navController = findNavController()
+                    val navController = recyclerView.findNavController()
                     if (navController.currentDestination?.id != R.id.Search) {
                         val searchLayout = binding?.EnterSearchKeywordLayout
                         if (searchLayout?.visibility != View.VISIBLE && dy < 0) {
