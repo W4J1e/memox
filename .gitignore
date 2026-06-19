@@ -12,3 +12,5 @@ fastlane/report.xml
 Gemfile*
 *.sh
 !generate-changelogs.sh
+*.jks
+*.keystore
