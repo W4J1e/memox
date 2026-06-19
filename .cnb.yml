@@ -3,29 +3,13 @@ dev:
     - name: build-debug-apk
       runner:
         cpus: 8
+      docker:
+        build:
+          dockerfile: Dockerfile.build
       stages:
-        - name: setup-env
-          script: |
-            apt-get update && apt-get install -y wget unzip openjdk-17-jdk-headless 2>/dev/null || true
-            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-            mkdir -p /opt/android-sdk/cmdline-tools
-            cd /opt/android-sdk
-            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmd.zip
-            unzip -q cmd.zip
-            mkdir -p latest/cmdline-tools
-            mv cmdline-tools latest/cmdline-tools/
-            rm cmd.zip
-            export ANDROID_HOME=/opt/android-sdk/latest
-            export PATH=$PATH:$ANDROID_HOME/latest/cmdline-tools/cmdline-tools/bin
-            yes | sdkmanager --licenses 2>/dev/null || true
-            sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
-            echo "sdk.dir=$ANDROID_HOME" > local.properties
-            echo "JAVA_HOME=$JAVA_HOME" >> local.properties
-            echo "ANDROID_HOME=$ANDROID_HOME" >> local.properties
         - name: build-apk
           script: |
-            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-            export ANDROID_HOME=/opt/android-sdk/latest
+            echo "sdk.dir=$ANDROID_HOME" > local.properties
             ./gradlew assembleDebug --no-daemon
         - name: upload-apk
           script: |
