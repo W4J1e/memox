@@ -31,7 +31,7 @@ import cool.hin.memox.presentation.setOnNextAction
 import cool.hin.memox.presentation.showKeyboard
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.note.TextFormattingAdapter
-import cool.hin.memox.presentation.view.note.action.AddNoteBottomSheet
+import cool.hin.memox.presentation.viewmodel.preference.EditAction
 import cool.hin.memox.utils.LinkMovementMethod
 import cool.hin.memox.utils.copyToClipBoard
 import cool.hin.memox.utils.findAllOccurrences
@@ -173,22 +173,69 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     }
 
     override fun initBottomMenu() {
-        super.initBottomMenu()
-        binding.BottomAppBarCenter.visibility = VISIBLE
+        binding.BottomAppBarCenter.visibility = GONE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            addIconButton(R.string.add_item, R.drawable.add, colorInt, marginStart = 0) {
-                AddNoteBottomSheet(actionHandler, colorInt)
-                    .show(supportFragmentManager, AddNoteBottomSheet.TAG)
-            }
             updateLayoutParams<ConstraintLayout.LayoutParams> { endToStart = -1 }
+            // Image
+            addIconButton(R.string.add_images, R.drawable.add_images, colorInt, marginStart = 0) {
+                actionHandler.addImages()
+            }
+            // Recording
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                addIconButton(R.string.record_audio, R.drawable.record_audio, colorInt) {
+                    actionHandler.recordAudio()
+                }
+            }
+            // Text format
             textFormatMenu =
                 addIconButton(R.string.edit, R.drawable.text_format, colorInt) {
                         initBottomTextFormattingMenu()
                     }
                     .apply { isEnabled = binding.EnterBody.isActionModeOn }
+            // Checkbox (insert list item)
+            addIconButton(R.string.add_checkbox, R.drawable.checkbox, colorInt) {
+                insertCheckboxAtCursor()
+            }
+        }
+        // Right side: view/edit, lock, more
+        binding.BottomAppBarRight.apply {
+            removeAllViews()
+            addBottomAction(preferences.editNoteActivityBottomAction.value)
+            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
+                actionHandler.handleAction(EditAction.LOCK_NOTE)
+            }
+            addIconButton(
+                R.string.tap_for_more_options,
+                R.drawable.more_vert,
+                colorInt,
+                marginStart = 0,
+            ) {
+                openMoreOptionsBottomSheet()
+            }
         }
         setBottomAppBarColor(colorInt)
+    }
+
+    private fun insertCheckboxAtCursor() {
+        val body = binding.EnterBody
+        val selStart = body.selectionStart
+        val selEnd = body.selectionEnd
+        val checkboxText = "- [ ] "
+        val text = body.text
+        // Find the start of the current line
+        val lineStart = text.substring(0, selStart.coerceAtLeast(0)).lastIndexOf('\n') + 1
+        // Insert checkbox at line start if not already present
+        val lineContent = text.substring(lineStart, selEnd.coerceAtLeast(lineStart))
+        if (lineContent.trimStart().startsWith("- [") || lineContent.trimStart().startsWith("[✓]")) {
+            // Already a list item, add a new line with checkbox
+            text.insert(selEnd, "\n- [ ] ")
+            body.setSelection(selEnd + 6)
+        } else {
+            // Insert checkbox at beginning of current line
+            text.insert(lineStart, checkboxText)
+            body.setSelection(lineStart + checkboxText.length + (selEnd - selStart))
+        }
     }
 
     private fun initBottomTextFormattingMenu() {

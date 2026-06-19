@@ -30,6 +30,8 @@ class MoreNoteBottomSheet(
                 allPossibleActions.filter {
                     it !in topActions &&
                         it != bottomAction &&
+                        it != EditAction.CONVERT &&
+                        it != EditAction.LOCK_NOTE &&
                         (it != EditAction.RESTORE || model.folder == Folder.DELETED)
                 }
 
