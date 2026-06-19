@@ -12,8 +12,9 @@ dev:
             echo "sdk.dir=$ANDROID_HOME" > local.properties
             ./gradlew assembleDebug --no-daemon
         - name: upload-apk
-          image: cnbcool/default-build-env
+          image: node:20
           script: |
+            npm install -g @cnbcool/cnb-cli 2>/dev/null
             APK_PATH=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -1)
             echo "Found APK: $APK_PATH"
             cnb issues upload-file --file "$APK_PATH"
