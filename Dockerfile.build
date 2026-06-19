@@ -1,0 +1,32 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install JDK 17 and basic tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    openjdk-17-jdk-headless \
+    wget \
+    unzip \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+# Install Android SDK
+RUN mkdir -p /opt/android-sdk && \
+    cd /opt/android-sdk && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip && \
+    unzip -q cmdline-tools.zip && \
+    mkdir -p latest/cmdline-tools && \
+    mv cmdline-tools latest/cmdline-tools/ && \
+    rm cmdline-tools.zip
+
+ENV ANDROID_HOME=/opt/android-sdk/latest
+ENV PATH=$PATH:$ANDROID_HOME/latest/cmdline-tools/cmdline-tools/bin
+
+# Accept licenses and install required SDK components
+RUN yes | sdkmanager --licenses && \
+    sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+ENV GRADLE_HOME=/opt/gradle
