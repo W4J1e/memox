@@ -219,12 +219,12 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     private fun insertCheckboxAtCursor() {
         val body = binding.EnterBody
-        val selStart = body.selectionStart
-        val selEnd = body.selectionEnd
+        val text = body.text ?: return
+        val selStart = body.selectionStart.coerceAtLeast(0)
+        val selEnd = body.selectionEnd.coerceAtLeast(0)
         val checkboxText = "- [ ] "
-        val text = body.text
         // Find the start of the current line
-        val lineStart = text.substring(0, selStart.coerceAtLeast(0)).lastIndexOf('\n') + 1
+        val lineStart = text.substring(0, selStart).lastIndexOf('\n') + 1
         // Insert checkbox at line start if not already present
         val lineContent = text.substring(lineStart, selEnd.coerceAtLeast(lineStart))
         if (lineContent.trimStart().startsWith("- [") || lineContent.trimStart().startsWith("[✓]")) {

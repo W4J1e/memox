@@ -243,7 +243,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 excludeTarget(binding.NavHostFragment, true)
                 excludeChildren(binding.NavHostFragment, true)
                 excludeTarget(binding.TakeNote, true)
-                excludeTarget(binding.MakeList, true)
             }
 
         baseModel.actionMode.enabled.observe(this) { enabled ->
@@ -295,11 +294,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 R.id.Notes,
                 R.id.DisplayLabel -> {
                     binding.TakeNote.show()
-                    binding.MakeList.show()
                 }
                 else -> {
                     binding.TakeNote.hide()
-                    binding.MakeList.hide()
                 }
             }
             isStartViewFragment = isStartViewFragment(destination.id, bundle)
