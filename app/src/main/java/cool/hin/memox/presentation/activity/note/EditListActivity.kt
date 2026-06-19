@@ -3,11 +3,16 @@ package cool.hin.memox.presentation.activity.note
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.View.GONE
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
+import cool.hin.memox.R
 import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
+import cool.hin.memox.presentation.addIconButton
 import cool.hin.memox.presentation.hideKeyboardOnFocusedItem
 import cool.hin.memox.presentation.setOnNextAction
 import cool.hin.memox.presentation.showKeyboardOnFocusedItem
@@ -94,7 +99,7 @@ class EditListActivity : EditActivity(Type.LIST) {
         binding.BottomAppBarCenter.visibility = GONE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
-            updateLayoutParams<androidx.constraintlayout.widget.ConstraintLayout.LayoutParams> { endToStart = -1 }
+            updateLayoutParams<ConstraintLayout.LayoutParams> { endToStart = -1 }
             // Image
             addIconButton(R.string.add_images, R.drawable.add_images, colorInt, marginStart = 0) {
                 actionHandler.addImages()
