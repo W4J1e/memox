@@ -247,7 +247,6 @@ class NoteActionHandler(
             }
             EditAction.SHARE -> share()
             EditAction.DELETE -> delete()
-            EditAction.ARCHIVE -> archive()
             EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
             EditAction.CONVERT -> convertTo()
             EditAction.DELETE_FOREVER -> deleteForever()
@@ -363,14 +362,6 @@ class NoteActionHandler(
 
     private fun restore() {
         moveNote(Folder.NOTES)
-    }
-
-    private fun archive() {
-        if (notallyModel.folder == Folder.ARCHIVED) {
-            restore()
-        } else {
-            moveNote(Folder.ARCHIVED)
-        }
     }
 
     private fun moveNote(toFolder: Folder) {

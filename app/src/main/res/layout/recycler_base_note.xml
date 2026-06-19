@@ -194,6 +194,7 @@
             android:scaleType="centerCrop"
             android:visibility="gone"
             app:layout_constraintTop_toTopOf="@id/Title"
+            app:layout_constraintBottom_toBottomOf="@id/Note"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <LinearLayout

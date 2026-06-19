@@ -17,13 +17,16 @@ dev:
             npm install -g @cnbcool/cnb-cli 2>/dev/null
             APK_PATH=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -1)
             echo "Found APK: $APK_PATH"
-            ZIP_PATH="/tmp/NotallyX-debug-apk.zip"
-            cd $(dirname "$APK_PATH") && zip "$ZIP_PATH" $(basename "$APK_PATH")
-            ZIP_SIZE=$(stat -c%s "$ZIP_PATH")
-            echo "ZIP: $ZIP_PATH, Size: $ZIP_SIZE bytes"
+            if [ -z "$APK_PATH" ]; then
+              echo "No APK found, aborting upload"
+              exit 1
+            fi
+            APK_NAME=$(basename "$APK_PATH")
+            APK_SIZE=$(stat -c%s "$APK_PATH")
+            echo "APK: $APK_PATH, Size: $APK_SIZE bytes"
             RESPONSE=$(cnb issues post-issue-comment-file-asset-upload-url \
               --repo "hin/NotallyX" --number 4 \
-              --name "NotallyX-debug-apk.zip" --size "$ZIP_SIZE" --verbose 2>&1)
+              --name "$APK_NAME" --size "$APK_SIZE" --verbose 2>&1)
             echo "Upload URL response: $RESPONSE"
             UPLOAD_URL=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['upload_url'])" 2>/dev/null)
             ASSET_LINK=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['asset_link'])" 2>/dev/null)
@@ -31,9 +34,9 @@ dev:
               echo "Failed to get upload URL"
               exit 1
             fi
-            echo "Uploading ZIP to: $UPLOAD_URL"
-            curl -s -X PUT "$UPLOAD_URL" -H "Content-Type: application/octet-stream" --data-binary @"$ZIP_PATH"
+            echo "Uploading APK to: $UPLOAD_URL"
+            curl -s -X PUT "$UPLOAD_URL" -H "Content-Type: application/vnd.android.package-archive" --data-binary @"$APK_PATH"
             echo "Upload complete. Asset link: $ASSET_LINK"
             cnb issues comment --repo "hin/NotallyX" --number 4 \
-              --body "📦 Debug APK 构建完成（zip 压缩包，下载后解压即可安装）：$ASSET_LINK"
+              --body "📦 Debug APK 构建完成（直接下载 .apk 即可安装）：$ASSET_LINK"
             echo "Comment posted to issue #4"

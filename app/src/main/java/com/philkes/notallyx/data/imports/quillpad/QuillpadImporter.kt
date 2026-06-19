@@ -161,7 +161,6 @@ class QuillpadImporter : ExternalImporter {
             folder =
                 when {
                     isDeleted -> Folder.DELETED
-                    isArchived -> Folder.ARCHIVED
                     else -> Folder.NOTES
                 },
             color = BaseNote.COLOR_DEFAULT,
