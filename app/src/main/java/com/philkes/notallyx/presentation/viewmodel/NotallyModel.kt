@@ -2,7 +2,9 @@ package com.philkes.notallyx.presentation.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.text.Editable
 import android.text.SpannableStringBuilder
@@ -16,6 +18,7 @@ import androidx.core.text.getSpans
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.bumptech.glide.Glide
 import com.philkes.notallyx.R
 import com.philkes.notallyx.data.NotallyDatabase
 import com.philkes.notallyx.data.dao.BaseNoteDao
@@ -33,6 +36,8 @@ import com.philkes.notallyx.data.model.Type
 import com.philkes.notallyx.data.model.attachmentsDifferFrom
 import com.philkes.notallyx.data.model.copy
 import com.philkes.notallyx.data.model.deepCopy
+import com.philkes.notallyx.presentation.IMAGE_PLACEHOLDER
+import com.philkes.notallyx.presentation.InlineImageSpan
 import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver
 import com.philkes.notallyx.presentation.activity.note.reminders.RemindersActivity.Companion.NEW_REMINDER_ID
 import com.philkes.notallyx.presentation.applySpans
@@ -43,6 +48,7 @@ import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreference
 import com.philkes.notallyx.presentation.viewmodel.preference.TextSizeSp
 import com.philkes.notallyx.presentation.viewmodel.progress.AddFilesProgress
 import com.philkes.notallyx.presentation.widget.WidgetProvider
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 import com.philkes.notallyx.utils.Cache
 import com.philkes.notallyx.utils.Event
 import com.philkes.notallyx.utils.FileError
@@ -56,6 +62,7 @@ import com.philkes.notallyx.utils.getCurrentAudioDirectory
 import com.philkes.notallyx.utils.getCurrentFilesDirectory
 import com.philkes.notallyx.utils.getCurrentImagesDirectory
 import com.philkes.notallyx.utils.getTempAudioFile
+import com.philkes.notallyx.utils.log
 import com.philkes.notallyx.utils.scheduleReminder
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -222,6 +229,157 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Imports the given image [uris] without touching the `images` list. The imported
+     * [FileAttachment]s are handed to [onInserted] (on the main thread) so the caller can insert
+     * them inline into the note body. Used for NOTE-type notes where images live in the body.
+     */
+    fun importImages(uris: Array<Uri>, onInserted: (List<FileAttachment>) -> Unit) {
+        imageRoot = app.getCurrentImagesDirectory()
+        requireNotNull(imageRoot) { "imageRoot is null" }
+        val directory = imageRoot!!
+        viewModelScope.launch {
+            addingFiles.postValue(AddFilesProgress(0, uris.size))
+            val successes = ArrayList<FileAttachment>()
+            val errors = ArrayList<FileError>()
+            uris.forEachIndexed { index, uri ->
+                val (fileAttachment, error) =
+                    app.importFile(
+                        uri,
+                        directory,
+                        FileType.IMAGE,
+                        R.string.error_while_renaming_image,
+                    )
+                fileAttachment?.let { successes.add(it) }
+                error?.let { errors.add(it) }
+                addingFiles.postValue(AddFilesProgress(index + 1, uris.size))
+            }
+            addingFiles.postValue(AddFilesProgress(inProgress = false))
+            if (successes.isNotEmpty()) {
+                onInserted(successes)
+            }
+            if (errors.isNotEmpty()) {
+                eventBus.value = Event(errors)
+            }
+        }
+    }
+
+    /**
+     * Re-derives the `images` list from the [body]'s [InlineImageSpan]s (in text order). The N-th
+     * [IMAGE_PLACEHOLDER] maps to the N-th image: if a span is present its [FileAttachment] is
+     * used, otherwise the existing list entry at that index is reused as a fallback (this keeps
+     * images intact even when spans are temporarily absent, e.g. after undo/redo on very large
+     * notes whose state was compressed). No image files are deleted here ? orphaned files are
+     * cleaned up later by [com.philkes.notallyx.utils.CleanupMissingAttachmentsWorker].
+     */
+    fun syncImagesFromBody() {
+        if (type != Type.NOTE) {
+            return
+        }
+        val current = images.value
+        val text = body
+        val result = ArrayList<FileAttachment>()
+        var placeholderIdx = 0
+        for (i in 0 until text.length) {
+            if (text[i] == IMAGE_PLACEHOLDER) {
+                val span = text.getSpans(i, i + 1, InlineImageSpan::class.java).firstOrNull()
+                val attachment = span?.attachment ?: current.getOrNull(placeholderIdx)
+                if (attachment != null) {
+                    result.add(attachment)
+                }
+                placeholderIdx++
+            }
+        }
+        if (result != current) {
+            images.value = result
+            viewModelScope.launch { updateImages() }
+        }
+    }
+
+    /**
+     * Ensures the body contains one [IMAGE_PLACEHOLDER] per image (appending placeholders at the
+     * end for legacy notes whose images used to live in the top gallery) and attaches an
+     * [InlineImageSpan] to each placeholder. Must run after the body and `images` have been loaded
+     * in [setState] and before the body is bound to the editor.
+     */
+    private suspend fun reconcileAndAttachInlineImages() {
+        if (type != Type.NOTE) {
+            return
+        }
+        val imgs = images.value
+        if (imgs.isEmpty()) {
+            return
+        }
+        val textStr = body.toString()
+        val placeholderCount = textStr.count { it == IMAGE_PLACEHOLDER }
+        if (placeholderCount < imgs.size) {
+            // Legacy migration: images existed only in the gallery list, not inline in the body.
+            // Append a placeholder for each missing image so it renders inline at the end.
+            val toAppend = imgs.size - placeholderCount
+            val builder = SpannableStringBuilder(body)
+            repeat(toAppend) { builder.append(IMAGE_PLACEHOLDER) }
+            body = builder
+        }
+        val finalText = body.toString()
+        val positions = ArrayList<Int>()
+        for (i in finalText.indices) {
+            if (finalText[i] == IMAGE_PLACEHOLDER) {
+                positions.add(i)
+            }
+        }
+        val spansToAttach =
+            withContext(Dispatchers.IO) {
+                positions.mapIndexedNotNull { index, pos ->
+                    if (index >= imgs.size) {
+                        null
+                    } else {
+                        loadInlineImageSpan(imgs[index])?.let { pos to it }
+                    }
+                }
+            }
+        for ((pos, span) in spansToAttach) {
+            try {
+                body.setSpan(span, pos, pos + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            } catch (_: Exception) {
+                // Ignore spans that fail to attach (e.g. index out of bounds after edits).
+            }
+        }
+    }
+
+    /**
+     * Loads the bitmap for [attachment] (scaled to fit the editor width) and wraps it in an
+     * [InlineImageSpan]. Must be called off the main thread.
+     */
+    fun loadInlineImageSpan(attachment: FileAttachment): InlineImageSpan? {
+        val root = imageRoot ?: return null
+        val file = File(root, attachment.localName)
+        if (!file.exists()) {
+            return null
+        }
+        val targetWidthPx = maxInlineImageWidthPx()
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            val originalWidth = bounds.outWidth.coerceAtLeast(1)
+            val originalHeight = bounds.outHeight.coerceAtLeast(1)
+            val targetHeightPx =
+                (targetWidthPx.toLong() * originalHeight / originalWidth).toInt().coerceAtLeast(1)
+            val bitmap =
+                Glide.with(app).asBitmap().load(file).submit(targetWidthPx, targetHeightPx).get()
+            val drawable = BitmapDrawable(app.resources, bitmap)
+            drawable.setBounds(0, 0, bitmap.width, bitmap.height)
+            InlineImageSpan(drawable, attachment)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun maxInlineImageWidthPx(): Int {
+        val displayWidth = app.resources.displayMetrics.widthPixels
+        val density = app.resources.displayMetrics.density
+        return (displayWidth - 32 * density).toInt().coerceIn(200, displayWidth)
+    }
+
     fun setLabels(list: List<String>) {
         labels.clear()
         labels.addAll(list)
@@ -260,6 +418,12 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 viewMode.value = baseNote.viewMode
                 isPinnedToStatus = baseNote.isPinnedToStatus
                 locked = baseNote.locked
+                try {
+                    reconcileAndAttachInlineImages()
+                } catch (e: Exception) {
+                    // Image attachment must never prevent the note from loading.
+                    app.log("NotallyModel", msg = "Failed to attach inline images", throwable = e)
+                }
             } else {
                 originalNote = createBaseNote(createInDb)
                 app.showToast(R.string.cant_find_note)
@@ -476,7 +640,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 setItems(ArrayList())
             }
             Type.LIST -> {
-                val text = body.toString()
+                val text = body.toString().withoutImagePlaceholders()
                 val listSyntaxRegex =
                     text.findListSyntaxRegex(checkContains = true, plainNewLineAllowed = true)
                 if (listSyntaxRegex != null) {

@@ -85,11 +85,11 @@ class NoteActionHandler(
                     val clipData = result.data?.clipData
                     if (uri != null) {
                         val uris = arrayOf(uri)
-                        notallyModel.addImages(uris)
+                        addImages(uris)
                     } else if (clipData != null) {
                         val uris =
                             Array(clipData.itemCount) { index -> clipData.getItemAt(index).uri }
-                        notallyModel.addImages(uris)
+                        addImages(uris)
                     }
                 }
             }
@@ -465,6 +465,18 @@ class NoteActionHandler(
                     .wrapWithChooser(activity)
             addImagesActivityResultLauncher.launch(intent)
         } else activity.showToast(R.string.insert_an_sd_card_images)
+    }
+
+    /**
+     * Handles the image picker result. NOTE-type notes insert images inline into the body;
+     * LIST-type notes keep using the top image gallery (a list has no body to inline into).
+     */
+    private fun addImages(uris: Array<Uri>) {
+        if (notallyModel.type == Type.NOTE) {
+            activity.insertImagesInline(uris)
+        } else {
+            notallyModel.addImages(uris)
+        }
     }
 
     fun attachFiles() {

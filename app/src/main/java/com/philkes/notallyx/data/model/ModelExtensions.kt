@@ -17,6 +17,7 @@ import com.philkes.notallyx.presentation.applySpans
 import com.philkes.notallyx.presentation.getQuantityStringPlain
 import com.philkes.notallyx.presentation.showToast
 import com.philkes.notallyx.presentation.viewmodel.NotallyModel
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 import com.philkes.notallyx.utils.decodeToBitmap
 import com.philkes.notallyx.utils.getFileName
 import com.philkes.notallyx.utils.getMimeType
@@ -208,7 +209,7 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
 
     when (type) {
         Type.NOTE -> {
-            val body = body.applySpans(spans).toHtml()
+            val body = body.applySpans(spans).withoutImagePlaceholders().toHtml()
             append(body)
         }
 
@@ -247,7 +248,7 @@ fun List<BaseNote>.toNoteIdReminders() = map { NoteIdReminder(it.id, it.reminder
 fun BaseNote.toMarkdown(): String = buildString {
     when (type) {
         Type.NOTE -> {
-            append(createMarkdownFromBodyAndSpans(body, spans))
+            append(createMarkdownFromBodyAndSpans(body, spans).withoutImagePlaceholders())
         }
         Type.LIST -> {
             append(items.toMarkdownChecklist())
@@ -559,7 +560,7 @@ fun Date.toCalendar() = Calendar.getInstance().apply { timeInMillis = this@toCal
 
 fun List<ListItem>.toText() = buildString {
     for (item in this@toText) {
-        val check = if (item.checked) "[✓]" else "[ ]"
+        val check = if (item.checked) "[?]" else "[ ]"
         val childIndentation = if (item.isChild) "    " else ""
         appendLine("$childIndentation$check ${item.body}")
     }

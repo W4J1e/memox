@@ -48,6 +48,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     override fun configureUI() {
         binding.EnterTitle.setOnNextAction { binding.EnterBody.requestFocus() }
 
+        // NOTE-type notes render images inline in the body, so the top image gallery is hidden.
+        binding.ImageLayout.visibility = GONE
+
         if (notallyModel.isNewNote) {
             binding.EnterBody.requestFocus()
         }
@@ -100,6 +103,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         binding.EnterBody.initHistory(changeHistory) { text ->
             val textChanged = !notallyModel.body.toString().contentEquals(text)
             notallyModel.body = text
+            notallyModel.syncImagesFromBody()
             if (textChanged) {
                 updateSearchResults(search.query)
                 updateJumpButtonsVisibility()

@@ -20,6 +20,7 @@ import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.extract
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetCheckedChangeIntent
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetOpenNoteIntent
 import com.philkes.notallyx.presentation.widget.WidgetProvider.Companion.getWidgetSelectNoteIntent
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 
 class WidgetFactory(
     private val app: NotallyXApplication,
@@ -76,8 +77,9 @@ class WidgetFactory(
             val bodyTextSize = textSize.displayBodySize
 
             setTextViewTextSize(R.id.Note, TypedValue.COMPLEX_UNIT_SP, bodyTextSize)
-            if (note.body.isNotEmpty()) {
-                setTextViewText(R.id.Note, note.body)
+            val displayBody = note.body.withoutImagePlaceholders()
+            if (displayBody.isNotEmpty()) {
+                setTextViewText(R.id.Note, displayBody)
                 setViewVisibility(R.id.Note, View.VISIBLE)
             } else setViewVisibility(R.id.Note, View.GONE)
 

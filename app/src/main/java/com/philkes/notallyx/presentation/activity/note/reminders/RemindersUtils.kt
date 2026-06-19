@@ -9,6 +9,7 @@ import com.philkes.notallyx.R
 import com.philkes.notallyx.data.model.BaseNote
 import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver.Companion.EXTRA_NOTE_ID
 import com.philkes.notallyx.presentation.activity.note.reminders.ReminderReceiver.Companion.EXTRA_REMINDER_ID
+import com.philkes.notallyx.presentation.withoutImagePlaceholders
 import com.philkes.notallyx.utils.getOpenNotePendingIntent
 
 fun Context.createNotification(
@@ -27,14 +28,14 @@ fun Context.createNotification(
         if (note.type == com.philkes.notallyx.data.model.Type.LIST) {
             note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
         } else {
-            note.body
+            note.body.withoutImagePlaceholders()
         }
 
     val bigText =
         if (note.type == com.philkes.notallyx.data.model.Type.LIST) {
             note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
         } else {
-            note.body
+            note.body.withoutImagePlaceholders()
         }
     val notification =
         NotificationCompat.Builder(this, channelId)
