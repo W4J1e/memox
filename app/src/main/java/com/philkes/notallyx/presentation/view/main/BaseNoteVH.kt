@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import com.bumptech.glide.Glide
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.philkes.notallyx.R

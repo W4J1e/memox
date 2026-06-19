@@ -971,7 +971,6 @@ class SettingsFragment : Fragment() {
                                 )
                                 return@launch
                             }
-                            app.locked.value = false
                             showToast(R.string.biometrics_setup_success)
                         }
                     }
