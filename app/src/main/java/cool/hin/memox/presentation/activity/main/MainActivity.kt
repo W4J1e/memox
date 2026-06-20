@@ -24,6 +24,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.transition.platform.MaterialFade
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
+import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.databinding.ActivityMainBinding
 import cool.hin.memox.presentation.activity.LockedActivity
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -82,6 +83,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         setupActivityResultLaunchers()
 
         checkForMigrations(savedInstanceState)
+
+        // Sync with WebDAV on app start (pull remote updates)
+        WebDavSyncWorker.syncNow(this)
 
         onBackPressedDispatcher.addCallback(
             this,
