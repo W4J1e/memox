@@ -44,12 +44,12 @@ class WebDavSyncWorker(
         private const val WORK_NAME_PERIODIC = "webdav_sync_periodic"
         private const val WORK_NAME_IMMEDIATE = "webdav_sync_immediate"
 
-        /** Schedule periodic auto-sync (every 1 hour) */
+        /** Schedule periodic auto-sync (every 30 minutes) */
         fun schedule(context: ContextWrapper) {
             val preferences = MemoXPreferences.getInstance(context)
             if (preferences.webdavSyncEnabled.value && preferences.webdavAutoSync.value) {
                 val request =
-                    PeriodicWorkRequest.Builder(WebDavSyncWorker::class.java, 1, TimeUnit.HOURS)
+                    PeriodicWorkRequest.Builder(WebDavSyncWorker::class.java, 30, TimeUnit.MINUTES)
                         .build()
                 WorkManager.getInstance(context)
                     .enqueueUniquePeriodicWork(
