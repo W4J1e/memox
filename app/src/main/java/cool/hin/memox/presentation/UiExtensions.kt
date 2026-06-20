@@ -97,6 +97,7 @@ import cool.hin.memox.data.imports.ImportStage
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.SpanRepresentation
+import cool.hin.memox.presentation.view.note.CheckboxSpan
 import cool.hin.memox.data.model.findNextNotificationDate
 import cool.hin.memox.data.model.haveAnyRepetition
 import cool.hin.memox.databinding.DialogInputBinding
@@ -129,7 +130,7 @@ import me.zhanghai.android.fastscroll.PopupStyles
  */
 fun String.applySpans(representations: List<SpanRepresentation>): Editable {
     val editable = Editable.Factory.getInstance().newEditable(this)
-    representations.forEach { (start, end, bold, link, linkData, italic, monospace, strikethrough)
+    representations.forEach { (start, end, bold, link, linkData, italic, monospace, strikethrough, checkbox, checkboxChecked)
         ->
         try {
             if (bold) {
@@ -147,6 +148,9 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
             }
             if (strikethrough) {
                 editable.setSpan(StrikethroughSpan(), start, end)
+            }
+            if (checkbox) {
+                editable.setSpan(CheckboxSpan(checkboxChecked), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
         } catch (exception: Exception) {
             exception.printStackTrace()

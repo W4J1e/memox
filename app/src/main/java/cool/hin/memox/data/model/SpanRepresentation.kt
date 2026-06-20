@@ -11,10 +11,12 @@ data class SpanRepresentation(
     var italic: Boolean = false,
     var monospace: Boolean = false,
     var strikethrough: Boolean = false,
+    var checkbox: Boolean = false,
+    var checkboxChecked: Boolean = false,
 ) {
 
     fun isNotUseless(): Boolean {
-        return bold || link || italic || monospace || strikethrough
+        return bold || link || italic || monospace || strikethrough || checkbox
     }
 
     fun isEqualInSize(representation: SpanRepresentation): Boolean {

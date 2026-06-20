@@ -158,5 +158,7 @@ private fun XmlPullParser.parseSpan(): SpanRepresentation {
     val italic = getAttributeValue(null, "italic")?.toBoolean() ?: false
     val monospace = getAttributeValue(null, "monospace")?.toBoolean() ?: false
     val strikethrough = getAttributeValue(null, "strike")?.toBoolean() ?: false
-    return SpanRepresentation(start, end, bold, link, linkData, italic, monospace, strikethrough)
+    val checkbox = getAttributeValue(null, "checkbox")?.toBoolean() ?: false
+    val checkboxChecked = getAttributeValue(null, "checkboxChecked")?.toBoolean() ?: false
+    return SpanRepresentation(start, end, bold, link, linkData, italic, monospace, strikethrough, checkbox, checkboxChecked)
 }

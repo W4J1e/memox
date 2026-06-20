@@ -84,6 +84,8 @@ class EditTextState(text: Editable, val cursorPos: Int) {
                     italic = false,
                     monospace = false,
                     strikethrough = false,
+                    checkbox = false,
+                    checkboxChecked = false,
                 )
 
             when (span) {
