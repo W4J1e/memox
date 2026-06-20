@@ -6,6 +6,7 @@ import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Converters
 import cool.hin.memox.data.model.Folder
+import cool.hin.memox.data.model.Label
 import cool.hin.memox.data.sync.SyncLog
 import cool.hin.memox.data.sync.SyncResult
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
@@ -43,6 +44,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
         const val REMOTE_AUDIOS_DIR = "memoX/attachments/audios"
         const val REMOTE_FILES_DIR = "memoX/attachments/files"
         const val REMOTE_SYNC_META = "memoX/sync_meta.json"
+        const val REMOTE_LABELS_FILE = "memoX/labels.json"
 
         /** Generate a safe filename for a note: {title}_{id}.json or {id}.json */
         fun noteFileName(note: BaseNote): String {
@@ -154,6 +156,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             }
 
             cleanupOrphanedAttachments(client, allNotes)
+            uploadLabels(client)
             uploadSyncMeta(client, allNotes.size)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
@@ -224,6 +227,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 dao.delete(deletedIds.toLongArray())
                 SyncLog.log("Deleted ${deletedIds.size} local notes not on server")
             }
+
+            downloadLabels(client)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
             SyncLog.log("Download complete: $downloaded downloaded, $failed failed")
@@ -307,6 +312,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             }
 
             cleanupOrphanedAttachments(client, localNotes)
+            syncLabels(client)
             uploadSyncMeta(client, localNotes.size)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
@@ -509,9 +515,129 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val json = JSONObject().apply {
                 put("lastSyncTime", System.currentTimeMillis())
                 put("noteCount", noteCount)
-                put("appVersion", "1.0.31")
+                put("appVersion", "1.0.32")
             }
             client.upload(REMOTE_SYNC_META, json.toString().toByteArray(Charsets.UTF_8))
         } catch (_: Exception) {}
+    }
+
+    /** Upload labels and hidden labels config to WebDAV */
+    private suspend fun uploadLabels(client: WebDavClient) {
+        try {
+            val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
+            val labelDao = database.getLabelDao()
+            val labels = labelDao.getArrayOfAll()
+            val hiddenLabels = preferences.labelsHidden.value
+
+            val json = JSONObject().apply {
+                val labelsArray = JSONArray()
+                for (label in labels) {
+                    labelsArray.put(label)
+                }
+                put("labels", labelsArray)
+                val hiddenArray = JSONArray()
+                for (hidden in hiddenLabels) {
+                    hiddenArray.put(hidden)
+                }
+                put("hiddenLabels", hiddenArray)
+            }
+            client.upload(REMOTE_LABELS_FILE, json.toString().toByteArray(Charsets.UTF_8))
+            Log.d(TAG, "uploadLabels: uploaded ${labels.size} labels, ${hiddenLabels.size} hidden")
+        } catch (e: Exception) {
+            Log.w(TAG, "uploadLabels: failed: ${e.message}")
+        }
+    }
+
+    /** Download labels and hidden labels config from WebDAV, replacing local data */
+    private suspend fun downloadLabels(client: WebDavClient) {
+        try {
+            val result = client.download(REMOTE_LABELS_FILE)
+            val bytes = result.getOrNull() ?: return
+            val json = JSONObject(String(bytes, Charsets.UTF_8))
+
+            val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
+            val labelDao = database.getLabelDao()
+
+            // Parse labels from JSON
+            val labelsArray = json.optJSONArray("labels") ?: return
+            val labels = mutableListOf<Label>()
+            for (i in 0 until labelsArray.length()) {
+                val value = labelsArray.getString(i)
+                labels.add(Label(value, i))
+            }
+
+            // Replace local labels
+            labelDao.deleteAll()
+            labelDao.insert(labels)
+
+            // Parse and apply hidden labels
+            val hiddenArray = json.optJSONArray("hiddenLabels")
+            if (hiddenArray != null) {
+                val hiddenSet = mutableSetOf<String>()
+                for (i in 0 until hiddenArray.length()) {
+                    hiddenSet.add(hiddenArray.getString(i))
+                }
+                preferences.labelsHidden.save(hiddenSet)
+            }
+
+            Log.d(TAG, "downloadLabels: downloaded ${labels.size} labels")
+        } catch (e: Exception) {
+            Log.w(TAG, "downloadLabels: failed: ${e.message}")
+        }
+    }
+
+    /** Two-way sync for labels: merge local and remote labels */
+    private suspend fun syncLabels(client: WebDavClient) {
+        try {
+            val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
+            val labelDao = database.getLabelDao()
+            val localLabels = labelDao.getArrayOfAll().toSet()
+            val localHidden = preferences.labelsHidden.value
+
+            val result = client.download(REMOTE_LABELS_FILE)
+            val bytes = result.getOrNull()
+
+            if (bytes == null) {
+                // No remote labels file, upload local
+                uploadLabels(client)
+                return
+            }
+
+            val json = JSONObject(String(bytes, Charsets.UTF_8))
+            val remoteArray = json.optJSONArray("labels") ?: return
+            val remoteLabels = mutableSetOf<String>()
+            for (i in 0 until remoteArray.length()) {
+                remoteLabels.add(remoteArray.getString(i))
+            }
+
+            val remoteHiddenArray = json.optJSONArray("hiddenLabels")
+            val remoteHidden = mutableSetOf<String>()
+            if (remoteHiddenArray != null) {
+                for (i in 0 until remoteHiddenArray.length()) {
+                    remoteHidden.add(remoteHiddenArray.getString(i))
+                }
+            }
+
+            // Merge: union of local and remote labels
+            val mergedLabels = localLabels + remoteLabels
+            val maxOrder = labelDao.getMaxOrder() ?: -1
+
+            // Delete labels not in merged set, then insert missing ones
+            val toInsert = mergedLabels - localLabels
+            for ((index, value) in toInsert.withIndex()) {
+                labelDao.insert(Label(value, maxOrder + 1 + index))
+            }
+
+            // Merge hidden labels: union of local and remote hidden
+            val mergedHidden = localHidden + remoteHidden
+            preferences.labelsHidden.save(mergedHidden)
+
+            // Upload merged result
+            uploadLabels(client)
+
+            Log.d(TAG, "syncLabels: local=${localLabels.size}, remote=${remoteLabels.size}, merged=${mergedLabels.size}")
+        } catch (e: Exception) {
+            Log.w(TAG, "syncLabels: failed: ${e.message}")
+        }
     }
 }

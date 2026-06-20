@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
 import cool.hin.memox.data.model.Label
+import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.databinding.DialogInputBinding
 import cool.hin.memox.databinding.FragmentNotesBinding
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -150,6 +151,7 @@ class LabelsFragment : Fragment(), LabelListener {
                 hiddenLabels.remove(value.value)
             }
             model.savePreference(model.preferences.labelsHidden, hiddenLabels)
+            WebDavSyncWorker.syncNow(requireActivity().applicationContext)
 
             val currentList = labelAdapter!!.currentList.toMutableList()
             currentList[position] =
