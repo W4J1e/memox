@@ -313,6 +313,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                         .show()
                 },
                 onImageClick = { span -> openInlineImage(span) },
+                onCheckboxClick = { span -> span.onClick(binding.EnterBody) },
             )
         binding.EnterBody.movementMethod = movementMethod
     }

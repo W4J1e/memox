@@ -543,7 +543,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             val end = spanned.getSpanEnd(span)
             val start = spanned.getSpanStart(span)
             val representation =
-                SpanRepresentation(start, end, false, false, null, false, false, false)
+                SpanRepresentation(start, end, false, false, null, false, false, false, false, false)
 
             when (span) {
                 is StyleSpan -> {
@@ -557,6 +557,10 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 is TypefaceSpan -> representation.monospace = span.family == "monospace"
                 is StrikethroughSpan -> representation.strikethrough = true
+                is cool.hin.memox.presentation.view.note.CheckboxSpan -> {
+                    representation.checkbox = true
+                    representation.checkboxChecked = span.isChecked
+                }
             }
 
             if (representation.isNotUseless()) {

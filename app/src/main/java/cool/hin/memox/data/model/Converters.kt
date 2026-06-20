@@ -73,6 +73,8 @@ object Converters {
                 val italic = jsonObject.getSafeBoolean("italic")
                 val monospace = jsonObject.getSafeBoolean("monospace")
                 val strikethrough = jsonObject.getSafeBoolean("strikethrough")
+                val checkbox = jsonObject.getSafeBoolean("checkbox")
+                val checkboxChecked = jsonObject.getSafeBoolean("checkboxChecked")
                 try {
                     val start = jsonObject.getInt("start")
                     val end = jsonObject.getInt("end")
@@ -85,6 +87,8 @@ object Converters {
                         italic,
                         monospace,
                         strikethrough,
+                        checkbox,
+                        checkboxChecked,
                     )
                 } catch (e: Exception) {
                     null
@@ -106,6 +110,8 @@ object Converters {
                 jsonObject.put("italic", representation.italic)
                 jsonObject.put("monospace", representation.monospace)
                 jsonObject.put("strikethrough", representation.strikethrough)
+                jsonObject.put("checkbox", representation.checkbox)
+                jsonObject.put("checkboxChecked", representation.checkboxChecked)
                 jsonObject.put("start", representation.start)
                 jsonObject.put("end", representation.end)
             }

@@ -9,15 +9,17 @@ import android.text.style.URLSpan
 import android.view.MotionEvent
 import android.widget.TextView
 import cool.hin.memox.presentation.InlineImageSpan
+import cool.hin.memox.presentation.view.note.CheckboxSpan
 
 /**
  * Inspired by https://github.com/saket/Better-Link-Movement-Method Intercepts touch events on links
  * and dispatches them accordingly. Also optionally intercepts touches on [InlineImageSpan]s (inline
- * images in the note body) so they can be opened full-screen.
+ * images in the note body) so they can be opened full-screen, and [CheckboxSpan]s for toggling.
  */
 class LinkMovementMethod(
     private val onClick: (span: URLSpan) -> Unit,
     private val onImageClick: ((span: InlineImageSpan) -> Unit)? = null,
+    private val onCheckboxClick: ((span: CheckboxSpan) -> Unit)? = null,
 ) : ArrowKeyMovementMethod() {
 
     private val touchedLineBounds = RectF()
@@ -25,6 +27,7 @@ class LinkMovementMethod(
 
     private var clickableSpanUnderTouchOnActionDown: ClickableSpan? = null
     private var imageSpanUnderTouchOnActionDown: InlineImageSpan? = null
+    private var checkboxSpanUnderTouchOnActionDown: CheckboxSpan? = null
 
     override fun onTouchEvent(textView: TextView, text: Spannable, event: MotionEvent): Boolean {
         textView.autoLinkMask = 0
@@ -34,21 +37,27 @@ class LinkMovementMethod(
             if (onImageClick != null) {
                 findImageSpanUnderTouch(textView, text, event)
             } else null
+        val checkboxSpanUnderTouch =
+            if (onCheckboxClick != null) {
+                findCheckboxSpanUnderTouch(textView, text, event)
+            } else null
 
         if (event.action == MotionEvent.ACTION_DOWN) {
             clickableSpanUnderTouchOnActionDown = linkSpanUnderTouch
             imageSpanUnderTouchOnActionDown = imageSpanUnderTouch
+            checkboxSpanUnderTouchOnActionDown = checkboxSpanUnderTouch
         }
 
         val touchStartedOverALinkSpan = clickableSpanUnderTouchOnActionDown != null
         val touchStartedOverAnImageSpan = imageSpanUnderTouchOnActionDown != null
+        val touchStartedOverACheckboxSpan = checkboxSpanUnderTouchOnActionDown != null
 
         return when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 if (linkSpanUnderTouch != null) {
                     highlightUrl(linkSpanUnderTouch, text)
                 }
-                touchStartedOverALinkSpan || touchStartedOverAnImageSpan
+                touchStartedOverALinkSpan || touchStartedOverAnImageSpan || touchStartedOverACheckboxSpan
             }
             MotionEvent.ACTION_UP -> {
                 if (
@@ -61,9 +70,14 @@ class LinkMovementMethod(
                         imageSpanUnderTouch === imageSpanUnderTouchOnActionDown
                 ) {
                     dispatchImageClick(imageSpanUnderTouch)
+                } else if (
+                    touchStartedOverACheckboxSpan &&
+                        checkboxSpanUnderTouch === checkboxSpanUnderTouchOnActionDown
+                ) {
+                    dispatchCheckboxClick(checkboxSpanUnderTouch)
                 }
                 cleanupOnTouchUp(textView)
-                touchStartedOverALinkSpan || touchStartedOverAnImageSpan
+                touchStartedOverALinkSpan || touchStartedOverAnImageSpan || touchStartedOverACheckboxSpan
             }
             MotionEvent.ACTION_CANCEL -> {
                 cleanupOnTouchUp(textView)
@@ -73,7 +87,7 @@ class LinkMovementMethod(
                 if (linkSpanUnderTouch != null) {
                     highlightUrl(linkSpanUnderTouch, text)
                 } else removeUrlHighlightColor(textView)
-                touchStartedOverALinkSpan || touchStartedOverAnImageSpan
+                touchStartedOverALinkSpan || touchStartedOverAnImageSpan || touchStartedOverACheckboxSpan
             }
             else -> false
         }
@@ -82,6 +96,7 @@ class LinkMovementMethod(
     private fun cleanupOnTouchUp(textView: TextView) {
         clickableSpanUnderTouchOnActionDown = null
         imageSpanUnderTouchOnActionDown = null
+        checkboxSpanUnderTouchOnActionDown = null
         removeUrlHighlightColor(textView)
     }
 
@@ -128,6 +143,15 @@ class LinkMovementMethod(
         return text.getSpans(offset, offset, InlineImageSpan::class.java).firstOrNull()
     }
 
+    private fun findCheckboxSpanUnderTouch(
+        textView: TextView,
+        text: Spannable,
+        event: MotionEvent,
+    ): CheckboxSpan? {
+        val offset = findOffsetUnderTouch(textView, event) ?: return null
+        return text.getSpans(offset, offset, CheckboxSpan::class.java).firstOrNull()
+    }
+
     private fun removeUrlHighlightColor(textView: TextView) {
         if (isUrlHighlighted) {
             isUrlHighlighted = false
@@ -153,6 +177,12 @@ class LinkMovementMethod(
     private fun dispatchImageClick(imageSpan: InlineImageSpan?) {
         if (imageSpan != null) {
             onImageClick?.invoke(imageSpan)
+        }
+    }
+
+    private fun dispatchCheckboxClick(checkboxSpan: CheckboxSpan?) {
+        if (checkboxSpan != null) {
+            onCheckboxClick?.invoke(checkboxSpan)
         }
     }
 }

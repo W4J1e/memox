@@ -43,6 +43,8 @@ object NoteSplitUtils {
                     italic = s.italic,
                     monospace = s.monospace,
                     strikethrough = s.strikethrough,
+                    checkbox = s.checkbox,
+                    checkboxChecked = s.checkboxChecked,
                 )
             )
         }
