@@ -12,22 +12,24 @@ import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.utils.SUBFOLDER_AUDIOS
 import cool.hin.memox.utils.SUBFOLDER_FILES
 import cool.hin.memox.utils.SUBFOLDER_IMAGES
-import cool.hin.memox.utils.resolveAttachmentFile
+import cool.hin.memox.utils.getCurrentAudioDirectory
+import cool.hin.memox.utils.getCurrentFilesDirectory
+import cool.hin.memox.utils.getCurrentImagesDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 /**
  * Handles synchronization with a WebDAV server.
  *
  * Strategy:
- * - Each note is stored as a separate JSON file: memoX/notes/{id}.json
+ * - Each note is stored as a separate JSON file: memoX/notes/{title}_{id}.json
+ * - If note has no title, filename is: memoX/notes/{id}.json
  * - Attachments are stored in: memoX/attachments/images/, memoX/attachments/audios/, memoX/attachments/files/
- * - Upload: Compare local notes with remote, upload new/modified notes and their attachments,
- *   delete remote notes that no longer exist locally
- * - Download: Compare remote notes with local, download new/modified notes and their attachments,
- *   delete local notes that no longer exist remotely
+ * - Upload: Upload all notes and their attachments, delete remote notes no longer local
+ * - Download: Download all notes and their attachments, delete local notes no longer remote
  * - Sync: Two-way sync based on modifiedTimestamp - newer version wins
  */
 class WebDavSyncService(private val context: ContextWrapper) {
@@ -40,6 +42,31 @@ class WebDavSyncService(private val context: ContextWrapper) {
         const val REMOTE_AUDIOS_DIR = "memoX/attachments/audios"
         const val REMOTE_FILES_DIR = "memoX/attachments/files"
         const val REMOTE_SYNC_META = "memoX/sync_meta.json"
+
+        /** Generate a safe filename for a note: {title}_{id}.json or {id}.json */
+        fun noteFileName(note: BaseNote): String {
+            val safeTitle = note.title
+                .trim()
+                .replace(Regex("[/\\\\:*?\"<>|\\n\\r]"), "_")
+                .take(50)
+                .trimEnd('_')
+                .trim()
+            return if (safeTitle.isNotEmpty()) "${safeTitle}_${note.id}.json" else "${note.id}.json"
+        }
+
+        /** Extract note ID from filename. Format: {title}_{id}.json or {id}.json */
+        fun extractNoteId(fileName: String): Long? {
+            if (!fileName.endsWith(".json")) return null
+            val name = fileName.removeSuffix(".json")
+            // Try to parse as plain ID first (old format: 123.json)
+            name.toLongOrNull()?.let { return it }
+            // New format: {title}_{id}.json - extract ID from the last _{digits}
+            val lastUnderscore = name.lastIndexOf('_')
+            if (lastUnderscore > 0) {
+                return name.substring(lastUnderscore + 1).toLongOrNull()
+            }
+            return null
+        }
     }
 
     private val preferences: MemoXPreferences by lazy { MemoXPreferences.getInstance(context) }
@@ -59,7 +86,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
         client.testConnection().fold(
             onSuccess = {
-                // Try to create the memoX directories
                 client.createDirectory(REMOTE_DIR)
                 client.createDirectory(REMOTE_NOTES_DIR)
                 client.createDirectory(REMOTE_IMAGES_DIR)
@@ -71,15 +97,13 @@ class WebDavSyncService(private val context: ContextWrapper) {
         )
     }
 
-    /** Upload current data to WebDAV (full upload of all notes) */
+    /** Upload current data to WebDAV */
     suspend fun upload(): SyncResult = withContext(Dispatchers.IO) {
         val client = createClient()
             ?: return@withContext SyncResult.Error("WebDAV not configured")
 
         try {
             SyncLog.log("Starting WebDAV upload...")
-
-            // Ensure remote directories exist
             ensureRemoteDirs(client)
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
@@ -88,26 +112,33 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             SyncLog.log("Found ${allNotes.size} notes to upload")
 
-            // Get list of existing remote note files
+            // Get list of existing remote note files (map: noteId -> fileName)
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
-            val remoteNoteIds = remoteFiles
-                .filter { !it.isDirectory && it.name.endsWith(".json") }
-                .mapNotNull { it.name.removeSuffix(".json").toLongOrNull() }
-                .toMutableSet()
+            val remoteNoteIdToFileName = mutableMapOf<Long, String>()
+            for (file in remoteFiles) {
+                if (!file.isDirectory && file.name.endsWith(".json")) {
+                    extractNoteId(file.name)?.let { id ->
+                        remoteNoteIdToFileName[id] = file.name
+                    }
+                }
+            }
 
             var uploaded = 0
             var failed = 0
 
-            // Upload each note as a JSON file
+            // Upload each note
             for (note in allNotes) {
                 val json = noteToJson(note)
-                val path = "$REMOTE_NOTES_DIR/${note.id}.json"
+                val newFileName = noteFileName(note)
+                val path = "$REMOTE_NOTES_DIR/$newFileName"
                 val result = client.upload(path, json.toByteArray(Charsets.UTF_8))
                 if (result.isSuccess) {
                     uploaded++
-                    remoteNoteIds.remove(note.id)
-
-                    // Upload attachments for this note
+                    // Delete old file if filename changed (e.g., title changed)
+                    val oldFileName = remoteNoteIdToFileName.remove(note.id)
+                    if (oldFileName != null && oldFileName != newFileName) {
+                        client.delete("$REMOTE_NOTES_DIR/$oldFileName")
+                    }
                     uploadAttachments(client, note)
                 } else {
                     failed++
@@ -116,16 +147,12 @@ class WebDavSyncService(private val context: ContextWrapper) {
             }
 
             // Delete remote notes that no longer exist locally
-            for (remoteId in remoteNoteIds) {
-                val path = "$REMOTE_NOTES_DIR/$remoteId.json"
-                client.delete(path)
-                SyncLog.log("Deleted remote note $remoteId")
+            for ((_, fileName) in remoteNoteIdToFileName) {
+                client.delete("$REMOTE_NOTES_DIR/$fileName")
+                SyncLog.log("Deleted remote note: $fileName")
             }
 
-            // Clean up orphaned remote attachments
             cleanupOrphanedAttachments(client, allNotes)
-
-            // Update sync metadata
             uploadSyncMeta(client, allNotes.size)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
@@ -144,7 +171,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
         try {
             SyncLog.log("Starting WebDAV download...")
-
             ensureRemoteDirs(client)
 
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
@@ -159,8 +185,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
-
-            // Get local note IDs for cleanup
             val localIds = dao.getAllIds().toSet()
 
             var downloaded = 0
@@ -168,8 +192,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val remoteIds = mutableSetOf<Long>()
 
             for (file in noteFiles) {
-                val noteId = file.name.removeSuffix(".json").toLongOrNull()
-                if (noteId == null) continue
+                val noteId = extractNoteId(file.name) ?: continue
                 remoteIds.add(noteId)
 
                 val path = "$REMOTE_NOTES_DIR/${file.name}"
@@ -179,11 +202,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
                         try {
                             val json = JSONObject(String(bytes, Charsets.UTF_8))
                             val note = jsonToNote(json)
-
-                            // Download attachments for this note
                             downloadAttachments(client, note)
-
-                            // Insert or update note (use insertSafe for truncation handling)
                             dao.insertSafe(context, note)
                             downloaded++
                         } catch (e: Exception) {
@@ -221,7 +240,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
         try {
             SyncLog.log("Starting WebDAV two-way sync...")
-
             ensureRemoteDirs(client)
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
@@ -235,7 +253,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             val remoteNoteMap = mutableMapOf<Long, JSONObject>()
             for (file in noteFiles) {
-                val noteId = file.name.removeSuffix(".json").toLongOrNull() ?: continue
+                val noteId = extractNoteId(file.name) ?: continue
                 val result = client.download("$REMOTE_NOTES_DIR/${file.name}")
                 result.getOrNull()?.let { bytes ->
                     try {
@@ -275,11 +293,9 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 val remoteTimestamp = remoteJson.optLong("modifiedTimestamp", 0)
 
                 if (local.modifiedTimestamp >= remoteTimestamp) {
-                    // Local is newer or same -> upload
                     uploadNote(client, local)
                     uploaded++
                 } else {
-                    // Remote is newer -> download
                     try {
                         val note = jsonToNote(remoteJson)
                         downloadAttachments(client, note)
@@ -289,24 +305,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 }
             }
 
-            // Delete remote notes that no longer exist locally (only if local has been synced before)
-            val lastSyncTime = preferences.webdavLastSyncTime.value
-            if (lastSyncTime > 0) {
-                for (id in remoteIds - localIds) {
-                    // Only delete if the note was deleted locally after last sync
-                    // For safety, we don't delete remote-only notes during sync
-                    // (they might have been created on another device)
-                }
-            }
-
-            // Delete local notes that no longer exist remotely
-            // For safety, we don't auto-delete during two-way sync
-            // Users can use "download" to force a full replace
-
-            // Clean up orphaned attachments
             cleanupOrphanedAttachments(client, localNotes)
-
-            // Update sync metadata
             uploadSyncMeta(client, localNotes.size)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
@@ -380,7 +379,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
     private fun uploadNote(client: WebDavClient, note: BaseNote): Result<Unit> {
         val json = noteToJson(note)
-        val path = "$REMOTE_NOTES_DIR/${note.id}.json"
+        val path = "$REMOTE_NOTES_DIR/${noteFileName(note)}"
         val result = client.upload(path, json.toByteArray(Charsets.UTF_8))
         if (result.isSuccess) {
             uploadAttachments(client, note)
@@ -390,23 +389,20 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
     /** Upload all attachments for a note */
     private fun uploadAttachments(client: WebDavClient, note: BaseNote) {
-        // Upload images
         for (img in note.images) {
-            val file = context.resolveAttachmentFile(SUBFOLDER_IMAGES, img.localName)
+            val file = getLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
             if (file != null && file.exists()) {
                 client.upload("$REMOTE_IMAGES_DIR/${img.localName}", file.readBytes())
             }
         }
-        // Upload files
         for (f in note.files) {
-            val file = context.resolveAttachmentFile(SUBFOLDER_FILES, f.localName)
+            val file = getLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
             if (file != null && file.exists()) {
                 client.upload("$REMOTE_FILES_DIR/${f.localName}", file.readBytes())
             }
         }
-        // Upload audios
         for (audio in note.audios) {
-            val file = context.resolveAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
+            val file = getLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
             if (file != null && file.exists()) {
                 client.upload("$REMOTE_AUDIOS_DIR/${audio.name}", file.readBytes())
             }
@@ -415,9 +411,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
     /** Download all attachments for a note */
     private fun downloadAttachments(client: WebDavClient, note: BaseNote) {
-        // Download images
         for (img in note.images) {
-            val localFile = context.resolveAttachmentFile(SUBFOLDER_IMAGES, img.localName)
+            val localFile = ensureLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
             if (localFile != null && !localFile.exists()) {
                 val result = client.download("$REMOTE_IMAGES_DIR/${img.localName}")
                 result.getOrNull()?.let { bytes ->
@@ -426,9 +421,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 }
             }
         }
-        // Download files
         for (f in note.files) {
-            val localFile = context.resolveAttachmentFile(SUBFOLDER_FILES, f.localName)
+            val localFile = ensureLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
             if (localFile != null && !localFile.exists()) {
                 val result = client.download("$REMOTE_FILES_DIR/${f.localName}")
                 result.getOrNull()?.let { bytes ->
@@ -437,9 +431,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 }
             }
         }
-        // Download audios
         for (audio in note.audios) {
-            val localFile = context.resolveAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
+            val localFile = ensureLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
             if (localFile != null && !localFile.exists()) {
                 val result = client.download("$REMOTE_AUDIOS_DIR/${audio.name}")
                 result.getOrNull()?.let { bytes ->
@@ -448,6 +441,22 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 }
             }
         }
+    }
+
+    /** Get local attachment file (may return null if directory can't be resolved) */
+    private fun getLocalAttachmentFile(subfolder: String, localName: String): File? {
+        return context.resolveAttachmentFile(subfolder, localName)
+    }
+
+    /** Ensure the local attachment file path exists (creates parent dirs), returns the File */
+    private fun ensureLocalAttachmentFile(subfolder: String, localName: String): File? {
+        val dir = when (subfolder) {
+            SUBFOLDER_IMAGES -> context.getCurrentImagesDirectory()
+            SUBFOLDER_FILES -> context.getCurrentFilesDirectory()
+            SUBFOLDER_AUDIOS -> context.getCurrentAudioDirectory()
+            else -> return null
+        }
+        return File(dir, localName)
     }
 
     /** Remove remote attachments that are no longer referenced by any note */
