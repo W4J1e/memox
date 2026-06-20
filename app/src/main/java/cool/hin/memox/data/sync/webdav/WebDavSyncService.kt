@@ -319,11 +319,12 @@ class WebDavSyncService(private val context: ContextWrapper) {
     }
 
     private suspend fun ensureRemoteDirs(client: WebDavClient) {
-        client.createDirectory(REMOTE_DIR)
-        client.createDirectory(REMOTE_NOTES_DIR)
-        client.createDirectory(REMOTE_IMAGES_DIR)
-        client.createDirectory(REMOTE_AUDIOS_DIR)
-        client.createDirectory(REMOTE_FILES_DIR)
+        client.createDirectory(REMOTE_DIR)           // memoX
+        client.createDirectory(REMOTE_NOTES_DIR)     // memoX/notes
+        client.createDirectory("memoX/attachments")  // memoX/attachments (intermediate)
+        client.createDirectory(REMOTE_IMAGES_DIR)    // memoX/attachments/images
+        client.createDirectory(REMOTE_AUDIOS_DIR)    // memoX/attachments/audios
+        client.createDirectory(REMOTE_FILES_DIR)     // memoX/attachments/files
     }
 
     private fun noteToJson(note: BaseNote): String {
