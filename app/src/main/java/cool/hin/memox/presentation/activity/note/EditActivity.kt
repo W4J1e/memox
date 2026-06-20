@@ -44,6 +44,7 @@ import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.generateBaseNote
+import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.databinding.ActivityEditBinding
 import cool.hin.memox.presentation.IMAGE_PLACEHOLDER
 import cool.hin.memox.presentation.InlineImageSpan
@@ -170,6 +171,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         updateModel()
         return notallyModel.saveNote(checkAutoSave).also {
             WidgetProvider.sendBroadcast(application, longArrayOf(it))
+            WebDavSyncWorker.syncNow(application)
         }
     }
 

@@ -10,7 +10,6 @@ import java.util.Locale
 sealed class SyncResult {
     data class Success(val message: String) : SyncResult()
     data class Error(val message: String) : SyncResult()
-    data class DownloadReady(val filePath: String) : SyncResult()
 }
 
 /**

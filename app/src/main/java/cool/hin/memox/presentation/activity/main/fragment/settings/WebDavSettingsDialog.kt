@@ -1,7 +1,6 @@
 package cool.hin.memox.presentation.activity.main.fragment.settings
 
 import android.app.Dialog
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +14,7 @@ import cool.hin.memox.data.sync.webdav.WebDavSyncService
 import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.databinding.DialogWebdavSettingsBinding
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.utils.backup.importZip
 import kotlinx.coroutines.launch
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -142,8 +139,7 @@ class WebDavSettingsDialog : DialogFragment() {
                 is SyncResult.Success -> {
                     setStatus(null)
                     updateLastSyncText()
-                    Toast.makeText(requireContext(), R.string.webdav_success, Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(requireContext(), result.message, Toast.LENGTH_SHORT).show()
                 }
                 is SyncResult.Error -> {
                     setStatus(null)
@@ -172,10 +168,10 @@ class WebDavSettingsDialog : DialogFragment() {
         setStatus(R.string.webdav_downloading)
         lifecycleScope.launch {
             when (val result = syncService.download()) {
-                is SyncResult.DownloadReady -> {
+                is SyncResult.Success -> {
                     setStatus(null)
                     updateLastSyncText()
-                    importDownloadedBackup(result.filePath)
+                    Toast.makeText(requireContext(), result.message, Toast.LENGTH_SHORT).show()
                 }
                 is SyncResult.Error -> {
                     setStatus(null)
@@ -190,33 +186,6 @@ class WebDavSettingsDialog : DialogFragment() {
         }
     }
 
-    private fun importDownloadedBackup(filePath: String) {
-        val zipFile = File(filePath)
-        if (!zipFile.exists()) {
-            Toast.makeText(requireContext(), getString(R.string.webdav_error, "File not found"), Toast.LENGTH_LONG).show()
-            return
-        }
-        val zipUri = Uri.fromFile(zipFile)
-        val databaseFolder = File(requireContext().cacheDir, "webdav_import").also {
-            if (it.exists()) it.deleteRecursively()
-            it.mkdirs()
-        }
-        lifecycleScope.launch {
-            try {
-                requireActivity().importZip(zipUri, databaseFolder, "")
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.webdav_error, e.message),
-                    Toast.LENGTH_LONG,
-                ).show()
-            } finally {
-                zipFile.delete()
-                databaseFolder.deleteRecursively()
-            }
-        }
-    }
-
     private fun performSync() {
         savePreferences()
         setStatus(R.string.webdav_syncing)
@@ -225,13 +194,7 @@ class WebDavSettingsDialog : DialogFragment() {
                 is SyncResult.Success -> {
                     setStatus(null)
                     updateLastSyncText()
-                    Toast.makeText(requireContext(), R.string.webdav_success, Toast.LENGTH_SHORT)
-                        .show()
-                }
-                is SyncResult.DownloadReady -> {
-                    setStatus(null)
-                    updateLastSyncText()
-                    importDownloadedBackup(result.filePath)
+                    Toast.makeText(requireContext(), result.message, Toast.LENGTH_SHORT).show()
                 }
                 is SyncResult.Error -> {
                     setStatus(null)

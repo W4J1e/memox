@@ -7,6 +7,24 @@
     <uses-permission
         android:name="android.permission.ACCESS_NETWORK_STATE"
         tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_SMS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.SEND_SMS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_SMS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_MMS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_WAP_PUSH"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.SEND_RESPOND_VIA_MESSAGE"
+        tools:node="remove" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />

@@ -41,7 +41,7 @@ import cool.hin.memox.utils.wrapWithChooser
 
 class EditNoteActivity : EditActivity(Type.NOTE) {
 
-    private lateinit var textFormatMenu: View
+    private var isTextFormattingMenuVisible = false
 
     private var textFormattingAdapter: TextFormattingAdapter? = null
 
@@ -60,7 +60,6 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     override fun toggleCanEdit(mode: NoteViewMode) {
         super.toggleCanEdit(mode)
-        textFormatMenu.isVisible = mode == NoteViewMode.EDIT
         when {
             mode == NoteViewMode.EDIT -> showKeyboard(binding.EnterBody)
             binding.EnterBody.isFocused -> hideKeyboard(binding.EnterBody)
@@ -147,16 +146,14 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         if (canEdit) {
             binding.EnterBody.setOnSelectionChange { selStart, selEnd ->
                 if (selEnd - selStart > 0) {
-                    if (!textFormatMenu.isEnabled) {
+                    if (!isTextFormattingMenuVisible) {
                         initBottomTextFormattingMenu()
                     }
-                    textFormatMenu.isEnabled = true
                     textFormattingAdapter?.updateTextFormattingToggles(selStart, selEnd)
                 } else {
-                    if (textFormatMenu.isEnabled) {
+                    if (isTextFormattingMenuVisible) {
                         initBottomMenu()
                     }
-                    textFormatMenu.isEnabled = false
                 }
             }
         } else {
@@ -174,6 +171,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     }
 
     override fun initBottomMenu() {
+        isTextFormattingMenuVisible = false
         binding.BottomAppBarCenter.visibility = GONE
         binding.BottomAppBarLeft.apply {
             removeAllViews()
@@ -193,15 +191,9 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                 insertCheckboxAtCursor()
             }
         }
-        // Right side: text format, view/edit, lock, more
+        // Right side: view/edit, lock, more
         binding.BottomAppBarRight.apply {
             removeAllViews()
-            // Text format
-            textFormatMenu =
-                addIconButton(R.string.edit, R.drawable.text_format, colorInt, marginStart = 0) {
-                        initBottomTextFormattingMenu()
-                    }
-                    .apply { isEnabled = binding.EnterBody.isActionModeOn }
             addBottomAction(preferences.editNoteActivityBottomAction.value)
             addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
                 actionHandler.handleAction(EditAction.LOCK_NOTE)
@@ -228,6 +220,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
     }
 
     private fun initBottomTextFormattingMenu() {
+        isTextFormattingMenuVisible = true
         binding.BottomAppBarCenter.visibility = GONE
         val extractColor = colorInt
         binding.BottomAppBarRight.apply {
@@ -246,6 +239,17 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     setBackgroundColor(0)
                 }
             )
+            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
+                actionHandler.handleAction(EditAction.LOCK_NOTE)
+            }
+            addIconButton(
+                R.string.tap_for_more_options,
+                R.drawable.more_vert,
+                colorInt,
+                marginStart = 0,
+            ) {
+                openMoreOptionsBottomSheet()
+            }
         }
         binding.BottomAppBarLeft.apply {
             removeAllViews()
