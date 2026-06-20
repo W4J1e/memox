@@ -651,6 +651,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             removeAllViews()
 
             addBottomAction(bottomAction)
+            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
+                actionHandler.handleAction(EditAction.LOCK_NOTE)
+            }
             addIconButton(
                 R.string.tap_for_more_options,
                 R.drawable.more_vert,
