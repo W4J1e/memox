@@ -1,3 +1,13 @@
+main:
+  push:
+    - name: sync-github
+      stages:
+        - name: 同步 Github 仓库
+          imports:
+            - https://cnb.cool/hin/env/-/blob/main/cnb2github.yml
+          script: |
+            git remote add github https://x-access-token:$GITHUB_TOKEN@github.com/W4J1e/memoX
+            git push github main --force
 $:
   tag_push:
     - name: build-and-release
