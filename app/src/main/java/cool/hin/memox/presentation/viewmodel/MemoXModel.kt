@@ -36,6 +36,7 @@ import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.attachmentsDifferFrom
 import cool.hin.memox.data.model.copy
 import cool.hin.memox.data.model.deepCopy
+import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.presentation.IMAGE_PLACEHOLDER
 import cool.hin.memox.presentation.InlineImageSpan
 import cool.hin.memox.presentation.activity.note.reminders.ReminderReceiver
@@ -194,11 +195,13 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                     FileType.IMAGE -> {
                         images.value = copy
                         updateImages()
+                        WebDavSyncWorker.syncNow(app)
                     }
 
                     FileType.ANY -> {
                         files.value = copy
                         updateFiles()
+                        WebDavSyncWorker.syncNow(app)
                     }
                 }
             }
@@ -216,6 +219,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             images.value = copy
             updateImages()
             withContext(Dispatchers.IO) { app.deleteAttachments(list) }
+            WebDavSyncWorker.syncNow(app)
         }
     }
 
@@ -226,6 +230,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             files.value = copy
             updateFiles()
             withContext(Dispatchers.IO) { app.deleteAttachments(list) }
+            WebDavSyncWorker.syncNow(app)
         }
     }
 
@@ -293,6 +298,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         if (result != current) {
             images.value = result
             viewModelScope.launch { updateImages() }
+            WebDavSyncWorker.syncNow(app)
         }
     }
 

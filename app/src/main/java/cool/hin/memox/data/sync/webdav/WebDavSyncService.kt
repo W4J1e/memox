@@ -390,22 +390,39 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
     /** Upload all attachments for a note */
     private fun uploadAttachments(client: WebDavClient, note: BaseNote) {
+        val imgCount = note.images.size
+        val fileCount = note.files.size
+        val audioCount = note.audios.size
+        Log.d(TAG, "uploadAttachments: note ${note.id} has $imgCount images, $fileCount files, $audioCount audios")
+
         for (img in note.images) {
             val file = getLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
+            Log.d(TAG, "uploadAttachments: image ${img.localName}, file=$file, exists=${file?.exists()}")
             if (file != null && file.exists()) {
-                client.upload("$REMOTE_IMAGES_DIR/${img.localName}", file.readBytes())
+                val result = client.upload("$REMOTE_IMAGES_DIR/${img.localName}", file.readBytes())
+                if (result.isFailure) {
+                    Log.w(TAG, "uploadAttachments: failed to upload image ${img.localName}: ${result.exceptionOrNull()?.message}")
+                }
             }
         }
         for (f in note.files) {
             val file = getLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
+            Log.d(TAG, "uploadAttachments: file ${f.localName}, localFile=$file, exists=${file?.exists()}")
             if (file != null && file.exists()) {
-                client.upload("$REMOTE_FILES_DIR/${f.localName}", file.readBytes())
+                val result = client.upload("$REMOTE_FILES_DIR/${f.localName}", file.readBytes())
+                if (result.isFailure) {
+                    Log.w(TAG, "uploadAttachments: failed to upload file ${f.localName}: ${result.exceptionOrNull()?.message}")
+                }
             }
         }
         for (audio in note.audios) {
             val file = getLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
+            Log.d(TAG, "uploadAttachments: audio ${audio.name}, file=$file, exists=${file?.exists()}")
             if (file != null && file.exists()) {
-                client.upload("$REMOTE_AUDIOS_DIR/${audio.name}", file.readBytes())
+                val result = client.upload("$REMOTE_AUDIOS_DIR/${audio.name}", file.readBytes())
+                if (result.isFailure) {
+                    Log.w(TAG, "uploadAttachments: failed to upload audio ${audio.name}: ${result.exceptionOrNull()?.message}")
+                }
             }
         }
     }
