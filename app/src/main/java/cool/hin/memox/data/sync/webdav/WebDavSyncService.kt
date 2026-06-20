@@ -414,7 +414,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
     private fun downloadAttachments(client: WebDavClient, note: BaseNote) {
         for (img in note.images) {
             val localFile = ensureLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
-            if (localFile != null && !localFile.exists()) {
+            if (localFile != null) {
                 val result = client.download("$REMOTE_IMAGES_DIR/${img.localName}")
                 result.getOrNull()?.let { bytes ->
                     localFile.parentFile?.mkdirs()
@@ -424,7 +424,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
         }
         for (f in note.files) {
             val localFile = ensureLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
-            if (localFile != null && !localFile.exists()) {
+            if (localFile != null) {
                 val result = client.download("$REMOTE_FILES_DIR/${f.localName}")
                 result.getOrNull()?.let { bytes ->
                     localFile.parentFile?.mkdirs()
@@ -434,7 +434,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
         }
         for (audio in note.audios) {
             val localFile = ensureLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
-            if (localFile != null && !localFile.exists()) {
+            if (localFile != null) {
                 val result = client.download("$REMOTE_AUDIOS_DIR/${audio.name}")
                 result.getOrNull()?.let { bytes ->
                     localFile.parentFile?.mkdirs()
@@ -491,7 +491,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val json = JSONObject().apply {
                 put("lastSyncTime", System.currentTimeMillis())
                 put("noteCount", noteCount)
-                put("appVersion", "1.0.2")
+                put("appVersion", "1.0.31")
             }
             client.upload(REMOTE_SYNC_META, json.toString().toByteArray(Charsets.UTF_8))
         } catch (_: Exception) {}

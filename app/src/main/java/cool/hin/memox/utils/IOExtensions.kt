@@ -97,16 +97,16 @@ fun ContextWrapper.getCurrentMediaRoot(): File {
 }
 
 fun ContextWrapper.getAlternateImagesDirectory(): File {
-    return if (isDataInPublicEnabled()) getExternalImagesDirectory()
+    return if (!isDataInPublicEnabled()) getExternalImagesDirectory()
     else getPrivateImagesDirectory()
 }
 
 fun ContextWrapper.getAlternateFilesDirectory(): File {
-    return if (isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
+    return if (!isDataInPublicEnabled()) getExternalFilesDirectory() else getPrivateFilesDirectory()
 }
 
 fun ContextWrapper.getAlternateAudioDirectory(): File {
-    return if (isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
+    return if (!isDataInPublicEnabled()) getExternalAudioDirectory() else getPrivateAudioDirectory()
 }
 
 /**
@@ -325,9 +325,9 @@ fun ContextWrapper.deleteAttachments(
 ) {
     if (attachments.isNotEmpty()) {
         progress?.postValue(DeleteAttachmentProgress(0, attachments.size))
-        val imageRoot = getExternalImagesDirectory()
-        val audioRoot = getExternalAudioDirectory()
-        val fileRoot = getExternalFilesDirectory()
+        val imageRoot = getCurrentImagesDirectory()
+        val audioRoot = getCurrentAudioDirectory()
+        val fileRoot = getCurrentFilesDirectory()
         attachments.forEachIndexed { index, attachment ->
             val file =
                 when (attachment) {

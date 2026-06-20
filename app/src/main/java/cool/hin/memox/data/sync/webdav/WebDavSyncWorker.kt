@@ -27,7 +27,7 @@ class WebDavSyncWorker(
         }
 
         val syncService = WebDavSyncService(appContext)
-        return when (val result = syncService.upload()) {
+        return when (val result = syncService.sync()) {
             is SyncResult.Success -> {
                 Log.i(TAG, "WebDAV auto sync succeeded")
                 Result.success()

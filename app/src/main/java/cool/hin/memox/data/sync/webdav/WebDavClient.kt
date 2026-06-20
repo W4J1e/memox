@@ -1,6 +1,7 @@
 package cool.hin.memox.data.sync.webdav
 
 import okhttp3.Credentials
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -109,11 +110,12 @@ class WebDavClient(
     fun upload(path: String, data: ByteArray): Result<Unit> {
         return try {
             val url = buildUrl(path)
-            val body = data.toRequestBody()
+            val body = data.toRequestBody("application/octet-stream".toMediaType())
             val request =
                 Request.Builder()
                     .url(url)
                     .header("Authorization", authHeader)
+                    .header("Content-Type", "application/octet-stream")
                     .put(body)
                     .build()
             val response = httpClient.newCall(request).execute()
@@ -134,12 +136,13 @@ class WebDavClient(
             val body =
                 inputStream.use { stream ->
                     val bytes = stream.readBytes()
-                    bytes.toRequestBody()
+                    bytes.toRequestBody("application/octet-stream".toMediaType())
                 }
             val request =
                 Request.Builder()
                     .url(url)
                     .header("Authorization", authHeader)
+                    .header("Content-Type", "application/octet-stream")
                     .put(body)
                     .build()
             val response = httpClient.newCall(request).execute()
