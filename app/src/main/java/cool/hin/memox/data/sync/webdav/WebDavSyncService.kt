@@ -15,6 +15,7 @@ import cool.hin.memox.utils.SUBFOLDER_IMAGES
 import cool.hin.memox.utils.getCurrentAudioDirectory
 import cool.hin.memox.utils.getCurrentFilesDirectory
 import cool.hin.memox.utils.getCurrentImagesDirectory
+import cool.hin.memox.utils.resolveAttachmentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
