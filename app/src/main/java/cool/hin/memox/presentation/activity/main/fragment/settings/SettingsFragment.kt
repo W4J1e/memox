@@ -491,7 +491,7 @@ class SettingsFragment : Fragment() {
 
     private fun MemoXPreferences.setupWebDav(binding: FragmentSettingsBinding) {
         binding.WebDavSync.Title.setText(R.string.webdav_sync)
-        binding.WebDavSync.setOnClickListener {
+        binding.WebDavSync.root.setOnClickListener {
             WebDavSettingsDialog()
                 .show(childFragmentManager, WebDavSettingsDialog.TAG)
         }
