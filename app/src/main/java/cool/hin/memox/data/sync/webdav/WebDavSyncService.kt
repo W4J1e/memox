@@ -603,7 +603,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val json = JSONObject().apply {
                 put("lastSyncTime", System.currentTimeMillis())
                 put("noteCount", noteIds.size)
-                put("appVersion", "1.0.33")
+                put("appVersion", "1.0.4")
                 val idsArray = JSONArray()
                 for (id in noteIds.sorted()) {
                     idsArray.put(id)
