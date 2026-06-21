@@ -23,6 +23,7 @@ import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
 import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.dao.CommonDao
+import cool.hin.memox.data.sync.webdav.WebDavSyncService
 import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.data.dao.LabelDao
 import cool.hin.memox.data.dao.NoteReminder
@@ -675,6 +676,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
         actionMode.close(false)
         app.cancelPinAndReminders(notes)
+        // Delete from WebDAV before deleting locally (need note data for filename/attachments)
+        try {
+            val syncService = WebDavSyncService(app)
+            syncService.deleteRemoteNotes(notes)
+        } catch (_: Exception) {}
         return withContext(Dispatchers.IO) {
             baseNoteDao.delete(ids)
             return@withContext notes
