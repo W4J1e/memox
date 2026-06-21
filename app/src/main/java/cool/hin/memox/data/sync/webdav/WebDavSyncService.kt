@@ -13,6 +13,7 @@ import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.utils.SUBFOLDER_AUDIOS
 import cool.hin.memox.utils.SUBFOLDER_FILES
 import cool.hin.memox.utils.SUBFOLDER_IMAGES
+import cool.hin.memox.utils.deleteAttachments
 import cool.hin.memox.utils.getCurrentAudioDirectory
 import cool.hin.memox.utils.getCurrentFilesDirectory
 import cool.hin.memox.utils.getCurrentImagesDirectory
@@ -157,7 +158,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             cleanupOrphanedAttachments(client, allNotes)
             uploadLabels(client)
-            uploadSyncMeta(client, allNotes.size)
+            uploadSyncMeta(client, allNotes.map { it.id }.toSet())
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
             SyncLog.log("Upload complete: $uploaded uploaded, $failed failed")
@@ -239,7 +240,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
         }
     }
 
-    /** Two-way sync: upload local changes, download remote changes */
+    /** Two-way sync: upload local changes, download remote changes, handle deletions */
     suspend fun sync(): SyncResult = withContext(Dispatchers.IO) {
         val client = createClient()
             ?: return@withContext SyncResult.Error("WebDAV not configured")
@@ -252,6 +253,10 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val dao = database.getBaseNoteDao()
             val localNotes = dao.getAllNotes()
             val localNoteMap = localNotes.associateBy { it.id }
+            val lastSyncTime = preferences.webdavLastSyncTime.value
+
+            // Get previously synced note IDs from sync_meta
+            val previouslySyncedIds = getSyncedNoteIds(client)
 
             // Get remote note list
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
@@ -273,23 +278,58 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             var uploaded = 0
             var downloaded = 0
+            var deletedRemote = 0
+            var deletedLocal = 0
 
-            // Notes only on local -> upload
+            // Notes only on local:
+            // - If previously synced (was on server before), it was deleted on another device -> delete locally
+            // - If not previously synced, it's a new local note -> upload
             for (id in localIds - remoteIds) {
                 val note = localNoteMap[id]!!
-                uploadNote(client, note)
-                uploaded++
+                if (id in previouslySyncedIds) {
+                    // Was on server before, now gone -> deleted on another device
+                    dao.delete(longArrayOf(id))
+                    context.deleteAttachments(note.images + note.files + note.audios)
+                    deletedLocal++
+                    SyncLog.log("Deleted local note $id (was deleted on another device)")
+                } else {
+                    // New local note -> upload
+                    uploadNote(client, note)
+                    uploaded++
+                }
             }
 
-            // Notes only on remote -> download
+            // Notes only on remote:
+            // - If modifiedTimestamp > lastSyncTime -> new from another device -> download
+            // - If modifiedTimestamp <= lastSyncTime -> was deleted locally -> delete from remote
             for (id in remoteIds - localIds) {
                 val json = remoteNoteMap[id]!!
-                try {
-                    val note = jsonToNote(json)
-                    downloadAttachments(client, note)
-                    dao.insertSafe(context, note)
-                    downloaded++
-                } catch (_: Exception) {}
+                val remoteTimestamp = json.optLong("modifiedTimestamp", 0)
+                if (lastSyncTime == 0L || remoteTimestamp > lastSyncTime) {
+                    // New note from another device (modified after our last sync)
+                    try {
+                        val note = jsonToNote(json)
+                        downloadAttachments(client, note)
+                        dao.insertSafe(context, note)
+                        downloaded++
+                    } catch (_: Exception) {}
+                } else {
+                    // Note existed before our last sync but we don't have it locally -> we deleted it
+                    // Delete from remote
+                    val fileName = noteFiles.find { extractNoteId(it.name) == id }?.name
+                    if (fileName != null) {
+                        client.delete("$REMOTE_NOTES_DIR/$fileName")
+                        // Also delete remote attachments
+                        try {
+                            val note = jsonToNote(json)
+                            for (img in note.images) client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
+                            for (f in note.files) client.delete("$REMOTE_FILES_DIR/${f.localName}")
+                            for (audio in note.audios) client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
+                        } catch (_: Exception) {}
+                        deletedRemote++
+                        SyncLog.log("Deleted remote note $id (was deleted locally)")
+                    }
+                }
             }
 
             // Notes on both -> compare timestamps
@@ -313,11 +353,14 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             cleanupOrphanedAttachments(client, localNotes)
             syncLabels(client)
-            uploadSyncMeta(client, localNotes.size)
+
+            // Save synced note IDs
+            val currentSyncedIds = localIds.toSet() + remoteIds
+            uploadSyncMeta(client, currentSyncedIds)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
-            SyncLog.log("Sync complete: $uploaded uploaded, $downloaded downloaded")
-            SyncResult.Success("Sync complete: $uploaded up, $downloaded down")
+            SyncLog.log("Sync complete: $uploaded uploaded, $downloaded downloaded, $deletedLocal deleted locally, $deletedRemote deleted remotely")
+            SyncResult.Success("Sync complete: $uploaded up, $downloaded down, $deletedLocal local del, $deletedRemote remote del")
         } catch (e: Exception) {
             SyncLog.log("Sync error: ${e.message}")
             SyncResult.Error(e.message ?: "Sync failed")
@@ -509,16 +552,83 @@ class WebDavSyncService(private val context: ContextWrapper) {
         }
     }
 
-    /** Upload sync metadata */
-    private fun uploadSyncMeta(client: WebDavClient, noteCount: Int) {
+    /** Delete a single note and its attachments from WebDAV */
+    suspend fun deleteRemoteNote(note: BaseNote) = withContext(Dispatchers.IO) {
+        val client = createClient() ?: return@withContext
+        try {
+            val fileName = noteFileName(note)
+            client.delete("$REMOTE_NOTES_DIR/$fileName")
+            // Delete remote attachments
+            for (img in note.images) {
+                client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
+            }
+            for (f in note.files) {
+                client.delete("$REMOTE_FILES_DIR/${f.localName}")
+            }
+            for (audio in note.audios) {
+                client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
+            }
+            SyncLog.log("Deleted remote note: $fileName")
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteRemoteNote failed: ${e.message}")
+        }
+    }
+
+    /** Delete multiple notes and their attachments from WebDAV */
+    suspend fun deleteRemoteNotes(notes: Collection<BaseNote>) = withContext(Dispatchers.IO) {
+        val client = createClient() ?: return@withContext
+        try {
+            for (note in notes) {
+                val fileName = noteFileName(note)
+                client.delete("$REMOTE_NOTES_DIR/$fileName")
+                for (img in note.images) {
+                    client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
+                }
+                for (f in note.files) {
+                    client.delete("$REMOTE_FILES_DIR/${f.localName}")
+                }
+                for (audio in note.audios) {
+                    client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
+                }
+            }
+            SyncLog.log("Deleted ${notes.size} remote notes")
+        } catch (e: Exception) {
+            Log.w(TAG, "deleteRemoteNotes failed: ${e.message}")
+        }
+    }
+
+    /** Upload sync metadata including synced note IDs */
+    private fun uploadSyncMeta(client: WebDavClient, noteIds: Set<Long>) {
         try {
             val json = JSONObject().apply {
                 put("lastSyncTime", System.currentTimeMillis())
-                put("noteCount", noteCount)
-                put("appVersion", "1.0.32")
+                put("noteCount", noteIds.size)
+                put("appVersion", "1.0.33")
+                val idsArray = JSONArray()
+                for (id in noteIds.sorted()) {
+                    idsArray.put(id)
+                }
+                put("syncedNoteIds", idsArray)
             }
             client.upload(REMOTE_SYNC_META, json.toString().toByteArray(Charsets.UTF_8))
         } catch (_: Exception) {}
+    }
+
+    /** Download sync metadata to get previously synced note IDs */
+    private fun getSyncedNoteIds(client: WebDavClient): Set<Long> {
+        return try {
+            val result = client.download(REMOTE_SYNC_META)
+            val bytes = result.getOrNull() ?: return emptySet()
+            val json = JSONObject(String(bytes, Charsets.UTF_8))
+            val idsArray = json.optJSONArray("syncedNoteIds") ?: return emptySet()
+            val ids = mutableSetOf<Long>()
+            for (i in 0 until idsArray.length()) {
+                ids.add(idsArray.getLong(i))
+            }
+            ids
+        } catch (_: Exception) {
+            emptySet()
+        }
     }
 
     /** Upload labels and hidden labels config to WebDAV */

@@ -36,6 +36,7 @@ import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.attachmentsDifferFrom
 import cool.hin.memox.data.model.copy
 import cool.hin.memox.data.model.deepCopy
+import cool.hin.memox.data.sync.webdav.WebDavSyncService
 import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.presentation.IMAGE_PLACEHOLDER
 import cool.hin.memox.presentation.InlineImageSpan
@@ -447,6 +448,11 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun deleteBaseNote(checkAutoSave: Boolean = true) {
         app.cancelPinAndReminders(id, reminders.value)
+        // Delete from WebDAV before deleting locally (need note data for filename/attachments)
+        try {
+            val syncService = WebDavSyncService(app)
+            syncService.deleteRemoteNote(getBaseNote())
+        } catch (_: Exception) {}
         withContext(Dispatchers.IO) { baseNoteDao.delete(id) }
         WidgetProvider.sendBroadcast(app, longArrayOf(id))
         val attachments = ArrayList(images.value + files.value + audios.value)
