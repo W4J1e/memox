@@ -116,13 +116,13 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             SyncLog.log("Found ${allNotes.size} notes to upload")
 
-            // Get list of existing remote note files (map: noteId -> fileName)
+            // Get list of existing remote note files (map: noteId -> list of filenames, to handle duplicates)
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
-            val remoteNoteIdToFileName = mutableMapOf<Long, String>()
+            val remoteNoteIdToFileNames = mutableMapOf<Long, MutableList<String>>()
             for (file in remoteFiles) {
                 if (!file.isDirectory && file.name.endsWith(".json")) {
                     extractNoteId(file.name)?.let { id ->
-                        remoteNoteIdToFileName[id] = file.name
+                        remoteNoteIdToFileNames.getOrPut(id) { mutableListOf() }.add(file.name)
                     }
                 }
             }
@@ -138,10 +138,12 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 val result = client.upload(path, json.toByteArray(Charsets.UTF_8))
                 if (result.isSuccess) {
                     uploaded++
-                    // Delete old file if filename changed (e.g., title changed)
-                    val oldFileName = remoteNoteIdToFileName.remove(note.id)
-                    if (oldFileName != null && oldFileName != newFileName) {
-                        client.delete("$REMOTE_NOTES_DIR/$oldFileName")
+                    // Delete old files if filename changed or duplicates exist
+                    val oldFileNames = remoteNoteIdToFileNames.remove(note.id) ?: emptyList()
+                    for (oldName in oldFileNames) {
+                        if (oldName != newFileName) {
+                            client.delete("$REMOTE_NOTES_DIR/$oldName")
+                        }
                     }
                     uploadAttachments(client, note)
                 } else {
@@ -151,9 +153,11 @@ class WebDavSyncService(private val context: ContextWrapper) {
             }
 
             // Delete remote notes that no longer exist locally
-            for ((_, fileName) in remoteNoteIdToFileName) {
-                client.delete("$REMOTE_NOTES_DIR/$fileName")
-                SyncLog.log("Deleted remote note: $fileName")
+            for ((_, fileNames) in remoteNoteIdToFileNames) {
+                for (fileName in fileNames) {
+                    client.delete("$REMOTE_NOTES_DIR/$fileName")
+                    SyncLog.log("Deleted remote note: $fileName")
+                }
             }
 
             cleanupOrphanedAttachments(client, allNotes)
@@ -258,18 +262,34 @@ class WebDavSyncService(private val context: ContextWrapper) {
             // Get previously synced note IDs from sync_meta
             val previouslySyncedIds = getSyncedNoteIds(client)
 
-            // Get remote note list
+            // Get remote note list - track ALL filenames per note ID to detect duplicates
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
             val noteFiles = remoteFiles.filter { !it.isDirectory && it.name.endsWith(".json") }
 
-            val remoteNoteMap = mutableMapOf<Long, JSONObject>()
+            // Map: noteId -> list of filenames (to detect and clean up duplicates)
+            val remoteNoteIdToFileNames = mutableMapOf<Long, MutableList<String>>()
             for (file in noteFiles) {
                 val noteId = extractNoteId(file.name) ?: continue
-                val result = client.download("$REMOTE_NOTES_DIR/${file.name}")
+                remoteNoteIdToFileNames.getOrPut(noteId) { mutableListOf() }.add(file.name)
+            }
+
+            // Download and parse remote notes (use the last file if duplicates exist)
+            val remoteNoteMap = mutableMapOf<Long, JSONObject>()
+            for ((noteId, fileNames) in remoteNoteIdToFileNames) {
+                // Use the last filename (most recent upload) for the note data
+                val fileName = fileNames.last()
+                val result = client.download("$REMOTE_NOTES_DIR/$fileName")
                 result.getOrNull()?.let { bytes ->
                     try {
                         remoteNoteMap[noteId] = JSONObject(String(bytes, Charsets.UTF_8))
                     } catch (_: Exception) {}
+                }
+                // Clean up duplicate files for the same note ID
+                if (fileNames.size > 1) {
+                    for (i in 0 until fileNames.size - 1) {
+                        client.delete("$REMOTE_NOTES_DIR/${fileNames[i]}")
+                        SyncLog.log("Deleted duplicate remote file: ${fileNames[i]} for note $noteId")
+                    }
                 }
             }
 
@@ -315,20 +335,20 @@ class WebDavSyncService(private val context: ContextWrapper) {
                     } catch (_: Exception) {}
                 } else {
                     // Note existed before our last sync but we don't have it locally -> we deleted it
-                    // Delete from remote
-                    val fileName = noteFiles.find { extractNoteId(it.name) == id }?.name
-                    if (fileName != null) {
+                    // Delete from remote (all files for this note ID)
+                    val fileNames = remoteNoteIdToFileNames[id] ?: emptyList()
+                    for (fileName in fileNames) {
                         client.delete("$REMOTE_NOTES_DIR/$fileName")
-                        // Also delete remote attachments
-                        try {
-                            val note = jsonToNote(json)
-                            for (img in note.images) client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
-                            for (f in note.files) client.delete("$REMOTE_FILES_DIR/${f.localName}")
-                            for (audio in note.audios) client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
-                        } catch (_: Exception) {}
-                        deletedRemote++
-                        SyncLog.log("Deleted remote note $id (was deleted locally)")
                     }
+                    // Also delete remote attachments
+                    try {
+                        val note = jsonToNote(json)
+                        for (img in note.images) client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
+                        for (f in note.files) client.delete("$REMOTE_FILES_DIR/${f.localName}")
+                        for (audio in note.audios) client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
+                    } catch (_: Exception) {}
+                    deletedRemote++
+                    SyncLog.log("Deleted remote note $id (was deleted locally)")
                 }
             }
 
@@ -339,7 +359,16 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 val remoteTimestamp = remoteJson.optLong("modifiedTimestamp", 0)
 
                 if (local.modifiedTimestamp >= remoteTimestamp) {
+                    // Upload local version, also clean up old filename if title changed
+                    val newFileName = noteFileName(local)
+                    val oldFileNames = remoteNoteIdToFileNames[id] ?: emptyList()
                     uploadNote(client, local)
+                    for (oldName in oldFileNames) {
+                        if (oldName != newFileName) {
+                            client.delete("$REMOTE_NOTES_DIR/$oldName")
+                            SyncLog.log("Deleted old remote file: $oldName (renamed to $newFileName)")
+                        }
+                    }
                     uploaded++
                 } else {
                     try {
@@ -556,8 +585,22 @@ class WebDavSyncService(private val context: ContextWrapper) {
     suspend fun deleteRemoteNote(note: BaseNote) = withContext(Dispatchers.IO) {
         val client = createClient() ?: return@withContext
         try {
-            val fileName = noteFileName(note)
-            client.delete("$REMOTE_NOTES_DIR/$fileName")
+            // Delete all possible filenames for this note ID
+            val currentFileName = noteFileName(note)
+            val idOnlyFileName = "${note.id}.json"
+            client.delete("$REMOTE_NOTES_DIR/$currentFileName")
+            if (currentFileName != idOnlyFileName) {
+                client.delete("$REMOTE_NOTES_DIR/$idOnlyFileName")
+            }
+            // Also try to find and delete any other files with this note ID
+            val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
+            for (file in remoteFiles) {
+                if (!file.isDirectory && file.name.endsWith(".json")) {
+                    if (extractNoteId(file.name) == note.id && file.name != currentFileName && file.name != idOnlyFileName) {
+                        client.delete("$REMOTE_NOTES_DIR/${file.name}")
+                    }
+                }
+            }
             // Delete remote attachments
             for (img in note.images) {
                 client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
@@ -568,7 +611,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             for (audio in note.audios) {
                 client.delete("$REMOTE_AUDIOS_DIR/${audio.name}")
             }
-            SyncLog.log("Deleted remote note: $fileName")
+            SyncLog.log("Deleted remote note: $currentFileName (and any duplicate files)")
         } catch (e: Exception) {
             Log.w(TAG, "deleteRemoteNote failed: ${e.message}")
         }
@@ -578,9 +621,25 @@ class WebDavSyncService(private val context: ContextWrapper) {
     suspend fun deleteRemoteNotes(notes: Collection<BaseNote>) = withContext(Dispatchers.IO) {
         val client = createClient() ?: return@withContext
         try {
+            // Get all remote files to find duplicates
+            val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
+            val noteIds = notes.map { it.id }.toSet()
+
             for (note in notes) {
-                val fileName = noteFileName(note)
-                client.delete("$REMOTE_NOTES_DIR/$fileName")
+                val currentFileName = noteFileName(note)
+                val idOnlyFileName = "${note.id}.json"
+                client.delete("$REMOTE_NOTES_DIR/$currentFileName")
+                if (currentFileName != idOnlyFileName) {
+                    client.delete("$REMOTE_NOTES_DIR/$idOnlyFileName")
+                }
+                // Delete any other files with this note ID
+                for (file in remoteFiles) {
+                    if (!file.isDirectory && file.name.endsWith(".json")) {
+                        if (extractNoteId(file.name) == note.id && file.name != currentFileName && file.name != idOnlyFileName) {
+                            client.delete("$REMOTE_NOTES_DIR/${file.name}")
+                        }
+                    }
+                }
                 for (img in note.images) {
                     client.delete("$REMOTE_IMAGES_DIR/${img.localName}")
                 }
@@ -603,7 +662,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val json = JSONObject().apply {
                 put("lastSyncTime", System.currentTimeMillis())
                 put("noteCount", noteIds.size)
-                put("appVersion", "1.0.4")
+                put("appVersion", "1.0.41")
                 val idsArray = JSONArray()
                 for (id in noteIds.sorted()) {
                     idsArray.put(id)
