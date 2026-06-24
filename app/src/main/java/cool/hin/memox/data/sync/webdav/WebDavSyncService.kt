@@ -163,6 +163,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
             cleanupOrphanedAttachments(client, allNotes)
             uploadLabels(client)
             val tombstones = preferences.webdavDeletedNoteIds.value
+                .mapNotNull { it.toLongOrNull() }
+                .toSet()
             uploadSyncMeta(client, allNotes.map { it.id }.toSet(), tombstones)
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
@@ -264,7 +266,9 @@ class WebDavSyncService(private val context: ContextWrapper) {
             val remoteTombstones = remoteMeta?.deletedNoteIds?.toMutableSet() ?: mutableSetOf()
 
             // Get local tombstones
-            val localTombstones = preferences.webdavDeletedNoteIds.value.toMutableSet()
+            val localTombstones = preferences.webdavDeletedNoteIds.value
+                .mapNotNull { it.toLongOrNull() }
+                .toMutableSet()
 
             // Merge tombstones: union of local and remote
             val mergedTombstones = (localTombstones + remoteTombstones).toMutableSet()
@@ -401,8 +405,8 @@ class WebDavSyncService(private val context: ContextWrapper) {
             mergedTombstones.retainAll { it !in currentNoteIds }
 
             // Save merged tombstones locally and upload sync_meta
-            preferences.webdavDeletedNoteIds.save(mergedTombstones)
-            uploadSyncMeta(client, updatedLocalNotes.map { it.id }.toSet(), mergedTombstones)
+            preferences.webdavDeletedNoteIds.save(mergedTombstones.map { it.toString() }.toSet())
+            uploadSyncMeta(client, updatedLocalNotes.map { it.id }.toSet(), mergedTombstones.toSet())
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
             SyncLog.log("Sync complete: $uploaded uploaded, $downloaded downloaded, $deletedLocal deleted locally, $deletedRemote deleted remotely, ${mergedTombstones.size} tombstones")
