@@ -154,6 +154,8 @@ class MemoXPreferences private constructor(private val context: Context) {
         BooleanPreference("webdav_auto_sync", preferences, false, R.string.webdav_auto_sync)
     val webdavLastSyncTime =
         LongPreference("webdav_last_sync_time", preferences, 0L)
+    val webdavDeletedNoteIds =
+        StringSetPreference("webdav_deleted_note_ids", preferences, setOf())
 
     val autoSaveAfterIdleTime =
         IntPreference(
