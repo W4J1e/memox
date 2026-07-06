@@ -200,6 +200,11 @@
             <include
                 layout="@layout/preference"
                 android:id="@+id/WebDavSync" />
+
+            <!-- OneDrive Sync -->
+            <include
+                layout="@layout/preference"
+                android:id="@+id/OneDriveSync" />
         </LinearLayout>
 
         <!-- Data category (security + settings) -->

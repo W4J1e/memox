@@ -14,7 +14,7 @@ Fork 自 [NotallyX](https://github.com/PhilKas/NotallyX)，进行了大量 UI �
 
 *1.有短、彩信权限，但本应用和引入的库均为发现相关权限要求，猜测可能是分享功能所需。*
 
-*2.锁定的笔记需要通过生物识别或 PIN 码解锁查看，实际为加密混淆笔记，同步到 WebDAV 时也没有加密，后续改进。*
+*2.锁定的笔记需要通过生物识别或 PIN 码解锁查看，实际未混淆加密笔记，同步到 WebDAV 时也没有加密，后续改进。*
 
 ## 功能特性
 
@@ -52,6 +52,7 @@ Fork 自 [NotallyX](https://github.com/PhilKas/NotallyX)，进行了大量 UI �
 ## 构建
 
 环境要求：
+
 - Android Studio
 - JDK 17+
 - Android SDK 35
