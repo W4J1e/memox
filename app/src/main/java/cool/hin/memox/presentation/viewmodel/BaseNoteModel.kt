@@ -23,8 +23,7 @@ import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
 import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.dao.CommonDao
-import cool.hin.memox.data.sync.webdav.WebDavSyncService
-import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
+import cool.hin.memox.data.sync.SyncRouter
 import cool.hin.memox.data.dao.LabelDao
 import cool.hin.memox.data.dao.NoteReminder
 import cool.hin.memox.data.dao.moveBaseNotes
@@ -676,10 +675,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
         actionMode.close(false)
         app.cancelPinAndReminders(notes)
-        // Delete from WebDAV before deleting locally (need note data for filename/attachments)
+        // Delete from the active sync provider before deleting locally (need note data for filename/attachments)
         try {
-            val syncService = WebDavSyncService(app)
-            syncService.deleteRemoteNotes(notes)
+            SyncRouter.deleteRemoteNotes(app, notes)
         } catch (_: Exception) {}
         return withContext(Dispatchers.IO) {
             baseNoteDao.delete(ids)
@@ -755,25 +753,25 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         if (preferences.startView.value == value) {
             savePreference(preferences.startView, START_VIEW_DEFAULT)
         }
-        WebDavSyncWorker.syncNow(getApplication())
+        SyncRouter.syncNow(getApplication())
     }
 
     fun insertLabel(label: String, onComplete: (success: Boolean) -> Unit) =
         executeAsyncWithCallback(
             { labelDao.insert(Label(label, (labelDao.getMaxOrder() ?: -1) + 1)) },
         ) { success ->
-            if (success) WebDavSyncWorker.syncNow(getApplication())
+            if (success) SyncRouter.syncNow(getApplication())
             onComplete(success)
         }
 
     fun updateLabels(labels: List<Label>) {
         viewModelScope.launch(Dispatchers.IO) { labelDao.update(labels) }
-        WebDavSyncWorker.syncNow(getApplication())
+        SyncRouter.syncNow(getApplication())
     }
 
     fun updateLabel(oldValue: String, newValue: String, onComplete: (success: Boolean) -> Unit) {
         executeAsyncWithCallback({ commonDao.updateLabel(oldValue, newValue) }) { success ->
-            if (success) WebDavSyncWorker.syncNow(getApplication())
+            if (success) SyncRouter.syncNow(getApplication())
             onComplete(success)
         }
         val labelsHiddenPreference = preferences.labelsHidden

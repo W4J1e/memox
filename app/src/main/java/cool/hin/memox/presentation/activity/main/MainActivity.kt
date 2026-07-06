@@ -24,7 +24,8 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.transition.platform.MaterialFade
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
-import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
+import cool.hin.memox.data.sync.SyncRouter
+import cool.hin.memox.data.sync.onedrive.OneDriveAuthHelper
 import cool.hin.memox.databinding.ActivityMainBinding
 import cool.hin.memox.presentation.activity.LockedActivity
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -69,6 +70,28 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         return navController.navigateUp()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleOAuthRedirect(intent)
+    }
+
+    private fun handleOAuthRedirect(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme == "memox" && data.host == "onedrive-auth") {
+            lifecycleScope.launch {
+                val error = OneDriveAuthHelper.handleRedirect(this@MainActivity, data)
+                if (error != null) {
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.onedrive_auth_failed, error),
+                        android.widget.Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -84,8 +107,11 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
         checkForMigrations(savedInstanceState)
 
-        // Sync with WebDAV on app start (pull remote updates)
-        WebDavSyncWorker.syncNow(this)
+        // Sync with the active provider on app start (pull remote updates)
+        SyncRouter.syncNow(this)
+
+        // Handle OneDrive OAuth redirect if the activity was (re)launched by it
+        handleOAuthRedirect(intent)
 
         onBackPressedDispatcher.addCallback(
             this,

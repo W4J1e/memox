@@ -36,8 +36,7 @@ import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.attachmentsDifferFrom
 import cool.hin.memox.data.model.copy
 import cool.hin.memox.data.model.deepCopy
-import cool.hin.memox.data.sync.webdav.WebDavSyncService
-import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
+import cool.hin.memox.data.sync.SyncRouter
 import cool.hin.memox.presentation.IMAGE_PLACEHOLDER
 import cool.hin.memox.presentation.InlineImageSpan
 import cool.hin.memox.presentation.activity.note.reminders.ReminderReceiver
@@ -196,13 +195,13 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                     FileType.IMAGE -> {
                         images.value = copy
                         updateImages()
-                        WebDavSyncWorker.syncNow(app)
+                        SyncRouter.syncNow(app)
                     }
 
                     FileType.ANY -> {
                         files.value = copy
                         updateFiles()
-                        WebDavSyncWorker.syncNow(app)
+                        SyncRouter.syncNow(app)
                     }
                 }
             }
@@ -220,7 +219,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             images.value = copy
             updateImages()
             withContext(Dispatchers.IO) { app.deleteAttachments(list) }
-            WebDavSyncWorker.syncNow(app)
+            SyncRouter.syncNow(app)
         }
     }
 
@@ -231,7 +230,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             files.value = copy
             updateFiles()
             withContext(Dispatchers.IO) { app.deleteAttachments(list) }
-            WebDavSyncWorker.syncNow(app)
+            SyncRouter.syncNow(app)
         }
     }
 
@@ -299,7 +298,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         if (result != current) {
             images.value = result
             viewModelScope.launch { updateImages() }
-            WebDavSyncWorker.syncNow(app)
+            SyncRouter.syncNow(app)
         }
     }
 
@@ -448,10 +447,9 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun deleteBaseNote(checkAutoSave: Boolean = true) {
         app.cancelPinAndReminders(id, reminders.value)
-        // Delete from WebDAV before deleting locally (need note data for filename/attachments)
+        // Delete from the active sync provider before deleting locally (need note data for filename/attachments)
         try {
-            val syncService = WebDavSyncService(app)
-            syncService.deleteRemoteNote(getBaseNote())
+            SyncRouter.deleteRemoteNote(app, getBaseNote())
         } catch (_: Exception) {}
         withContext(Dispatchers.IO) { baseNoteDao.delete(id) }
         WidgetProvider.sendBroadcast(app, longArrayOf(id))

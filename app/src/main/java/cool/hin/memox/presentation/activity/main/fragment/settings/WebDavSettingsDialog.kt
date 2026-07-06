@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
 import cool.hin.memox.data.sync.SyncResult
+import cool.hin.memox.data.sync.onedrive.OneDriveSyncWorker
 import cool.hin.memox.data.sync.webdav.WebDavSyncService
 import cool.hin.memox.data.sync.webdav.WebDavSyncWorker
 import cool.hin.memox.databinding.DialogWebdavSettingsBinding
@@ -61,11 +62,23 @@ class WebDavSettingsDialog : DialogFragment() {
     }
 
     private fun savePreferences() {
+        val enabling = binding.webdavSyncEnabledSwitch.isChecked
+        // Mutual exclusion: enabling WebDAV disables OneDrive (and vice-versa).
+        if (enabling && preferences.onedriveSyncEnabled.value) {
+            preferences.onedriveSyncEnabled.save(false)
+            preferences.onedriveAutoSync.save(false)
+            OneDriveSyncWorker.cancel(requireActivity())
+        }
         preferences.webdavUrl.save(binding.webdavUrlInput.text.toString().trim())
         preferences.webdavUsername.save(binding.webdavUsernameInput.text.toString().trim())
         preferences.webdavPassword.save(binding.webdavPasswordInput.text.toString())
-        preferences.webdavSyncEnabled.save(binding.webdavSyncEnabledSwitch.isChecked)
+        preferences.webdavSyncEnabled.save(enabling)
         preferences.webdavAutoSync.save(binding.webdavAutoSyncSwitch.isChecked)
+        preferences.syncProvider.save(
+            if (enabling) MemoXPreferences.PROVIDER_WEBDAV
+            else if (preferences.onedriveSyncEnabled.value) MemoXPreferences.PROVIDER_ONEDRIVE
+            else MemoXPreferences.PROVIDER_NONE
+        )
         // Schedule or cancel auto sync based on preferences
         WebDavSyncWorker.schedule(requireActivity())
     }

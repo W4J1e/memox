@@ -98,6 +98,7 @@ class SettingsFragment : Fragment() {
             setupBackup(binding)
             setupAutoBackups(binding)
             setupWebDav(binding)
+            setupOneDrive(binding)
             setupSecurity(binding)
             setupSettings(binding)
         }
@@ -508,6 +509,29 @@ class SettingsFragment : Fragment() {
                     }
                 } else {
                     getString(R.string.webdav_not_configured)
+                }
+        }
+    }
+
+    private fun MemoXPreferences.setupOneDrive(binding: FragmentSettingsBinding) {
+        binding.OneDriveSync.Title.setText(R.string.onedrive_sync)
+        binding.OneDriveSync.root.setOnClickListener {
+            OneDriveSettingsDialog()
+                .show(childFragmentManager, OneDriveSettingsDialog.TAG)
+        }
+        onedriveSyncEnabled.observe(viewLifecycleOwner) { enabled ->
+            binding.OneDriveSync.Value.text =
+                if (enabled) {
+                    val lastSync = onedriveLastSyncTime.value
+                    if (lastSync > 0) {
+                        val date = java.text.SimpleDateFormat.getDateTimeInstance()
+                            .format(java.util.Date(lastSync))
+                        getString(R.string.onedrive_last_sync, date)
+                    } else {
+                        getString(R.string.onedrive_last_sync_never)
+                    }
+                } else {
+                    getString(R.string.onedrive_not_signed_in)
                 }
         }
     }

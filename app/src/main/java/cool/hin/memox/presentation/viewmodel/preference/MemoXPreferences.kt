@@ -157,6 +157,37 @@ class MemoXPreferences private constructor(private val context: Context) {
     val webdavDeletedNoteIds =
         StringSetPreference("webdav_deleted_note_ids", preferences, setOf())
 
+    // Active sync provider: "" (none) | "webdav" | "onedrive"
+    val syncProvider =
+        StringPreference("sync_provider", preferences, PROVIDER_NONE)
+
+    // OneDrive sync preferences
+    val onedriveAccessToken by lazy {
+        StringPreference("onedrive_access_token", encryptedPreferences, "")
+    }
+    val onedriveRefreshToken by lazy {
+        StringPreference("onedrive_refresh_token", encryptedPreferences, "")
+    }
+    val onedriveTokenExpiresAt =
+        LongPreference("onedrive_token_expires_at", preferences, 0L)
+    val onedriveAccount =
+        StringPreference("onedrive_account", preferences, "")
+    val onedriveSyncEnabled =
+        BooleanPreference("onedrive_sync_enabled", preferences, false, R.string.onedrive_sync_enabled)
+    val onedriveAutoSync =
+        BooleanPreference("onedrive_auto_sync", preferences, false, R.string.onedrive_auto_sync)
+    val onedriveLastSyncTime =
+        LongPreference("onedrive_last_sync_time", preferences, 0L)
+    val onedriveDeletedNoteIds =
+        StringSetPreference("onedrive_deleted_note_ids", preferences, setOf())
+    // Transient PKCE/OAuth state for the in-flight sign-in (not user-configurable)
+    val onedrivePkceVerifier by lazy {
+        StringPreference("onedrive_pkce_verifier", encryptedPreferences, "")
+    }
+    val onedriveOauthState by lazy {
+        StringPreference("onedrive_oauth_state", encryptedPreferences, "")
+    }
+
     val autoSaveAfterIdleTime =
         IntPreference(
             "autoSaveAfterIdleTime",
@@ -335,6 +366,10 @@ class MemoXPreferences private constructor(private val context: Context) {
         const val EMPTY_PATH = "emptyPath"
         const val START_VIEW_DEFAULT = ""
         const val START_VIEW_UNLABELED = "cool.hin.memox.startview.UNLABELED"
+
+        const val PROVIDER_NONE = ""
+        const val PROVIDER_WEBDAV = "webdav"
+        const val PROVIDER_ONEDRIVE = "onedrive"
 
         val DEFAULT_EDIT_NOTE_TOP_ACTIONS =
             listOf(EditAction.SEARCH, EditAction.LABELS, EditAction.SHARE)
