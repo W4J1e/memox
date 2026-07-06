@@ -271,8 +271,12 @@ class OneDriveClient(private val context: Context) {
     }
 
     private fun encodePath(path: String): String {
-        // Graph path segments must be URL-encoded, but '/' separators preserved.
-        return path.split('/').joinToString("/") { Uri.encode(it) }
+        // Graph path-based URLs require a leading '/' after 'root:', e.g.
+        // 'root:/memoX/notes/file.json:/content'. Each segment is URL-encoded
+        // but '/' separators are preserved.
+        if (path.isEmpty()) return ""
+        val encoded = path.split('/').joinToString("/") { Uri.encode(it) }
+        return "/$encoded"
     }
 
     private fun splitParent(path: String): Pair<String, String> {

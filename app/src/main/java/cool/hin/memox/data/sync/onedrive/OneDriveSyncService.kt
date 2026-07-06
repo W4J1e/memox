@@ -153,8 +153,13 @@ class OneDriveSyncService(private val context: ContextWrapper) {
             uploadSyncMeta(client, allNotes.map { it.id }.toSet(), tombstones)
 
             preferences.onedriveLastSyncTime.save(System.currentTimeMillis())
-            SyncLog.log("Upload complete: $uploaded uploaded, $failed failed")
-            SyncResult.Success("Upload complete: $uploaded notes uploaded")
+            SyncLog.log("Upload complete: $uploaded uploaded, $failed failed out of ${allNotes.size}")
+            val msg = if (failed > 0) {
+                "Upload: $uploaded/${allNotes.size} notes, $failed failed"
+            } else {
+                "Upload complete: $uploaded notes uploaded"
+            }
+            SyncResult.Success(msg)
         } catch (e: Exception) {
             SyncLog.log("Upload error: ${e.message}")
             SyncResult.Error(e.message ?: "Upload failed")
@@ -383,12 +388,20 @@ class OneDriveSyncService(private val context: ContextWrapper) {
     }
 
     private suspend fun ensureRemoteDirs(client: OneDriveClient) {
-        client.createDirectory(REMOTE_DIR)
-        client.createDirectory(REMOTE_NOTES_DIR)
-        client.createDirectory("memoX/attachments")
-        client.createDirectory(REMOTE_IMAGES_DIR)
-        client.createDirectory(REMOTE_AUDIOS_DIR)
-        client.createDirectory(REMOTE_FILES_DIR)
+        val dirs = listOf(
+            REMOTE_DIR,
+            REMOTE_NOTES_DIR,
+            "memoX/attachments",
+            REMOTE_IMAGES_DIR,
+            REMOTE_AUDIOS_DIR,
+            REMOTE_FILES_DIR,
+        )
+        for (dir in dirs) {
+            val result = client.createDirectory(dir)
+            if (result.isFailure) {
+                SyncLog.log("Failed to create remote dir '$dir': ${result.exceptionOrNull()?.message}")
+            }
+        }
     }
 
     private fun noteToJson(note: BaseNote): String {

@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
@@ -57,6 +58,20 @@ class OneDriveSettingsDialog : DialogFragment() {
         super.onResume()
         // The OAuth flow opens the browser and redirects back here; refresh account state on return.
         updateAccountStatus()
+    }
+
+    private val accountObserver = Observer<String> {
+        // OAuth token exchange is async; when the token/account preference changes, refresh the UI.
+        if (_binding != null) updateAccountStatus()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Observe preference changes so the UI auto-refreshes when the async OAuth exchange
+        // completes after returning from the browser. onResume alone is insufficient because
+        // the token exchange may still be in flight when onResume fires.
+        preferences.onedriveAccount.observe(this, accountObserver)
+        preferences.onedriveRefreshToken.observe(this, accountObserver)
     }
 
     private fun loadPreferences() {
