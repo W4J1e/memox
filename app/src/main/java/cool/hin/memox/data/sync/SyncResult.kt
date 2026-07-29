@@ -13,19 +13,6 @@ sealed class SyncResult {
 }
 
 /**
- * Current status of sync.
- */
-enum class SyncStatus {
-    IDLE,
-    CONNECTING,
-    UPLOADING,
-    DOWNLOADING,
-    SYNCING,
-    SUCCESS,
-    ERROR,
-}
-
-/**
  * Simple sync log for debugging.
  */
 object SyncLog {
