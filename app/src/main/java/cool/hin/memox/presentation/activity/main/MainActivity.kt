@@ -10,6 +10,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -330,19 +332,31 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             if (syncing) getString(R.string.sync_status_syncing)
             else getString(R.string.sync_status_completed)
         binding.SyncIslandSpinner.visibility = if (syncing) View.VISIBLE else View.GONE
+        binding.SyncIslandDone.visibility = if (syncing) View.GONE else View.VISIBLE
         if (island.visibility != View.VISIBLE) {
+            // Expand from the centre (horizontal "pop") for a Dynamic-Island-like reveal.
             island.alpha = 0f
-            island.scaleX = 0.85f
-            island.scaleY = 0.85f
+            island.scaleX = 0.4f
+            island.scaleY = 1f
             island.visibility = View.VISIBLE
-            island.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(200).start()
+            island.animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .setDuration(280)
+                .setInterpolator(OvershootInterpolator())
+                .start()
         }
     }
 
     private fun hideSyncIsland() {
         val island = binding.SyncIsland
         if (island.visibility == View.VISIBLE) {
-            island.animate().alpha(0f).scaleX(0.85f).scaleY(0.85f).setDuration(250)
+            // Contract back towards the centre and fade out.
+            island.animate()
+                .alpha(0f)
+                .scaleX(0.4f)
+                .setDuration(220)
+                .setInterpolator(AccelerateInterpolator())
                 .withEndAction { island.visibility = View.GONE }
                 .start()
         }
