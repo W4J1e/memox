@@ -25,6 +25,7 @@ import cool.hin.memox.databinding.DialogPreferenceBooleanBinding
 import cool.hin.memox.databinding.DialogPreferenceEnumWithToggleBinding
 import cool.hin.memox.databinding.DialogSelectionBoxBinding
 import cool.hin.memox.databinding.DialogTextInputBinding
+import cool.hin.memox.databinding.DialogTextSizeBinding
 import cool.hin.memox.databinding.PreferenceBinding
 import cool.hin.memox.databinding.PreferenceSeekbarBinding
 import cool.hin.memox.databinding.PreferenceStepperBinding
@@ -394,11 +395,12 @@ fun PreferenceSeekbarBinding.setupTextSizePreference(
     context: Context,
     value: Float = preference.value,
     tooltipResId: Int? = null,
+    titleResId: Int? = null,
     onChange: (newValue: Float) -> Unit,
 ) {
     setup(
         value.toInt(),
-        preference.titleResId!!,
+        titleResId ?: preference.titleResId!!,
         preference.min.toInt(),
         preference.max.toInt(),
         context,
@@ -423,6 +425,50 @@ fun PreferenceSeekbarBinding.setupTextSizePreference(
                 }
             }
         )
+    }
+}
+
+/**
+ * Single "Font size" preference row that opens a dialog (similar to View/Theme) containing two
+ * sliders: one for the overview and one for the note editor.
+ */
+fun PreferenceBinding.setupTextSize(
+    editorPreference: FloatPreference,
+    overviewPreference: FloatPreference,
+    editorValue: Float,
+    overviewValue: Float,
+    context: Context,
+    layoutInflater: LayoutInflater,
+    onEditorChange: (newValue: Float) -> Unit,
+    onOverviewChange: (newValue: Float) -> Unit,
+) {
+    Title.setText(R.string.font_size)
+    Value.text =
+        "${context.getString(R.string.font_size_overview)} ${overviewValue.toInt()} · " +
+            "${context.getString(R.string.font_size_note_editor)} ${editorValue.toInt()}"
+    root.setOnClickListener {
+        val dialogBinding = DialogTextSizeBinding.inflate(layoutInflater)
+        dialogBinding.OverviewSize.setupTextSizePreference(
+            overviewPreference,
+            context,
+            value = overviewValue,
+            titleResId = R.string.font_size_overview,
+        ) { newValue ->
+            onOverviewChange(newValue)
+        }
+        dialogBinding.EditorSize.setupTextSizePreference(
+            editorPreference,
+            context,
+            value = editorValue,
+            titleResId = R.string.font_size_note_editor,
+        ) { newValue ->
+            onEditorChange(newValue)
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.font_size)
+            .setView(dialogBinding.root)
+            .setPositiveButton(R.string.save) { dialog, _ -> dialog.cancel() }
+            .show()
     }
 }
 

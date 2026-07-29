@@ -9,6 +9,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.model.Converters
+import cool.hin.memox.data.sync.SyncRouter
 import cool.hin.memox.presentation.format
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import java.util.Date
@@ -48,6 +49,7 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
     return try {
         val ids = baseNoteDao.getDeletedNoteIdsOlderThan(before)
         if (ids.isNotEmpty()) {
+            val notes = baseNoteDao.getByIds(ids)
             val imageStrings = baseNoteDao.getImages(ids)
             val fileStrings = baseNoteDao.getFiles(ids)
             val audioStrings = baseNoteDao.getAudios(ids)
@@ -55,6 +57,14 @@ suspend fun ContextWrapper.removeOldDeletedNotes(): ListenableWorker.Result {
             val images = imageStrings.flatMap { json -> Converters.jsonToFiles(json) }
             val files = fileStrings.flatMap { json -> Converters.jsonToFiles(json) }
             val audios = audioStrings.flatMap { json -> Converters.jsonToAudios(json) }
+
+            // Delete from the active sync provider (records tombstones) before deleting locally,
+            // otherwise a later sync would re-download the remote copies
+            try {
+                SyncRouter.deleteRemoteNotes(app, notes)
+            } catch (e: Exception) {
+                Log.w(AutoRemoveDeletedNotesWorker.TAG, "Failed to delete remote notes", e)
+            }
 
             baseNoteDao.delete(ids)
             deleteAttachments(images + files + audios, ids)
