@@ -15,14 +15,16 @@ RUN sed -i '/jdk.tls.disabledAlgorithms/s/^/#/' ${JAVA_HOME}/conf/security/java.
 
 ENV ANDROID_HOME=/opt/android-sdk
 
+# Android SDK 改用腾讯云镜像（https://mirrors.cloud.tencent.com/AndroidSDK/ 对应 dl.google.com/android/repository/）
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
     cd /tmp && \
-    wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmd.zip && \
+    wget -q https://mirrors.cloud.tencent.com/AndroidSDK/commandlinetools-linux-11076708_latest.zip -O cmd.zip && \
     unzip -q cmd.zip && \
     mv cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
     rm cmd.zip
 
 ENV PATH=$PATH:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools
 
-RUN yes | sdkmanager --licenses > /dev/null 2>&1 && \
-    sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null 2>&1
+# sdkmanager 仓库地址同样指向腾讯云镜像（android.sdk_repo_url 系统属性，由 JAVA_OPTS 传入）
+RUN yes | JAVA_OPTS="-Dandroid.sdk_repo_url=https://mirrors.cloud.tencent.com/AndroidSDK/" sdkmanager --licenses > /dev/null 2>&1 && \
+    JAVA_OPTS="-Dandroid.sdk_repo_url=https://mirrors.cloud.tencent.com/AndroidSDK/" sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null 2>&1
