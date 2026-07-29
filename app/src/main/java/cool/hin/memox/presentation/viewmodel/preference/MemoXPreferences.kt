@@ -70,6 +70,10 @@ class MemoXPreferences private constructor(private val context: Context) {
         )
 
     val labelsHidden = StringSetPreference("labelsHiddenInNavigation", preferences, setOf())
+    // Snapshot of `labelsHidden` as of the last successful sync. Used as the merge base so that
+    // un-hiding a label on one device can propagate to others (a plain union merge would keep a
+    // label hidden forever once any device had hidden it).
+    val labelsHiddenLastSynced = StringSetPreference("labelsHiddenLastSynced", preferences, setOf())
     val labelTagsHiddenInOverview =
         BooleanPreference(
             "labelsHiddenInOverview",

@@ -705,6 +705,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                 put("hiddenLabels", hiddenArray)
             }
             client.upload(REMOTE_LABELS_FILE, json.toString().toByteArray(Charsets.UTF_8))
+            preferences.labelsHiddenLastSynced.save(hiddenLabels)
         } catch (e: Exception) {
             Log.w(TAG, "uploadLabels: failed: ${e.message}")
         }
@@ -736,6 +737,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                     hiddenSet.add(hiddenArray.getString(i))
                 }
                 preferences.labelsHidden.save(hiddenSet)
+                preferences.labelsHiddenLastSynced.save(hiddenSet)
             }
         } catch (e: Exception) {
             Log.w(TAG, "downloadLabels: failed: ${e.message}")
@@ -786,9 +788,18 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                 labelDao.insert(Label(value, maxOrder + 1 + index))
             }
 
-            val mergedHidden = localHidden + remoteHidden
+            // Three-way merge of hidden-label state (base = snapshot from last successful sync)
+            // so that un-hiding (removals) propagates across devices. A plain union would keep a
+            // label hidden forever once any device had hidden it.
+            val lastSynced = preferences.labelsHiddenLastSynced.value
+            val mergedHidden = lastSynced.toMutableSet()
+            (remoteHidden - lastSynced).forEach { mergedHidden.add(it) }
+            (lastSynced - remoteHidden).forEach { mergedHidden.remove(it) }
+            (localHidden - lastSynced).forEach { mergedHidden.add(it) }
+            (lastSynced - localHidden).forEach { mergedHidden.remove(it) }
             preferences.labelsHidden.save(mergedHidden)
 
+            // Upload merged result (uploadLabels also refreshes labelsHiddenLastSynced to mergedHidden)
             uploadLabels(client)
         } catch (e: Exception) {
             Log.w(TAG, "syncLabels: failed: ${e.message}")

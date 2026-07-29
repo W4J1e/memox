@@ -780,6 +780,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 put("hiddenLabels", hiddenArray)
             }
             client.upload(REMOTE_LABELS_FILE, json.toString().toByteArray(Charsets.UTF_8))
+            preferences.labelsHiddenLastSynced.save(hiddenLabels)
             Log.d(TAG, "uploadLabels: uploaded ${labels.size} labels, ${hiddenLabels.size} hidden")
         } catch (e: Exception) {
             Log.w(TAG, "uploadLabels: failed: ${e.message}")
@@ -816,6 +817,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
                     hiddenSet.add(hiddenArray.getString(i))
                 }
                 preferences.labelsHidden.save(hiddenSet)
+                preferences.labelsHiddenLastSynced.save(hiddenSet)
             }
 
             Log.d(TAG, "downloadLabels: downloaded ${labels.size} labels")
@@ -872,11 +874,18 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 labelDao.insert(Label(value, maxOrder + 1 + index))
             }
 
-            // Merge hidden labels: union of local and remote hidden
-            val mergedHidden = localHidden + remoteHidden
+            // Three-way merge of hidden-label state (base = snapshot from last successful sync)
+            // so that un-hiding (removals) propagates across devices. A plain union would keep a
+            // label hidden forever once any device had hidden it.
+            val lastSynced = preferences.labelsHiddenLastSynced.value
+            val mergedHidden = lastSynced.toMutableSet()
+            (remoteHidden - lastSynced).forEach { mergedHidden.add(it) }
+            (lastSynced - remoteHidden).forEach { mergedHidden.remove(it) }
+            (localHidden - lastSynced).forEach { mergedHidden.add(it) }
+            (lastSynced - localHidden).forEach { mergedHidden.remove(it) }
             preferences.labelsHidden.save(mergedHidden)
 
-            // Upload merged result
+            // Upload merged result (uploadLabels also refreshes labelsHiddenLastSynced to mergedHidden)
             uploadLabels(client)
 
             Log.d(TAG, "syncLabels: local=${localLabels.size}, remote=${remoteLabels.size}, merged=${mergedLabels.size}")
