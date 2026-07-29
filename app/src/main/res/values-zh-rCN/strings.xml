@@ -180,7 +180,7 @@
     <string name="documentation">文档</string>
     <string name="donate">捐赠</string>
     <string name="drag_handle">拖动处理</string>
-    <string name="duplicate">复制笔记</string>
+    <string name="duplicate">复用</string>
     <plurals name="duplicates">
         <item quantity="one">%1$d 个重复项</item>
         <item quantity="other">%1$d 个重复项</item>
@@ -324,7 +324,7 @@
     <string name="others">其他</string>
     <string name="pause">暂停</string>
     <string name="paused">已暂停</string>
-    <string name="pin">置于顶部</string>
+    <string name="pin">置顶</string>
     <string name="pin_to_status_bar">固定到状态栏</string>
     <string name="pinned">已置顶</string>
     <string name="plain_text_files">Markdown/纯文本文件</string>
