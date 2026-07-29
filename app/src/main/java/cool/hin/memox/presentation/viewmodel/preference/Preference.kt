@@ -471,20 +471,6 @@ fun ListItemSort.callback(adapterChecked: CheckedListItemAdapter) =
         else -> ListItemParentSortCallback(adapterChecked)
     }
 
-enum class DefaultListNoteViewMode(override val textResId: Int) : StaticTextProvider {
-    READ_ONLY(R.string.read_only),
-    EDIT(R.string.edit),
-    LAST_USED(R.string.last_used);
-
-    fun toNoteViewMode(lastUsed: NoteViewMode): NoteViewMode {
-        return when (this) {
-            READ_ONLY -> NoteViewMode.READ_ONLY
-            EDIT -> NoteViewMode.EDIT
-            LAST_USED -> lastUsed
-        }
-    }
-}
-
 enum class BiometricLock(override val textResId: Int) : StaticTextProvider {
     ENABLED(R.string.enabled),
     DISABLED(R.string.disabled);
@@ -503,7 +489,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     SHARE(R.string.share, R.drawable.share),
     DELETE(R.string.delete, R.drawable.delete),
     TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
-    CONVERT(R.string.convert_to_list_note, R.drawable.convert_to_text),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
     RESTORE(R.string.restore, R.drawable.restore),
     PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard),
@@ -540,9 +525,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 RESTORE -> R.string.restore
                 TOGGLE_VIEW_MODE ->
                     if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
-                CONVERT ->
-                    if (type == Type.LIST) R.string.convert_to_text_note
-                    else R.string.convert_to_list_note
                 LOCK_NOTE -> if (isNoteLocked) R.string.unlock_note else R.string.lock_note
                 else -> textResId
             }

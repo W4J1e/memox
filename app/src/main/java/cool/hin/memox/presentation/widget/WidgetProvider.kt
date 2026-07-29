@@ -8,31 +8,23 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import cool.hin.memox.MemoXApplication
 import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
-import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.presentation.activity.ConfigureWidgetActivity
 import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import cool.hin.memox.presentation.activity.note.EditListActivity
 import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.extractColor
 import cool.hin.memox.presentation.getContrastFontColor
-import cool.hin.memox.presentation.view.note.listitem.findChildrenPositions
-import cool.hin.memox.presentation.view.note.listitem.findParentPosition
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.presentation.viewmodel.preference.Theme
 import cool.hin.memox.utils.embedIntentExtras
-import cool.hin.memox.utils.getOpenNotePendingIntent
 import cool.hin.memox.utils.isSystemInDarkMode
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,83 +44,7 @@ class WidgetProvider : AppWidgetProvider() {
                 }
             }
             ACTION_OPEN_NOTE -> openActivity(context, intent, EditNoteActivity::class.java)
-            ACTION_OPEN_LIST -> openActivity(context, intent, EditListActivity::class.java)
-            ACTION_CHECKED_CHANGED -> checkChanged(intent, context)
             ACTION_SELECT_NOTE -> openActivity(context, intent, ConfigureWidgetActivity::class.java)
-        }
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun checkChanged(intent: Intent, context: Context) {
-        val noteId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0)
-        val position = intent.getIntExtra(EXTRA_POSITION, 0)
-        var checked =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false)
-            } else null
-        val database =
-            MemoXDatabase.getDatabase(
-                    context.applicationContext as Application,
-                    observePreferences = false,
-                )
-                .value
-        val pendingResult = goAsync()
-        GlobalScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val baseNoteDao = database.getBaseNoteDao()
-                    val note = baseNoteDao.get(noteId)!!
-                    val item = note.items[position]
-                    if (checked == null) {
-                        checked = !item.checked
-                    }
-                    if (item.isChild) {
-                        changeChildChecked(note, position, checked!!, baseNoteDao, noteId)
-                    } else {
-                        val childrenPositions = note.items.findChildrenPositions(position)
-                        baseNoteDao.updateChecked(noteId, childrenPositions + position, checked!!)
-                    }
-                } finally {
-                    val app = context.applicationContext as MemoXApplication
-                    val preferences = MemoXPreferences.getInstance(context)
-                    updateWidgets(
-                        context,
-                        longArrayOf(noteId),
-                    )
-                    pendingResult.finish()
-                }
-            }
-        }
-    }
-
-    private suspend fun changeChildChecked(
-        note: BaseNote,
-        childPosition: Int,
-        checked: Boolean,
-        baseNoteDao: BaseNoteDao,
-        noteId: Long,
-    ) {
-        val parentPosition = note.items.findParentPosition(childPosition)!!
-        val parent = note.items[parentPosition]
-        val childrenPositions = note.items.findChildrenPositions(parentPosition)
-        if (parent.checked != checked) {
-            if (checked) {
-                // If the last unchecked child is being checked also check parent
-                if (childrenPositions.none { !note.items[it].checked && it != childPosition }) {
-                    baseNoteDao.updateChecked(noteId, listOf(childPosition, parentPosition), true)
-                } else {
-                    baseNoteDao.updateChecked(noteId, childPosition, true)
-                }
-            } else {
-                if (parent.checked) {
-                    // If any child is unchecked the parent is unchecked too
-                    baseNoteDao.updateChecked(noteId, listOf(childPosition, parentPosition), false)
-                } else {
-                    baseNoteDao.updateChecked(noteId, childPosition, false)
-                }
-            }
-        } else {
-            baseNoteDao.updateChecked(noteId, childPosition, false)
         }
     }
 
@@ -264,21 +180,8 @@ class WidgetProvider : AppWidgetProvider() {
             return Intent().setOpenNoteIntent(noteType, noteId)
         }
 
-        fun getWidgetCheckedChangeIntent(listNoteId: Long, position: Int): Intent {
-            return Intent().apply {
-                action = ACTION_CHECKED_CHANGED
-                putExtra(EXTRA_POSITION, position)
-                putExtra(EXTRA_SELECTED_BASE_NOTE, listNoteId)
-                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-            }
-        }
-
         private fun Intent.setOpenNoteIntent(noteType: Type, noteId: Long) = apply {
-            action =
-                when (noteType) {
-                    Type.LIST -> ACTION_OPEN_LIST
-                    Type.NOTE -> ACTION_OPEN_NOTE
-                }
+            action = ACTION_OPEN_NOTE
             putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
             data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
@@ -350,10 +253,6 @@ class WidgetProvider : AppWidgetProvider() {
         private const val ACTION_NOTES_MODIFIED = "cool.hin.memox.ACTION_NOTE_MODIFIED"
 
         const val ACTION_OPEN_NOTE = "cool.hin.memox.ACTION_OPEN_NOTE"
-        const val ACTION_OPEN_LIST = "cool.hin.memox.ACTION_OPEN_LIST"
         const val ACTION_SELECT_NOTE = "cool.hin.memox.ACTION_SELECT_NOTE"
-
-        const val ACTION_CHECKED_CHANGED = "cool.hin.memox.ACTION_CHECKED_CHANGED"
-        const val EXTRA_POSITION = "memox.intent.extra.cool.hin.memox.EXTRA_POSITION"
     }
 }

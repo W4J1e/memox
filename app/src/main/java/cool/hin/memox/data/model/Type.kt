@@ -1,13 +1,12 @@
 package cool.hin.memox.data.model
 
 enum class Type {
-    NOTE,
-    LIST;
+    NOTE;
 
     companion object {
-        fun valueOfOrDefault(value: String) =
+        fun valueOfOrDefault(value: String?) =
             try {
-                Type.valueOf(value)
+                Type.valueOf(value!!)
             } catch (e: Exception) {
                 NOTE
             }

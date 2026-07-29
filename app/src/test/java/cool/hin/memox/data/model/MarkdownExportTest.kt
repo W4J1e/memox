@@ -102,7 +102,7 @@ class MarkdownExportTest {
         val note =
             BaseNote(
                 id = 0L,
-                type = Type.LIST,
+                type = Type.NOTE,
                 folder = Folder.NOTES,
                 color = BaseNote.COLOR_DEFAULT,
                 title = "",

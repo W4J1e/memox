@@ -251,13 +251,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         if (initListeners) setupListeners()
         setStateFromModel(savedInstanceState)
 
-        if (
-            !notallyModel.isNewNote && notallyModel.type == Type.LIST && savedInstanceState == null
-        ) {
-            val lastUsedViewMode = notallyModel.viewMode.value
-            notallyModel.viewMode.value =
-                preferences.defaultListNoteViewMode.value.toNoteViewMode(lastUsedViewMode)
-        }
         if (initListeners) configureUI()
         if (notallyModel.locked) {
             showNoteLockScreen()
@@ -401,7 +394,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         index: Int,
         isBottomBar: Boolean = false,
     ) {
-        val actions = EditAction.entries.filter { it != EditAction.RESTORE && it != EditAction.CONVERT && it != EditAction.LOCK_NOTE }
+        val actions = EditAction.entries.filter { it != EditAction.RESTORE && it != EditAction.LOCK_NOTE }
         ActionSelectionBottomSheet(
                 actions,
                 notallyModel,
@@ -518,14 +511,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected fun updateJumpButtonsVisibility(manualSize: Int? = null) {
         jumpToTop?.post {
             val show =
-                when (notallyModel.type) {
-                    Type.NOTE ->
-                        (manualSize ?: binding.EnterBody.lineCount) >
-                            (if (isInLandscapeMode) 30 else 75)
-                    Type.LIST ->
-                        (manualSize ?: notallyModel.items.size) >
-                            (if (isInLandscapeMode) 15 else 25)
-                }
+                (manualSize ?: binding.EnterBody.lineCount) > (if (isInLandscapeMode) 30 else 75)
             jumpToTop?.isVisible = show
             jumpToBottom?.isVisible = show
         }
@@ -1054,18 +1040,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     private fun initialiseBinding() {
         binding = ActivityEditBinding.inflate(layoutInflater)
-        when (type) {
-            Type.NOTE -> {
-                binding.AddItem.visibility = GONE
-                binding.MainListView.visibility = GONE
-                binding.CheckedListView.visibility = GONE
-            }
-            Type.LIST -> {
-                binding.EnterBody.visibility = GONE
-                binding.CheckedListView.visibility =
-                    if (preferences.listItemSorting.value.isAutoSortChecked) VISIBLE else GONE
-            }
-        }
+        binding.AddItem.visibility = GONE
+        binding.MainListView.visibility = GONE
+        binding.CheckedListView.visibility = GONE
 
         binding.EnterTitle.setTextSizeSp(notallyModel.textSize.editTitleSize)
         binding.Date.setTextSizeSp(notallyModel.textSize.displaySmallerSize)

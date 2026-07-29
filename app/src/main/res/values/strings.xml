@@ -294,6 +294,7 @@
     <string name="migrating_data">Migrating data…</string>
     <string name="migration_moving_attachments">Moving attachments…</string>
     <string name="migration_splitting_notes">Splitting oversized notes…</string>
+    <string name="migration_converting_lists">Converting checklists into notes…</string>
     <string name="minutes">Minutes</string>
     <string name="modified_date">Modified</string>
     <string name="monospace">Monospace</string>

@@ -142,9 +142,10 @@ class GoogleKeepImporter : ExternalImporter {
                 )
             }
 
+        val (finalBody, finalSpans) = items.toCheckboxBodyAndSpans(body, spans)
         return BaseNote(
             id = 0L, // Auto-generated
-            type = if (googleKeepNote.listContent.isNotEmpty()) Type.LIST else Type.NOTE,
+            type = Type.NOTE,
             folder =
                 when {
                     googleKeepNote.isTrashed -> Folder.DELETED
@@ -156,9 +157,9 @@ class GoogleKeepImporter : ExternalImporter {
             timestamp = googleKeepNote.createdTimestampUsec / 1000,
             modifiedTimestamp = googleKeepNote.userEditedTimestampUsec / 1000,
             labels = googleKeepNote.labels.map { it.name },
-            body = body,
-            spans = spans,
-            items = items,
+            body = finalBody,
+            spans = finalSpans,
+            items = listOf(),
             images = images,
             files = files,
             audios = audios,

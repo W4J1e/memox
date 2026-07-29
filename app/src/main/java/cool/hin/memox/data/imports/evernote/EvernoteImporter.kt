@@ -138,9 +138,11 @@ fun EvernoteNote.mapToBaseNote(): BaseNote {
             Audio(it.attributes!!.fileName, -1, System.currentTimeMillis())
         }
 
+    val items = tasks.mapToListItem()
+    val (finalBody, finalSpans) = items.toCheckboxBodyAndSpans(body, spans)
     return BaseNote(
         0L,
-        type = if (tasks.isEmpty()) Type.NOTE else Type.LIST,
+        type = Type.NOTE,
         folder = Folder.NOTES, // There is no archive in Evernote, also deleted notes are not
         // exported
         color = BaseNote.COLOR_DEFAULT, // TODO: possible in Evernote?
@@ -149,9 +151,9 @@ fun EvernoteNote.mapToBaseNote(): BaseNote {
         timestamp = parseTimestamp(created),
         modifiedTimestamp = parseTimestamp(updated),
         labels = tag.map { it.name },
-        body = body,
-        spans = spans,
-        items = tasks.mapToListItem(),
+        body = finalBody,
+        spans = finalSpans,
+        items = emptyList(),
         images = images,
         files = files,
         audios = audios,

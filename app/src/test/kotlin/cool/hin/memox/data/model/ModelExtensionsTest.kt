@@ -98,7 +98,7 @@ class ModelExtensionsTest {
         val baseNote =
             BaseNote(
                 id = 1,
-                Type.LIST,
+                Type.NOTE,
                 Folder.DELETED,
                 "#E2F6D3",
                 "Title",
@@ -137,7 +137,7 @@ class ModelExtensionsTest {
               "pinned": true,
               "color": "#E2F6D3",
               "modifiedTimestamp": 945869546,
-              "type": "LIST",
+              "type": "NOTE",
               "title": "Title",
               "viewMode": "READ_ONLY",
               "items": [

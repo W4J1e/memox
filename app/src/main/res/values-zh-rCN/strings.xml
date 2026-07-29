@@ -285,6 +285,7 @@
     <string name="migrating_data">迁移数据中…</string>
     <string name="migration_moving_attachments">移动附件中…</string>
     <string name="migration_splitting_notes">正在分割过大的笔记…</string>
+    <string name="migration_converting_lists">正在将清单转换为笔记…</string>
     <string name="minutes">分钟</string>
     <string name="modified_date">修改时间</string>
     <string name="monospace">等宽</string>
