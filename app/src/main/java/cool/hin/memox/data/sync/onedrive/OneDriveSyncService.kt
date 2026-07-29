@@ -101,7 +101,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
-            val allNotes = dao.getAllNotes()
+            val allNotes = dao.getAllNotesIncludingDeleted()
 
             SyncLog.log("Found ${allNotes.size} notes to upload")
 
@@ -247,7 +247,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
-            val localNotes = dao.getAllNotes()
+            val localNotes = dao.getAllNotesIncludingDeleted()
             val localNoteMap = localNotes.associateBy { it.id }
 
             val remoteMeta = downloadSyncMeta(client)
@@ -270,7 +270,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                 }
             }
 
-            val updatedLocalNotes = dao.getAllNotes()
+            val updatedLocalNotes = dao.getAllNotesIncludingDeleted()
             val updatedLocalNoteMap = updatedLocalNotes.associateBy { it.id }
 
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()

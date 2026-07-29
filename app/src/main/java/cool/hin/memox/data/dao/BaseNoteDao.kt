@@ -122,6 +122,12 @@ interface BaseNoteDao {
     @Query("SELECT * FROM BaseNote WHERE folder = 'NOTES' ORDER BY pinned DESC, timestamp DESC")
     suspend fun getAllNotes(): List<BaseNote>
 
+    /** 同步专用：返回所有文件夹（含回收站 DELETED、归档等）的笔记。
+     *  不能用 getAllNotes()（仅 NOTES），否则回收站笔记不参与本地侧，
+     *  会被误判为"仅远程存在"而下载回首页。 */
+    @Query("SELECT * FROM BaseNote ORDER BY pinned DESC, timestamp DESC")
+    suspend fun getAllNotesIncludingDeleted(): List<BaseNote>
+
     @Query(
         "SELECT * FROM BaseNote WHERE folder = 'NOTES' AND isPinnedToStatus = 1 ORDER BY timestamp DESC"
     )

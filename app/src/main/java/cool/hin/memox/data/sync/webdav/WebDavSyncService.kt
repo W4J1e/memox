@@ -112,7 +112,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
-            val allNotes = dao.getAllNotes()
+            val allNotes = dao.getAllNotesIncludingDeleted()
 
             SyncLog.log("Found ${allNotes.size} notes to upload")
 
@@ -258,7 +258,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
-            val localNotes = dao.getAllNotes()
+            val localNotes = dao.getAllNotesIncludingDeleted()
             val localNoteMap = localNotes.associateBy { it.id }
 
             // Download remote sync_meta to get tombstones (deletedNoteIds)
@@ -286,7 +286,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
             }
 
             // Re-read local notes after applying tombstones
-            val updatedLocalNotes = dao.getAllNotes()
+            val updatedLocalNotes = dao.getAllNotesIncludingDeleted()
             val updatedLocalNoteMap = updatedLocalNotes.associateBy { it.id }
 
             // Get remote note list - track ALL filenames per note ID to detect duplicates
