@@ -1,5 +1,9 @@
 buildscript {
     repositories {
+        // 腾讯云 Maven 镜像：优先走镜像，避免 Maven Central 限流(429)；覆盖 root :classpath 解析
+        maven {
+            url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
+        }
         google()
         mavenCentral()
     }
