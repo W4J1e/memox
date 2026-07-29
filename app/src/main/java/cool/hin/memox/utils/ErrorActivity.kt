@@ -19,9 +19,10 @@ import cool.hin.memox.presentation.setupProgressDialog
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.misc.Progress
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.utils.backup.BACKUP_TIMESTAMP_FORMATTER
 import cool.hin.memox.utils.backup.exportAsZip
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -78,7 +79,7 @@ class ErrorActivity : AppCompatActivity() {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                                 putExtra(
                                     Intent.EXTRA_TITLE,
-                                    "MemoX_Crash_Backup-${BACKUP_TIMESTAMP_FORMATTER.format(Date())}",
+                                    "MemoX_Crash_Backup-${backupTimestampFormatter.format(Date())}",
                                 )
                             }
                             .wrapWithChooser(this@ErrorActivity)
@@ -120,5 +121,7 @@ class ErrorActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "ErrorActivity"
+        private val backupTimestampFormatter =
+            SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
     }
 }
