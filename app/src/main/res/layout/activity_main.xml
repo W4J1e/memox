@@ -47,8 +47,10 @@
         style="@style/FloatingActionButtonPrimary"
         app:srcCompat="@drawable/edit" />
 
-    <!-- Dynamic-Island style sync status indicator: centered in the toolbar row,
-         between the title and the labels/settings buttons. Hidden by default. -->
+    <!-- Dynamic-Island style sync status indicator: sits in the toolbar row,
+         between the title and the labels/settings buttons. Its vertical center is
+         nudged down (FrameLayout paddingTop) so it aligns with the title text and
+         the right-side icons. Hidden by default. -->
     <FrameLayout
         android:id="@+id/SyncIsland"
         android:layout_width="wrap_content"
@@ -57,6 +59,7 @@
         android:layout_alignBottom="@id/Toolbar"
         android:layout_centerHorizontal="true"
         android:gravity="center"
+        android:paddingTop="12dp"
         android:visibility="gone"
         android:clickable="false"
         android:focusable="false"
@@ -70,8 +73,8 @@
             android:background="@drawable/sync_island_bg"
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp">
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
 
             <ProgressBar
                 android:id="@+id/SyncIslandSpinner"
