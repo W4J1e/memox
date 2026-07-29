@@ -394,6 +394,8 @@
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>
     <string name="text_default">默认</string>
+    <string name="sync_status_syncing">正在同步……</string>
+    <string name="sync_status_completed">同步完成！</string>
     <string name="font_size">字体大小</string>
     <string name="font_size_note_editor">编辑器</string>
     <string name="font_size_overview">概述</string>
