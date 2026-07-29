@@ -162,7 +162,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
         labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
         labelsHiddenObserver = Observer { labelsHidden ->
-            baseNotes = null
+            // Do NOT reassign `baseNotes` here: NotesFragment observes the existing
+            // Content instance (model.baseNotes!!). Recreating it would orphan the
+            // observed instance, so changes triggered by a background sync would not
+            // reach the home list until the fragment is recreated.
             initBaseNotes(labelsHidden)
         }
         preferences.labelsHidden.observeForever(labelsHiddenObserver!!)
