@@ -3,7 +3,6 @@ package cool.hin.memox.presentation.activity.main.fragment.settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.biometrics.BiometricManager
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -14,7 +13,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
-import androidx.documentfile.provider.DocumentFile
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
@@ -47,7 +45,6 @@ import cool.hin.memox.presentation.viewmodel.preference.DateFormat
 import cool.hin.memox.presentation.viewmodel.preference.EnumPreference
 import cool.hin.memox.presentation.viewmodel.preference.FloatPreference
 import cool.hin.memox.presentation.viewmodel.preference.IntPreference
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_DEFAULT
 import cool.hin.memox.presentation.viewmodel.preference.NotesSort
 import cool.hin.memox.presentation.viewmodel.preference.NotesSortBy
@@ -58,7 +55,6 @@ import cool.hin.memox.presentation.viewmodel.preference.TextProvider
 import cool.hin.memox.presentation.viewmodel.preference.Theme
 import cool.hin.memox.presentation.viewmodel.preference.TimeFormat
 import cool.hin.memox.utils.canAuthenticateWithBiometrics
-import cool.hin.memox.utils.toReadablePath
 
 inline fun <reified T> PreferenceBinding.setup(
     enumPreference: EnumPreference<T>,
@@ -295,52 +291,6 @@ fun PreferenceBinding.setup(
     }
 }
 
-fun PreferenceBinding.setupPeriodicBackup(
-    value: Boolean,
-    context: Context,
-    layoutInflater: LayoutInflater,
-    enabled: Boolean,
-    onSave: (newValue: Boolean) -> Unit,
-) {
-    Title.setText(R.string.backup_periodic)
-    val enabledText = context.getString(R.string.enabled)
-    val disabledText = context.getString(R.string.disabled)
-    val text =
-        if (enabled) {
-            if (value) enabledText else disabledText
-        } else context.getString(R.string.auto_backups_folder_set)
-    Value.text = text
-    root.isEnabled = enabled
-    root.setOnClickListener {
-        val layout =
-            DialogPreferenceBooleanBinding.inflate(layoutInflater, null, false).apply {
-                Title.setText(R.string.backup_periodic)
-                Message.setText(R.string.backup_periodic_hint)
-                if (value) {
-                    EnabledButton.isChecked = true
-                } else {
-                    DisabledButton.isChecked = true
-                }
-            }
-        val dialog =
-            MaterialAlertDialogBuilder(context).setView(layout.root).setCancelButton().show()
-        layout.apply {
-            EnabledButton.setOnClickListener {
-                dialog.cancel()
-                if (!value) {
-                    onSave.invoke(true)
-                }
-            }
-            DisabledButton.setOnClickListener {
-                dialog.cancel()
-                if (value) {
-                    onSave.invoke(false)
-                }
-            }
-        }
-    }
-}
-
 fun PreferenceBinding.setupBackupPassword(
     preference: StringPreference,
     password: String,
@@ -381,39 +331,6 @@ fun PreferenceBinding.setupBackupPassword(
                 onSave(PASSWORD_EMPTY)
             }
             .showAndFocus(allowFullSize = true)
-    }
-}
-
-fun PreferenceBinding.setupBackupsFolder(
-    value: String,
-    context: Context,
-    chooseBackupFolder: () -> Unit,
-    onDisable: () -> Unit,
-) {
-    Title.setText(R.string.auto_backups_folder)
-
-    if (value == EMPTY_PATH) {
-        Value.setText(R.string.tap_to_set_up)
-
-        root.setOnClickListener { chooseBackupFolder() }
-    } else {
-        val uri = Uri.parse(value)
-        val folder =
-            requireNotNull(
-                DocumentFile.fromTreeUri(context, uri),
-                { "Folder with uri: '$uri' does not exist" },
-            )
-        if (folder.exists()) {
-            val path = context.toReadablePath(uri)
-            Value.text = path
-        } else Value.setText(R.string.cant_find_folder)
-
-        root.setOnClickListener {
-            MenuDialog(context)
-                .add(R.string.clear) { onDisable() }
-                .add(R.string.choose_another_folder) { chooseBackupFolder() }
-                .show()
-        }
     }
 }
 

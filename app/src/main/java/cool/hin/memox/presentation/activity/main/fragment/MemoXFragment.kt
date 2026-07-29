@@ -319,8 +319,8 @@ abstract class MemoXFragment : Fragment(), ItemListener {
             with(model.preferences) {
                 BaseNoteAdapter(
                     model.actionMode.selectedIds,
-                    dateFormatOverview.value,
-                    timeFormatOverview.value,
+                    dateFormat.value,
+                    timeFormat.value,
                     notesAdapterSortCallback(),
                     BaseNoteVHPreferences(
                         textSizeOverview.value,

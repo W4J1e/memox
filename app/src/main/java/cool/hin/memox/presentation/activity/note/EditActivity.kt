@@ -133,7 +133,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             updateModel()
             if (notallyModel.isModified()) {
                 Log.d(TAG, "Auto-saving note...")
-                saveNote(checkAutoSave = false)
+                saveNote()
             }
         }
     }
@@ -147,11 +147,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     protected open suspend fun checkSave() {
         if (notallyModel.isEmpty()) {
-            notallyModel.deleteBaseNote(checkAutoSave = false)
+            notallyModel.deleteBaseNote()
         } else if (notallyModel.isModified()) {
             saveNote()
-        } else {
-            notallyModel.checkBackupOnSave()
         }
     }
 
@@ -167,9 +165,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
-    open suspend fun saveNote(checkAutoSave: Boolean = true): Long {
+    open suspend fun saveNote(): Long {
         updateModel()
-        return notallyModel.saveNote(checkAutoSave).also {
+        return notallyModel.saveNote().also {
             WidgetProvider.sendBroadcast(application, longArrayOf(it))
             SyncRouter.syncNow(application)
         }
@@ -743,8 +741,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         binding.Date.apply {
             displayFormattedTimestamp(
                 date,
-                preferences.dateFormatNoteView.value,
-                preferences.timeFormatNoteView.value,
+                preferences.dateFormat.value,
+                preferences.timeFormat.value,
                 datePrefixResId,
             )
             setTextSizeSp(notallyModel.textSize.displaySmallerSize)
@@ -1123,8 +1121,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         notallyModel.originalNote?.let { note ->
             binding.EditNoteReminderChip.setupReminderChip(
                 note,
-                preferences.dateFormatNoteView.value,
-                preferences.timeFormatNoteView.value,
+                preferences.dateFormat.value,
+                preferences.timeFormat.value,
                 notallyModel.textSize.displaySmallerSize,
             )
             binding.EditNoteReminderChip.setOnClickListener {

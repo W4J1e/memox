@@ -27,17 +27,6 @@
         <item quantity="other">Attachments</item>
     </plurals>
     <string name="audio_recordings">Audio Recordings</string>
-    <string name="auto_backup">Auto Backups</string>
-    <string name="auto_backup_error_message">An error occurred during auto backup:\n\'%1$s\'\nPlease check your settings or report a bug</string>
-    <string name="auto_backup_failed">memoX Auto Backup failed</string>
-    <string name="auto_backup_last">Last Backup</string>
-    <string name="auto_backup_on_save">Backup on exit Note automatically</string>
-    <string name="auto_backup_on_save_hint">By enabling this, a backup (\"MemoX_AutoBackup.zip\") is automatically created in the configured \"Backups Folder\" whenever a note is exited.\nBe aware this might affect performance</string>
-    <string name="auto_backup_skipped_files">Skipped %1$d missing attached files/images</string>
-    <string name="auto_backups_folder">Backups Folder</string>
-    <string name="auto_backups_folder_hint">Folder in which all auto backups will be stored in.\nIf you want to use Cloud-Storage/WebDAV for your backups, please read the docs (click \"%1$s\")</string>
-    <string name="auto_backups_folder_rechoose">You need to re-choose your Backups Folder so that memoX has permission to write to it.\nYou can also press cancel to skip importing Backups Folder value</string>
-    <string name="auto_backups_folder_set">Set up a Backups Folder above first</string>
     <string name="auto_remove_deleted_notes">Auto remove deleted Notes permanently after</string>
     <string name="auto_remove_deleted_notes_hint">By enabling this, Notes that were deleted will be permanently removed after X days</string>
     <string name="auto_save_after_idle_time">Auto save note after specified idle time</string>
@@ -47,8 +36,6 @@
     <string name="backup">Backup</string>
     <string name="backup_password">Backup Password</string>
     <string name="backup_password_hint">By setting this, all future backup ZIPs will be encrypted and password-protected</string>
-    <string name="backup_period_days">Auto backup period in days</string>
-    <string name="backup_periodic">Periodic Backups</string>
     <string name="webdav_sync">WebDAV Sync</string>
     <string name="webdav_url">WebDAV URL</string>
     <string name="webdav_url_hint">https://dav.jianguoyun.com/dav/</string>
@@ -95,7 +82,6 @@
     <string name="onedrive_auth_failed">Microsoft sign-in failed: %1$s</string>
     <string name="onedrive_provider_conflict">WebDAV sync is enabled. Enable OneDrive will disable WebDAV sync. Continue?</string>
     <string name="webdav_provider_conflict">OneDrive sync is enabled. Enable WebDAV will disable OneDrive sync. Continue?</string>
-    <string name="backup_periodic_hint">By enabling this, backups are automatically created in the configured Backups Folder.\nThis may not work if you have power saving mode enabled</string>
     <string name="behaviour">Behaviour</string>
     <string name="biometric_backup_advice">It is advised to export a full backup of all notes before dis-/enabling biometric lock, in case the encryption via biometric lock fails</string>
     <string name="biometric_lock">Lock app with device biometric or PIN</string>
@@ -118,7 +104,6 @@
         <item quantity="one">Can’t add %1$d image</item>
         <item quantity="other">Can’t add %1$d images</item>
     </plurals>
-    <string name="cant_find_folder">Can’t find folder. It may have been moved or deleted</string>
     <string name="cant_find_note">Can’t find note. It may have been deleted</string>
     <string name="cant_load_file">Can’t load file. It may have been moved or deleted</string>
     <string name="cant_load_image">Can’t load image. It may have been moved or deleted</string>
@@ -129,7 +114,6 @@
     <string name="change_note">Change Note</string>
     <string name="check_all_items">Check all items</string>
     <string name="choose_another_folder">Choose another folder</string>
-    <string name="choose_folder">Choose folder</string>
     <string name="choose_other_app">Choose which app to import from</string>
     <string name="clean_up">Clean Up</string>
     <string name="cleanup_finished_summary">Removed %1$d missing attachments from %2$d notes</string>
@@ -161,9 +145,8 @@
     <string name="data_in_public_message">By enabling this, the app’s internal database and attached files will be moved into the app’s public folder (Android/media/cool.hin.memox). In combination with file synchronization apps this can be used to synchronize memoX data between multiple devices.</string>
     <string name="date">Date</string>
     <string name="date_format">Date format</string>
-    <string name="date_format_hint">Applies selected datetime format in Notes Overview</string>
-    <string name="date_format_note_view">Datetime Format Note View</string>
-    <string name="date_format_overview">Datetime Format Overview</string>
+    <string name="date_format_hint">Applies the selected date and time format to notes</string>
+    <string name="time_format">Time format</string>
     <plurals name="days">
         <item quantity="one">Day</item>
         <item quantity="other">Days</item>
@@ -303,7 +286,6 @@
     <string name="make_default">Make default</string>
     <string name="make_feature_request">Make a feature request</string>
     <string name="make_list">Make list</string>
-    <string name="max_backups">Amount of backups to keep</string>
     <string name="max_items_to_display">Max items to display in list</string>
     <string name="max_labels_to_display">Max labels to display in Navigation</string>
     <string name="max_lines_to_display">Max lines to display in note</string>
@@ -359,7 +341,6 @@
     <string name="please_grant_notally_alarm">Please grant memoX to send reminders</string>
     <string name="please_grant_notally_audio">Please grant memoX the permission to record audio. Recordings never leave your device</string>
     <string name="please_grant_notally_notification">Please grant memoX the permission to send notifications</string>
-    <string name="please_grant_notally_notification_auto_backup">If an auto backup fails you can receive a notification, if you grant memoX permission to send notifications</string>
     <string name="previous">Previous</string>
     <string name="quillpad" translatable="false">Quillpad</string>
     <string name="quillpad_help">In order to import your Notes from Quillpad you must export your Quillpad Notes as a .ZIP Backup file. To do that, open Quillpad, go to Settings &gt; Backup &gt; Create a backup, and save the .ZIP on your phone. \n\nIf you already have a Quillpad Backup .ZIP file, click Import and choose it.</string>
@@ -430,8 +411,6 @@
     <string name="time">Time</string>
     <string name="time_24h">24h</string>
     <string name="time_am_pm">am/pm</string>
-    <string name="time_format_note_view">Time format Note View</string>
-    <string name="time_format_overview">Time format Overview</string>
     <string name="title">Title</string>
     <string name="to_pin_note_status_bar">To pin a note to the status bar, allow memoX to send notifications. Tap Settings &gt; Permissions and allow Notifications</string>
     <string name="to_record_audio">To record audio, allow memoX access to your microphone. Tap Settings &gt; Permissions and turn Microphone on</string>

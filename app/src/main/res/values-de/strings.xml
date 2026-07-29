@@ -20,17 +20,6 @@
     <string name="ascending">Aufsteigend</string>
     <string name="attach_file">Datei hinzufügen</string>
     <string name="audio_recordings">Sprachnotizen</string>
-    <string name="auto_backup">Automatisches Backup</string>
-    <string name="auto_backup_error_message">Beim autom. Backup ist ein Fehler aufgetreten:\n\'%1$s\'\nÜberprüfe deine Einstellungen oder melde einen Bug</string>
-    <string name="auto_backup_failed">memoX Auto Backup fehlgeschlagen</string>
-    <string name="auto_backup_last">Letztes Backup</string>
-    <string name="auto_backup_on_save">Autom. Backup beim Notiz Verlassen</string>
-    <string name="auto_backup_on_save_hint">Ist dies aktiviert, wird jedesmal wenn eine Notiz verlassen wird autom. ein Backup (\"MemoX_AutoBackup.zip\") im \"Backups Ordner\" erstellt.\nDies kann die App-Performance beeinträchtigen</string>
-    <string name="auto_backup_skipped_files">%1$d fehlende angehängte Dateien/Bilder übersprungen</string>
-    <string name="auto_backups_folder">Backups Ordner</string>
-    <string name="auto_backups_folder_hint">Ordner in dem alle autom. Backups erstellt werden</string>
-    <string name="auto_backups_folder_rechoose">Der Backups Ordner muss erneut ausgewählt werden, damit memoX Schreibrechte dafür erhält.\nÜber Abbrechen kann der Import dieser Einstellung übersprungen werden.</string>
-    <string name="auto_backups_folder_set">Stelle erst ein Backups Ordner ein</string>
     <string name="auto_remove_deleted_notes">Entferne gelöschte Notizen permanent nach</string>
     <string name="auto_remove_deleted_notes_hint">Ist dies aktiviert, werden gelöschte Notizen automatisch nach X Tagen permanent entfernt</string>
     <string name="auto_save_after_idle_time">Autom. Speichern nach X Sekunden</string>
@@ -39,9 +28,6 @@
     <string name="backup">Backup</string>
     <string name="backup_password">Backup Passwort</string>
     <string name="backup_password_hint">Durch diese Einstellung werden alle zukünftigen ZIP Backups verschlüsselt und passwortgeschützt</string>
-    <string name="backup_period_days">Auto. Backup Intervall in Tagen</string>
-    <string name="backup_periodic">Periodische Backups</string>
-    <string name="backup_periodic_hint">Ist dies aktiviert, werden autom. Backups im eingestellten Backups Ordner erstellt. \nDies könnte fehlschlagen wenn Energiesparmodus aktiviert ist</string>
     <string name="behaviour">Funktionsweise</string>
     <string name="biometric_backup_advice">Es wird empfohlen ein komplettes Backup zu erstellen bevor die Biometrische/PIN Sperre de-/aktiviert wird, für den Fall dass die Verschlüsselung fehlschlägt</string>
     <string name="biometric_lock">App per Biometrie/PIN sperren</string>
@@ -64,7 +50,6 @@
         <item quantity="one">Kann %1$d Bild nicht hinzufügen</item>
         <item quantity="other">Kann %1$d Bilder nicht hinzufügen</item>
     </plurals>
-    <string name="cant_find_folder">Kann den Ordner nicht finden. Er kann verschoben oder gelöscht worden sein</string>
     <string name="cant_find_note">Kann Notiz nicht finden. Vielleicht wurde sie gelöscht</string>
     <string name="cant_load_file">Datei kann nicht geladen werden. Eventuell wurde sie verschoben oder gelöscht</string>
     <string name="cant_load_image">Bild kann nicht geladen werden. Es kann verschoben oder gelöscht worden sein</string>
@@ -74,7 +59,6 @@
     <string name="change_note">Notiz ändern</string>
     <string name="check_all_items">Alle Elemente abhaken</string>
     <string name="choose_another_folder">Anderen Ordner wählen</string>
-    <string name="choose_folder">Ordner wählen</string>
     <string name="choose_other_app">Wähle von welcher App importiert werden soll</string>
     <string name="clean_up">Cleanup</string>
     <string name="cleanup_finished_summary">%1$d fehlende Anhänge für %2$d Notizen wurden entfernt</string>
@@ -233,7 +217,6 @@
     <string name="locked">Gesperrt</string>
     <string name="make_feature_request">Feature/Verbesserung vorschlagen</string>
     <string name="make_list">Liste erstellen</string>
-    <string name="max_backups">Anzahl zu behaltende Backups</string>
     <string name="max_items_to_display">Maximal angezeigte Listeneinträge</string>
     <string name="max_labels_to_display">Max. Anzahl an angezeigten Lables in der Navigation</string>
     <string name="max_lines_to_display">Maximal angezeigte Zeilen</string>
@@ -281,7 +264,6 @@
     <string name="please_grant_notally_alarm">Bitte erlaube memoX Erinnerungen zu schicken</string>
     <string name="please_grant_notally_audio">Bitte gib memoX die Berechtigung Sprachnotizen zu erstellen. Die Aufnahmen verlassen niemals dein Gerät.</string>
     <string name="please_grant_notally_notification">Bitte erlaube memoX Benachrichtigungen zu schicken</string>
-    <string name="please_grant_notally_notification_auto_backup">Wenn ein autom. Backup fehlschlägt kann eine Benachrichtigung geschickt werden, wenn du memoX erlaubst Benachrichtigungen zu schicken</string>
     <string name="previous">Vorherige</string>
     <string name="rate">App bewerten</string>
     <string name="read_only">Lesemodus</string>

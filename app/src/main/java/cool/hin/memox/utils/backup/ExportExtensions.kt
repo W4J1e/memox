@@ -1,31 +1,18 @@
 package cool.hin.memox.utils.backup
 
-import android.Manifest
 import android.app.Application
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
 import android.print.printPdf
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import androidx.core.app.NotificationCompat
-import androidx.core.content.getSystemService
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import androidx.work.Data
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.ListenableWorker.Result
-import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
@@ -37,15 +24,12 @@ import cool.hin.memox.data.model.toJson
 import cool.hin.memox.data.model.toMarkdown
 import cool.hin.memox.data.model.toTxt
 import cool.hin.memox.presentation.activity.LockedActivity
-import cool.hin.memox.presentation.activity.main.MainActivity
-import cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment
 import cool.hin.memox.presentation.getQuantityString
 import cool.hin.memox.presentation.view.misc.Progress
 import cool.hin.memox.presentation.viewmodel.BackupFile
 import cool.hin.memox.presentation.viewmodel.ExportMimeType
 import cool.hin.memox.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.progress.BackupProgress
 import cool.hin.memox.utils.MIME_TYPE_ZIP
 import cool.hin.memox.utils.SUBFOLDER_AUDIOS
@@ -53,16 +37,12 @@ import cool.hin.memox.utils.SUBFOLDER_FILES
 import cool.hin.memox.utils.SUBFOLDER_IMAGES
 import cool.hin.memox.utils.ZipVerificationException
 import cool.hin.memox.utils.copyToLarge
-import cool.hin.memox.utils.createChannelIfNotExists
 import cool.hin.memox.utils.createFileSafe
-import cool.hin.memox.utils.createReportBugIntent
 import cool.hin.memox.utils.getCurrentAudioDirectory
 import cool.hin.memox.utils.getCurrentFilesDirectory
 import cool.hin.memox.utils.getCurrentImagesDirectory
 import cool.hin.memox.utils.getCurrentMediaRoot
 import cool.hin.memox.utils.getExportedPath
-import cool.hin.memox.utils.getLogFileUri
-import cool.hin.memox.utils.listZipFiles
 import cool.hin.memox.utils.log
 import cool.hin.memox.utils.md5Hash
 import cool.hin.memox.utils.recreateDir
@@ -77,16 +57,8 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStreamWriter
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.exception.ZipException
@@ -95,225 +67,6 @@ import net.lingala.zip4j.model.enums.CompressionLevel
 import net.lingala.zip4j.model.enums.EncryptionMethod
 
 private const val TAG = "ExportExtensions"
-private const val NOTIFICATION_CHANNEL_ID = "AutoBackups"
-private const val NOTIFICATION_ID = 123412
-private const val OUTPUT_DATA_BACKUP_URI = "backupUri"
-
-const val AUTO_BACKUP_WORK_NAME = "cool.hin.memox.AutoBackupWork"
-const val OUTPUT_DATA_EXCEPTION = "exception"
-
-val BACKUP_TIMESTAMP_FORMATTER = SimpleDateFormat("yyyyMMdd-HHmmssSSS", Locale.ENGLISH)
-private const val ON_SAVE_BACKUP_FILE = "MemoX_AutoBackup"
-private const val PERIODIC_BACKUP_FILE_PREFIX = "MemoX_Backup_"
-
-private val periodicBackupMutex = Mutex()
-
-suspend fun ContextWrapper.createBackup(): Result {
-    return periodicBackupMutex.withLock {
-        val app = applicationContext as Application
-        val preferences = MemoXPreferences.getInstance(app)
-        val (_, maxBackups) = preferences.periodicBackups.value
-        val path = preferences.backupsFolder.value
-
-        if (path != EMPTY_PATH) {
-            val uri = path.toUri()
-            val folder =
-                requireBackupFolder(
-                    path,
-                    "Periodic Backup failed, because auto-backup path '$path' is invalid",
-                ) ?: return@withLock Result.success()
-            try {
-                val backupFilePrefix = PERIODIC_BACKUP_FILE_PREFIX
-                val name =
-                    "$backupFilePrefix${BACKUP_TIMESTAMP_FORMATTER.format(System.currentTimeMillis())}"
-                log(TAG, msg = "Creating '$uri/$name.zip'...")
-                val zipUri = folder.createFileSafe(MIME_TYPE_ZIP, name, ".zip").uri
-                val exportedNotes =
-                    app.exportAsZip(zipUri, password = preferences.backupPassword.value)
-                log(TAG, msg = "Exported $exportedNotes notes")
-                val backupFiles = folder.listZipFiles(backupFilePrefix)
-                log(TAG, msg = "Found ${backupFiles.size} backups")
-                val backupsToBeDeleted = backupFiles.drop(maxBackups)
-                if (backupsToBeDeleted.isNotEmpty()) {
-                    log(
-                        TAG,
-                        msg =
-                            "Deleting ${backupsToBeDeleted.size} oldest backups (maxBackups: $maxBackups): ${backupsToBeDeleted.joinToString { "'${it.name.toString()}'" }}",
-                    )
-                }
-                backupsToBeDeleted.forEach {
-                    if (it.exists()) {
-                        it.delete()
-                    }
-                }
-                log(TAG, msg = "Finished backup to '$zipUri'")
-                preferences.periodicBackupLastExecution.save(Date().time)
-                return@withLock Result.success(
-                    Data.Builder().putString(OUTPUT_DATA_BACKUP_URI, zipUri.path!!).build()
-                )
-            } catch (e: Exception) {
-                log(TAG, msg = "Failed creating backup to '$path'", throwable = e)
-                tryPostErrorNotification(e)
-                return Result.success(
-                    Data.Builder().putString(OUTPUT_DATA_EXCEPTION, e.message).build()
-                )
-            }
-        }
-        return@withLock Result.success()
-    }
-}
-
-fun ContextWrapper.autoBackupOnSaveFileExists(backupPath: String): Boolean {
-    val backupFolderFile = DocumentFile.fromTreeUri(this, backupPath.toUri())
-    return backupFolderFile?.let {
-        val autoBackupFile = it.findFile("$ON_SAVE_BACKUP_FILE.zip")
-        autoBackupFile != null && autoBackupFile.exists()
-    } ?: false
-}
-
-private val autoBackupOnSaveMutex = Mutex()
-
-suspend fun ContextWrapper.autoBackupOnSave(
-    backupPath: String,
-    password: String,
-    savedNote: BaseNote?,
-) {
-    return autoBackupOnSaveMutex.withLock {
-        Log.d(
-            TAG,
-            "Starting Auto Backup${savedNote?.let { " for Note id: ${it.id} title: ${it.title}" } ?: ""}...",
-        )
-        val folder =
-            requireBackupFolder(
-                backupPath,
-                "Auto backup on note save (${savedNote?.let { "id: '${savedNote.id}, title: '${savedNote.title}'" }}) failed, because auto-backup path '$backupPath' is invalid",
-            ) ?: return@withLock
-        try {
-            var changedNote = savedNote
-            var backupFile = folder.findFile("$ON_SAVE_BACKUP_FILE.zip")
-            backupFile =
-                if (backupFile == null || !backupFile.exists()) {
-                    if (savedNote != null) {
-                        log(
-                            "Re-creating full backup since auto backup ZIP unexpectedly does not exist"
-                        )
-                        changedNote = null
-                    }
-                    folder.createFileSafe(MIME_TYPE_ZIP, ON_SAVE_BACKUP_FILE, ".zip")
-                } else backupFile
-            if (changedNote == null) {
-                // Export all notes
-                Log.d(TAG, "Creating full backup ${backupFile.uri}")
-                exportAsZip(backupFile.uri, password = password)
-                Log.d(TAG, "Finished full backup ${backupFile.uri}")
-            } else {
-                Log.d(TAG, "Creating partial backup for Note ${changedNote.id}")
-                // Only add changed note to existing backup ZIP
-                val (_, databaseFile) = copyDatabase()
-                val files =
-                    with(changedNote) {
-                        images.map {
-                            BackupFile(
-                                SUBFOLDER_IMAGES,
-                                File(getCurrentImagesDirectory(), it.localName),
-                            )
-                        } +
-                            files.map {
-                                BackupFile(
-                                    SUBFOLDER_FILES,
-                                    File(getCurrentFilesDirectory(), it.localName),
-                                )
-                            } +
-                            audios.map {
-                                BackupFile(
-                                    SUBFOLDER_AUDIOS,
-                                    File(getCurrentAudioDirectory(), it.name),
-                                )
-                            } +
-                            BackupFile(null, databaseFile)
-                    }
-                suspend fun handleZipException(e: Throwable, backupFile: DocumentFile) {
-                    log(
-                        TAG,
-                        msg =
-                            "Re-creating full backup since existing auto backup ZIP is corrupt: ${e.message}",
-                    )
-                    backupFile.delete()
-                    autoBackupOnSave(backupPath, password, savedNote)
-                }
-                try {
-                    exportToZip(backupFile.uri, files, password)
-                    Log.d(TAG, "Finished partial backup for Note ${changedNote.id}")
-                } catch (e: ZipException) {
-                    handleZipException(e, backupFile)
-                } catch (e: ZipVerificationException) {
-                    handleZipException(e, backupFile)
-                }
-            }
-        } catch (e: Exception) {
-            try {
-                log(
-                    TAG,
-                    "Auto backup on note save (${savedNote?.let { "id: '${savedNote.id}, title: '${savedNote.title}'" }}) failed",
-                    e,
-                )
-            } catch (logException: Exception) {
-                tryPostErrorNotification(logException)
-                return@withLock
-            }
-            tryPostErrorNotification(e)
-        }
-    }
-}
-
-private fun ContextWrapper.requireBackupFolder(path: String, msg: String): DocumentFile? {
-    return try {
-        val folder = DocumentFile.fromTreeUri(this, path.toUri())!!
-        if (!folder.exists()) {
-            log(TAG, msg = msg)
-            tryPostErrorNotification(BackupFolderNotExistsException(path))
-            return null
-        }
-        folder
-    } catch (e: Exception) {
-        log(TAG, msg = msg, throwable = e)
-        tryPostErrorNotification(BackupFolderNotExistsException(path, e))
-        return null
-    }
-}
-
-suspend fun ContextWrapper.checkBackupOnSave(
-    preferences: MemoXPreferences,
-    note: BaseNote? = null,
-    forceFullBackup: Boolean = false,
-) {
-    if (preferences.backupOnSave.value) {
-        val backupPath = preferences.backupsFolder.value
-        if (backupPath != EMPTY_PATH) {
-            if (forceFullBackup) {
-                deleteModifiedNoteBackup(backupPath)
-            }
-            MainScope().launch {
-                withContext(Dispatchers.IO) {
-                    autoBackupOnSave(backupPath, preferences.backupPassword.value, note)
-                }
-            }
-            println()
-        }
-    }
-}
-
-fun ContextWrapper.deleteModifiedNoteBackup(backupPath: String) {
-    DocumentFile.fromTreeUri(this, backupPath.toUri())
-        ?.findFile("$ON_SAVE_BACKUP_FILE.zip")
-        ?.delete()
-}
-
-fun ContextWrapper.modifiedNoteBackupExists(backupPath: String): Boolean {
-    return DocumentFile.fromTreeUri(this, backupPath.toUri())
-        ?.findFile("$ON_SAVE_BACKUP_FILE.zip")
-        ?.exists() ?: false
-}
 
 typealias NotesAndAttachments = Pair<Int, Int>
 
@@ -357,7 +110,6 @@ fun ContextWrapper.exportAsZip(
         )
 
         val counter = AtomicInteger(0)
-        val missingAttachments = ArrayList<String>()
         images.export(
             zipFile,
             zipParameters,
@@ -366,7 +118,6 @@ fun ContextWrapper.exportAsZip(
             backupProgress,
             totalAttachments,
             counter,
-            missingAttachments,
         )
         files.export(
             zipFile,
@@ -376,24 +127,19 @@ fun ContextWrapper.exportAsZip(
             backupProgress,
             totalAttachments,
             counter,
-            missingAttachments,
         )
         audios
             .asSequence()
             .flatMap { string -> Converters.jsonToAudios(string) }
             .forEach { audio ->
                 try {
-                    if (
-                        !backupAttachmentFile(
-                            this,
-                            zipFile,
-                            zipParameters,
-                            SUBFOLDER_AUDIOS,
-                            audio.name,
-                        )
-                    ) {
-                        missingAttachments.add("Audio: ${audio.name}")
-                    }
+                    backupAttachmentFile(
+                        this,
+                        zipFile,
+                        zipParameters,
+                        SUBFOLDER_AUDIOS,
+                        audio.name,
+                    )
                 } catch (exception: Exception) {
                     log(TAG, throwable = exception)
                 } finally {
@@ -451,10 +197,6 @@ fun ContextWrapper.exportAsZip(
         zipFile.file.delete()
         databaseCopy.delete()
         backupProgress?.postValue(BackupProgress(inProgress = false))
-        // Post skipped attachments notification if any were missing
-        if (missingAttachments.isNotEmpty()) {
-            postSkippedAttachmentsNotification(missingAttachments)
-        }
         return Pair(totalNotes, totalAttachments)
     } finally {
         tempFile.delete()
@@ -562,20 +304,10 @@ private fun Sequence<FileAttachment>.export(
     backupProgress: MutableLiveData<Progress>?,
     total: Int,
     counter: AtomicInteger,
-    missingDisplayNames: MutableList<String>,
 ) {
     forEach { file ->
         try {
-            if (!backupAttachmentFile(context, zipFile, zipParameters, subfolder, file.localName)) {
-                val typePrefix =
-                    when (subfolder) {
-                        SUBFOLDER_IMAGES -> "Image"
-                        SUBFOLDER_FILES -> "File"
-                        else -> subfolder
-                    }
-                val display = file.originalName.ifBlank { file.localName }
-                missingDisplayNames.add("$typePrefix: $display")
-            }
+            backupAttachmentFile(context, zipFile, zipParameters, subfolder, file.localName)
         } catch (exception: Exception) {
             context.log(TAG, throwable = exception)
         } finally {
@@ -587,44 +319,6 @@ private fun Sequence<FileAttachment>.export(
                 )
             )
         }
-    }
-}
-
-fun WorkInfo.PeriodicityInfo.isEqualTo(value: Long, unit: TimeUnit): Boolean {
-    return repeatIntervalMillis == unit.toMillis(value)
-}
-
-fun List<WorkInfo>.containsNonCancelled(): Boolean = any { it.state != WorkInfo.State.CANCELLED }
-
-fun WorkManager.cancelAutoBackup() {
-    Log.d(TAG, "Cancelling auto backup work")
-    cancelUniqueWork(AUTO_BACKUP_WORK_NAME)
-}
-
-fun WorkManager.updateAutoBackup(workInfos: List<WorkInfo>, autoBackPeriodInDays: Long) {
-    Log.d(TAG, "Updating auto backup schedule for period: $autoBackPeriodInDays days")
-    val workInfoId = workInfos.first().id
-    val updatedWorkRequest =
-        PeriodicWorkRequest.Builder(
-                AutoBackupWorker::class.java,
-                autoBackPeriodInDays.toLong(),
-                TimeUnit.DAYS,
-            )
-            .setId(workInfoId)
-            .build()
-    updateWork(updatedWorkRequest)
-}
-
-fun WorkManager.scheduleAutoBackup(context: ContextWrapper, periodInDays: Long) {
-    Log.d(TAG, "Scheduling auto backup for period: $periodInDays days")
-    val request =
-        PeriodicWorkRequest.Builder(AutoBackupWorker::class.java, periodInDays, TimeUnit.DAYS)
-            .build()
-    try {
-        enqueueUniquePeriodicWork(AUTO_BACKUP_WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
-    } catch (e: IllegalStateException) {
-        // only happens in Unit-Tests
-        context.log(TAG, "Scheduling auto backup failed", throwable = e)
     }
 }
 
@@ -643,59 +337,6 @@ private fun backupAttachmentFile(
         true
     } else {
         false
-    }
-}
-
-private fun ContextWrapper.postSkippedAttachmentsNotification(missingAttachments: List<String>) {
-    getSystemService<NotificationManager>()?.let { manager ->
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createChannelIfNotExists(NOTIFICATION_CHANNEL_ID)
-        }
-        val maxToShow = 10
-        val lines = missingAttachments.take(maxToShow)
-        val more = missingAttachments.size - lines.size
-        val bigText = buildString {
-            append(getString(R.string.auto_backup_skipped_files, missingAttachments.size))
-            append(" (${getCurrentMediaRoot()})")
-            append('\n')
-            lines.forEachIndexed { idx, name ->
-                if (idx > 0) append('\n')
-                append("• ")
-                append(name)
-            }
-            if (more > 0) {
-                append('\n')
-                append("+")
-                append(more)
-                append(" …")
-            }
-        }
-
-        val cleanupIntent =
-            Intent(this, CleanupMissingAttachmentsReceiver::class.java).apply {
-                action = CleanupMissingAttachmentsReceiver.ACTION_CLEANUP_MISSING_ATTACHMENTS
-            }
-        val cleanupPendingIntent =
-            PendingIntent.getBroadcast(
-                this,
-                0,
-                cleanupIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-
-        val notification =
-            NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(R.drawable.export)
-                .setContentTitle(getString(R.string.backup))
-                .setContentText(
-                    getString(R.string.auto_backup_skipped_files, missingAttachments.size) +
-                        " (${getCurrentMediaRoot()})"
-                )
-                .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .addAction(R.drawable.delete, getString(R.string.clean_up), cleanupPendingIntent)
-                .build()
-        manager.notify(NOTIFICATION_ID + 1, notification)
     }
 }
 
@@ -882,109 +523,6 @@ fun Context.exportPreferences(preferences: MemoXPreferences, uri: Uri): Boolean 
             Log.e(TAG, "Export preferences failed", e)
         }
         return false
-    }
-}
-
-private fun ContextWrapper.tryPostErrorNotification(e: Throwable) {
-    fun postErrorNotification(e: Throwable) {
-        getSystemService<NotificationManager>()?.let { manager ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                manager.createChannelIfNotExists(NOTIFICATION_CHANNEL_ID)
-            }
-            val bugIntent =
-                try {
-                    createReportBugIntent(
-                        e.stackTraceToString(),
-                        title = "Auto Backup failed",
-                        body = "Error occurred during auto backup, see logs below",
-                    )
-                } catch (e: IllegalArgumentException) {
-                    createReportBugIntent(
-                        stackTrace =
-                            "PLEASE PASTE YOUR MEMOX LOGS FILE CONTENT HERE (Error Notification -> 'View Logs')",
-                        title = "Auto Backup failed",
-                        body = "Error occurred during auto backup, see logs below.",
-                    )
-                }
-            val notificationBuilder =
-                NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.error)
-                    .setContentTitle(getString(R.string.auto_backup_failed))
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .bigText(
-                                getString(
-                                    R.string.auto_backup_error_message,
-                                    "${e.javaClass.simpleName}: ${e.localizedMessage}",
-                                )
-                            )
-                    )
-                    .addAction(
-                        R.drawable.settings,
-                        getString(R.string.settings),
-                        PendingIntent.getActivity(
-                            this,
-                            0,
-                            Intent(this, MainActivity::class.java).apply {
-                                putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                            },
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                        ),
-                    )
-                    .addAction(
-                        R.drawable.error,
-                        getString(R.string.report_bug),
-                        PendingIntent.getActivity(
-                            this,
-                            0,
-                            bugIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                        ),
-                    )
-                    .addAction(
-                        R.drawable.text_file,
-                        getString(R.string.view_logs),
-                        PendingIntent.getActivity(
-                            this,
-                            0,
-                            Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(getLogFileUri(), "text/plain")
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            },
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                        ),
-                    )
-
-            // Add a "Select Folder" button if the error is about a missing folder
-            if (e is BackupFolderNotExistsException) {
-                notificationBuilder.addAction(
-                    R.drawable.settings,
-                    getString(R.string.choose_folder),
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        Intent(this, MainActivity::class.java).apply {
-                            putExtra(MainActivity.EXTRA_FRAGMENT_TO_OPEN, R.id.Settings)
-                            putExtra(SettingsFragment.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER, true)
-                        },
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    ),
-                )
-            }
-
-            manager.notify(NOTIFICATION_ID, notificationBuilder.build())
-        }
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        if (
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            postErrorNotification(e)
-        }
-    } else {
-        postErrorNotification(e)
     }
 }
 

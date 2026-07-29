@@ -18,25 +18,12 @@
     <string name="ascending">升序</string>
     <string name="attach_file">附件</string>
     <string name="audio_recordings">錄音</string>
-    <string name="auto_backup">自動備份</string>
-    <string name="auto_backup_error_message">自動備份期間發生錯誤: \'%1$s\' 請檢查您的設定或報告錯誤</string>
-    <string name="auto_backup_failed">memoX自動備份失敗</string>
-    <string name="auto_backup_last">最近的備份</string>
-    <string name="auto_backup_on_save">筆記上的備份會自動儲存</string>
-    <string name="auto_backup_on_save_hint">透過啟用此功能，每當儲存筆記時，都會在選擇的\"備份資料夾\"中自動建立備份(\"MemoX_AutoBackup.zip\")。\n請注意這可能會影響效能</string>
-    <string name="auto_backups_folder">備份資料夾</string>
-    <string name="auto_backups_folder_hint">所有自動備份都儲存於其中的資料夾。</string>
-    <string name="auto_backups_folder_rechoose">您需要重新選擇備份資料夾，以便 memoX 有權限寫入該資料夾。\n您也可以按取消跳過匯入備份資料夾</string>
-    <string name="auto_backups_folder_set">首先設定上面的備份資料夾</string>
     <string name="auto_save_after_idle_time">在指定的空閒時間後自動儲存筆記</string>
     <string name="auto_sort_by_checked">將選取的項目排列到最後</string>
     <string name="back">返回</string>
     <string name="backup">備份</string>
     <string name="backup_password">備份密碼</string>
     <string name="backup_password_hint">如果設定密碼，未來備份的zip資料都會被加密且受密碼保護</string>
-    <string name="backup_period_days">自動備份週期/天</string>
-    <string name="backup_periodic">定期備份</string>
-    <string name="backup_periodic_hint">透過啟用此功能，將在選擇的備份資料夾中自動建立備份。\n如果啟用了省電模式，則可能不起作用</string>
     <string name="behaviour">行為</string>
     <string name="biometric_lock">使用生物辨識/密碼鎖定應用</string>
     <string name="biometrics_disable_success">生物辨識/PIN 鎖已禁用</string>
@@ -55,7 +42,6 @@
         <item quantity="one">無法新增 %1$d 張圖片</item>
         <item quantity="other">無法新增 %1$d 張圖片</item>
     </plurals>
-    <string name="cant_find_folder">找不到資料夾。可能已經被移動或刪除</string>
     <string name="cant_find_note">找不到筆記。可能已經被刪除</string>
     <string name="cant_load_file">無法載入檔案。可能已經被移動或刪除</string>
     <string name="cant_load_image">無法載入圖片。可能已經被移動或刪除</string>
@@ -65,7 +51,6 @@
     <string name="change_note">變更筆記</string>
     <string name="check_all_items">檢查所有項目</string>
     <string name="choose_another_folder">選擇另一個資料夾</string>
-    <string name="choose_folder">選擇資料夾</string>
     <string name="choose_other_app">選擇要從哪個應用程式匯入</string>
     <string name="clear">清除</string>
     <string name="clear_data">清除資料</string>
@@ -90,7 +75,8 @@
     <string name="data_in_public_message">啟用此功能，應用程式的內部資料庫和附件將被移至應用程式的公開資料夾（Android/media/cool.hin.memox）中。與檔案同步應用程式組合，這可用於同步多個裝置之間的資料。</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
-    <string name="date_format_hint">在筆記概覽中套用選定的日期格式</string>
+    <string name="date_format_hint">將所選日期與時間格式套用至筆記</string>
+    <string name="time_format">時間格式</string>
     <plurals name="days">
         <item quantity="one">天</item>
         <item quantity="other">天</item>
@@ -204,7 +190,6 @@
     <string name="locked">已鎖定</string>
     <string name="make_feature_request">提出功能請求</string>
     <string name="make_list">製作清單</string>
-    <string name="max_backups">保留的備份數量</string>
     <string name="max_items_to_display">清單最多可顯示的項目數</string>
     <string name="max_labels_to_display">導航欄最多可顯示的標簽數</string>
     <string name="max_lines_to_display">筆記最多可顯示的行數</string>
@@ -239,7 +224,6 @@
     <string name="please_grant_notally_alarm">請授權 memoX 來傳送提醒</string>
     <string name="please_grant_notally_audio">請授予 memoX 錄製音訊的權限。錄音永遠不會離開你的設備</string>
     <string name="please_grant_notally_notification">請授予 memoX 傳送通知的權限</string>
-    <string name="please_grant_notally_notification_auto_backup">如果自動備份失敗，您將收到通知（如果您授予 memoX 發送通知的權限）</string>
     <string name="previous">先前的</string>
     <string name="rate">評價此應用</string>
     <string name="read_only">唯讀</string>

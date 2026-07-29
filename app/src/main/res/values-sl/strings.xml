@@ -8,7 +8,6 @@
     <string name="appearance">Videz</string>
     <string name="archive">Arhiviraj</string>
     <string name="archived">Arhiv</string>
-    <string name="auto_backup">Samodejno kopiranje</string>
     <string name="backup">Varnostno kopiranje</string>
     <string name="bold">Krepko</string>
     <string name="calculating">Izračun…</string>
@@ -19,13 +18,11 @@
         <item quantity="other">%1$d slik ni bilo dodanih.</item>
         <item quantity="two">%1$d sliki nista bili dodani.</item>
     </plurals>
-    <string name="cant_find_folder">Mapa ne obstaja. Morda je bila premaknjena ali izbrisana.</string>
     <string name="cant_find_note">Zapisek ne obstaja. Morda je bil izbrisan.</string>
     <string name="cant_load_image">Slike ni mogoče odpreti. Morda je bila premaknjena ali izbrisana.</string>
     <string name="cant_open_link">Povezave ni mogoče odpreti</string>
     <string name="change_color">Spremeni barvo</string>
     <string name="choose_another_folder">Izberite drugo mapo</string>
-    <string name="choose_folder">Izberite mapo</string>
     <string name="clear_formatting">Počisti oblikovanje</string>
     <string name="content_density">Gostota vsebine</string>
     <string name="continue_">Nadaljuj</string>

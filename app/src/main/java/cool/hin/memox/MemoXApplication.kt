@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.material.color.DynamicColors
 import cool.hin.memox.MemoXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
@@ -17,22 +16,10 @@ import cool.hin.memox.MemoXApplication.Companion.TAG
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.presentation.setEnabledSecureFlag
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.preference.Theme
 import cool.hin.memox.presentation.widget.WidgetProvider
 import cool.hin.memox.utils.AutoRemoveDeletedNotesWorker
 import cool.hin.memox.utils.PinnedNotificationManager
-import cool.hin.memox.utils.backup.AUTO_BACKUP_WORK_NAME
-import cool.hin.memox.utils.backup.autoBackupOnSave
-import cool.hin.memox.utils.backup.autoBackupOnSaveFileExists
-import cool.hin.memox.utils.backup.cancelAutoBackup
-import cool.hin.memox.utils.backup.containsNonCancelled
-import cool.hin.memox.utils.backup.createBackup
-import cool.hin.memox.utils.backup.deleteModifiedNoteBackup
-import cool.hin.memox.utils.backup.isEqualTo
-import cool.hin.memox.utils.backup.modifiedNoteBackupExists
-import cool.hin.memox.utils.backup.scheduleAutoBackup
-import cool.hin.memox.utils.backup.updateAutoBackup
 import cool.hin.memox.utils.log
 import cool.hin.memox.utils.observeOnce
 import java.util.concurrent.TimeUnit
@@ -78,52 +65,9 @@ class MemoXApplication : Application(), Application.ActivityLifecycleCallbacks {
             }
         }
 
-        preferences.backupsFolder.observeForeverWithPrevious { (backupFolderBefore, backupFolder) ->
-            checkUpdatePeriodicBackup(
-                backupFolderBefore,
-                backupFolder,
-                preferences.periodicBackups.value.periodInDays.toLong(),
-                execute = true,
-            )
-            checkUpdateAutoBackupOnSave(backupFolderBefore, backupFolder)
-        }
-        preferences.periodicBackups.observeForever { value ->
-            val backupFolder = preferences.backupsFolder.value
-            checkUpdatePeriodicBackup(backupFolder, backupFolder, value.periodInDays.toLong())
-        }
         preferences.autoRemoveDeletedNotesAfterDays.observeForever { value ->
             checkUpdateAutoRemoveOldDeletedNotes(value)
         }
-
-        preferences.backupPassword.observeForeverWithPrevious {
-            (previousBackupPassword, backupPassword) ->
-            if (preferences.backupOnSave.value) {
-                val backupPath = preferences.backupsFolder.value
-                if (backupPath != EMPTY_PATH) {
-                    if (
-                        !modifiedNoteBackupExists(backupPath) ||
-                            (previousBackupPassword != null &&
-                                previousBackupPassword != backupPassword)
-                    ) {
-                        deleteModifiedNoteBackup(backupPath)
-                        runOnIODispatcher {
-                            autoBackupOnSave(
-                                backupPath,
-                                savedNote = null,
-                                password = backupPassword,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun folderChanged(folderBefore: String?, folderAfter: String): Boolean {
-        if (folderBefore == null || folderAfter == EMPTY_PATH) {
-            return false
-        }
-        return folderBefore != folderAfter
     }
 
     private fun restorePinnedNotifications() {
@@ -137,57 +81,6 @@ class MemoXApplication : Application(), Application.ActivityLifecycleCallbacks {
                         PinnedNotificationManager.notify(this@MemoXApplication, note)
                     }
                 }
-        }
-    }
-
-    private fun checkUpdatePeriodicBackup(
-        backupFolderBefore: String?,
-        backupFolder: String,
-        periodInDays: Long,
-        execute: Boolean = false,
-    ) {
-        val workManager = getWorkManagerSafe() ?: return
-        workManager.getWorkInfosForUniqueWorkLiveData(AUTO_BACKUP_WORK_NAME).observeOnce { workInfos
-            ->
-            if (backupFolder == EMPTY_PATH || periodInDays < 1) {
-                if (workInfos?.containsNonCancelled() == true) {
-                    workManager.cancelAutoBackup()
-                }
-            } else if (
-                workInfos.isNullOrEmpty() ||
-                    workInfos.all { it.state == WorkInfo.State.CANCELLED } ||
-                    folderChanged(backupFolderBefore, backupFolder)
-            ) {
-                workManager.scheduleAutoBackup(this, periodInDays)
-                if (execute) {
-                    runOnIODispatcher { createBackup() }
-                }
-            } else if (
-                workInfos.first().periodicityInfo?.isEqualTo(periodInDays, TimeUnit.DAYS) == false
-            ) {
-                workManager.updateAutoBackup(workInfos, periodInDays)
-                if (execute) {
-                    runOnIODispatcher { createBackup() }
-                }
-            }
-        }
-    }
-
-    private fun checkUpdateAutoBackupOnSave(backupFolderBefore: String?, backupFolder: String) {
-        if (preferences.backupOnSave.value) {
-            if (
-                backupFolderBefore == null &&
-                    backupFolder != EMPTY_PATH &&
-                    !autoBackupOnSaveFileExists(backupFolder)
-            ) {
-                runOnIODispatcher {
-                    autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
-                }
-            }
-        } else if (folderChanged(backupFolderBefore, backupFolder)) {
-            runOnIODispatcher {
-                autoBackupOnSave(backupFolder, preferences.backupPassword.value, null)
-            }
         }
     }
 

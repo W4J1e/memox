@@ -11,7 +11,7 @@
     <string name="all">所有</string>
     <string name="always_show_search_bar">始终显示展开的搜索栏</string>
     <string name="always_show_search_bar_hint">启用后，将始终在布局中显示搜索栏而不是用顶栏中的搜索图标进行展示</string>
-    <string name="appearance">外观</string>
+    <string name="appearance">显示</string>
     <string name="archive">存档</string>
     <string name="archived">已存档</string>
     <plurals name="archived_selected_notes">
@@ -25,17 +25,6 @@
         <item quantity="other">附件</item>
     </plurals>
     <string name="audio_recordings">录音</string>
-    <string name="auto_backup">自动备份</string>
-    <string name="auto_backup_error_message">自动备份时出错：\'%1$s\' 请检查你的设置或报告故障</string>
-    <string name="auto_backup_failed">memoX 自动备份失败了</string>
-    <string name="auto_backup_last">上次备份</string>
-    <string name="auto_backup_on_save">保存笔记时自动备份</string>
-    <string name="auto_backup_on_save_hint">启用本选项后，每当退出笔记时都会在所配置的”备份文件夹“中自动创建一个备份文件（”MemoX_AutoBackup.zip）。请注意这可能影响性能</string>
-    <string name="auto_backup_skipped_files">跳过了 %1$d 个缺失的附加文件/图片</string>
-    <string name="auto_backups_folder">备份文件夹</string>
-    <string name="auto_backups_folder_hint">保存所有自动备份文件的文件夹。如果要对备份使用云存储/WebDAV，请阅读文档（单击“%1$s”）</string>
-    <string name="auto_backups_folder_rechoose">你需要重新选择备份文件夹，这样 memoX 有写入它的权限。你也可以“取消”跳过导入备份文件夹的值</string>
-    <string name="auto_backups_folder_set">先在上方设置备份文件夹</string>
     <string name="auto_remove_deleted_notes">多久后对已删除笔记自动采取永久删除操作</string>
     <string name="auto_remove_deleted_notes_hint">启用后，被删除的笔记将在 X 天后被永久性删除</string>
     <string name="auto_save_after_idle_time">在指定的空闲时间后自动保存笔记</string>
@@ -45,8 +34,6 @@
     <string name="backup">备份</string>
     <string name="backup_password">备份密码</string>
     <string name="backup_password_hint">如果设置密码，未来备份的ZIP压缩包都会被加密且受密码保护。</string>
-    <string name="backup_period_days">自动备份周期/天</string>
-    <string name="backup_periodic">定期备份</string>
     <string name="webdav_sync">WebDAV 同步</string>
     <string name="webdav_url">WebDAV 地址</string>
     <string name="webdav_url_hint">https://dav.jianguoyun.com/dav/</string>
@@ -93,7 +80,6 @@
     <string name="onedrive_auth_failed">Microsoft 登录失败：%1$s</string>
     <string name="onedrive_provider_conflict">WebDAV 同步已启用。启用 OneDrive 将关闭 WebDAV 同步。是否继续？</string>
     <string name="webdav_provider_conflict">OneDrive 同步已启用。启用 WebDAV 将关闭 OneDrive 同步。是否继续？</string>
-    <string name="backup_periodic_hint">启用此选项后将自动在配置的备份文件夹中创建备份文件。如果你启用了节能模式，这可能无法正常工作</string>
     <string name="behaviour">行为</string>
     <string name="biometric_backup_advice">建议在禁用/开启生物特征锁前导出所有笔记的完整备份，以防通过生物特征锁的加密失败</string>
     <string name="biometric_lock">使用生物识别或PIN解锁应用</string>
@@ -116,7 +102,6 @@
         <item quantity="one">无法添加 %1$d 张图片</item>
         <item quantity="other">无法添加 %1$d 张图片</item>
     </plurals>
-    <string name="cant_find_folder">找不到该文件夹。可能被移动或删除了。</string>
     <string name="cant_find_note">找不到笔记。它可能已被删除</string>
     <string name="cant_load_file">无法加载文件。它可能已被移动或删除</string>
     <string name="cant_load_image">无法加载图片。它可能已被移动或删除</string>
@@ -127,7 +112,6 @@
     <string name="change_note">更改笔记</string>
     <string name="check_all_items">选中所有项目</string>
     <string name="choose_another_folder">选择另一个文件夹</string>
-    <string name="choose_folder">选择文件夹</string>
     <string name="choose_other_app">选择你要导入的APP笔记</string>
     <string name="clean_up">清理</string>
     <string name="cleanup_finished_summary">从 %2$d 则笔记中删除了 %1$d  个缺失的附件</string>
@@ -157,9 +141,8 @@
     <string name="data_in_public_message">启用此项，应用程序的内部数据库和附件将被移动到应用程序的外部存储（Android/media/cool.hin.memox）中。与文件同步应用组合，这可用于同步多个设备之间的数据。</string>
     <string name="date">日期</string>
     <string name="date_format">日期格式</string>
-    <string name="date_format_hint">将所选日期格式应用于笔记概览</string>
-    <string name="date_format_note_view">日期时间格式笔记视图</string>
-    <string name="date_format_overview">日期时间格式概览</string>
+    <string name="date_format_hint">将所选日期和时间格式应用于笔记</string>
+    <string name="time_format">时间格式</string>
     <plurals name="days">
         <item quantity="one">天</item>
         <item quantity="other">天</item>
@@ -178,7 +161,7 @@
     <string name="delete_note_forever">永久性删除笔记？</string>
     <string name="delete_reminder_question">删除提醒？</string>
     <string name="delete_selected_notes">删除所选笔记？</string>
-    <string name="deleted">已删除</string>
+    <string name="deleted">回收站</string>
     <plurals name="deleted_selected_notes">
         <item quantity="one">删除了 %1$d 则笔记</item>
         <item quantity="other">删除了 %1$d 则笔记</item>
@@ -294,7 +277,6 @@
     <string name="make_default">成为默认色</string>
     <string name="make_feature_request">提出功能需求</string>
     <string name="make_list">制作列表</string>
-    <string name="max_backups">保留的备份文件数</string>
     <string name="max_items_to_display">列表最多显示多少条目</string>
     <string name="max_labels_to_display">导航显示的最多标签数量</string>
     <string name="max_lines_to_display">笔记最多显示几行</string>
@@ -350,7 +332,6 @@
     <string name="please_grant_notally_alarm">请授予 memoX 发送提醒的权限</string>
     <string name="please_grant_notally_audio">请授予 memoX 录音权限。录音永远不会离开你的设备</string>
     <string name="please_grant_notally_notification">请授予 memoX 发送通知的权限</string>
-    <string name="please_grant_notally_notification_auto_backup">如果自动备份失败，你会收到一则通知（前提是你授予了 memoX 发送通知的权限）</string>
     <string name="previous">前一个</string>
     <string name="quillpad_help">要从 Quillpad 导入笔记，必须将 Quillpad 笔记导出为 .ZIP 备份文件。具体步骤为打开 Quillpad，转到设置&gt;备份&gt;创建备份，在手机上保存 .ZIP 。\n\n如果已经有 Quillpad 的 .ZIP 备份文件，单击导入并选中该文件。</string>
     <string name="rate">给应用打分</string>
@@ -417,11 +398,9 @@
     <string name="text_size_preview">乱数假文</string>
     <string name="theme">主题</string>
     <string name="theme_use_dynamic_colors">使用系统的壁纸颜色</string>
-    <string name="time">使用系统壁纸颜色</string>
+    <string name="time">时间</string>
     <string name="time_24h">24 小时</string>
     <string name="time_am_pm">时间</string>
-    <string name="time_format_note_view">时间格式笔记视图</string>
-    <string name="time_format_overview">时间格式概览</string>
     <string name="title">标题</string>
     <string name="to_pin_note_status_bar">要固定笔记到状态栏，请允许本应用发送通知。轻按系统设置&gt;权限，允许通知</string>
     <string name="to_record_audio">要录音，请允许 memoX 访问你的麦克风。轻按“设置”&gt;“权限”，打开麦克风</string>

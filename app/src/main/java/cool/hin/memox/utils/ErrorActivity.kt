@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import cat.ereza.customactivityoncrash.CustomActivityOnCrash
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
-import cool.hin.memox.R.string.auto_backup_failed
 import cool.hin.memox.R.string.crash_export_backup_failed
 import cool.hin.memox.R.string.report_bug
 import cool.hin.memox.databinding.ActivityErrorBinding
@@ -96,7 +95,7 @@ class ErrorActivity : AppCompatActivity() {
                         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
                             showErrorDialog(
                                 throwable,
-                                auto_backup_failed,
+                                R.string.crash_message,
                                 getString(crash_export_backup_failed, this.getString(report_bug)),
                                 originalStacktrace = stacktrace,
                             )

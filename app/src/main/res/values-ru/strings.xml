@@ -21,25 +21,12 @@
     <string name="ascending">По возрастанию</string>
     <string name="attach_file">Прикрепить файл</string>
     <string name="audio_recordings">Аудиозаписи</string>
-    <string name="auto_backup">Автобэкапы</string>
-    <string name="auto_backup_error_message">Ошибка при авторезервной копии: \n\'%1$s\'\nПроверьте настройки или сообщите об ошибке</string>
-    <string name="auto_backup_failed">Сбой авторезервирования memoX</string>
-    <string name="auto_backup_last">Последняя резервная копия</string>
-    <string name="auto_backup_on_save">Создавать резервную копию при выходе (авто)</string>
-    <string name="auto_backup_on_save_hint">При включении этой функции в папке резервных копий (Папка резервных копий) автоматически создаётся архив MemoX_AutoBackup.zip при выходе из заметки.\nЭто может повлиять на производительность</string>
-    <string name="auto_backups_folder">Папка резервных копий</string>
-    <string name="auto_backups_folder_hint">Папка, в которой будут храниться резервные копии</string>
-    <string name="auto_backups_folder_rechoose">Необходимо повторно указать папку для резервных копий для доступа memoX.\nМожно отменить и пропустить импорт папки резервных копий</string>
-    <string name="auto_backups_folder_set">Сначала укажите папку для резервных копий</string>
     <string name="auto_save_after_idle_time">Автосохранение заметки после указанного времени бездействия</string>
     <string name="auto_sort_by_checked">Сортировать отмеченные элементы в конец</string>
     <string name="back">Назад</string>
     <string name="backup">Резервная копия</string>
     <string name="backup_password">Пароль для резервной копии</string>
     <string name="backup_password_hint">При включении этой функции все новые ZIP-архивы резервных копий буду зашифрованы и защищены паролем</string>
-    <string name="backup_period_days">Интервал авторезервирования (в днях)</string>
-    <string name="backup_periodic">Периодические резервные копии</string>
-    <string name="backup_periodic_hint">При включении этой функции резервные копии будут автоматически сохраняться в указанную папку.\nФункция может не работать при включенном режиме энергосбережения</string>
     <string name="behaviour">Поведение</string>
     <string name="biometric_lock">Блокировать приложение с помощью биометрии или PIN-кода</string>
     <string name="biometrics_disable_success">Биометрическая защита/PIN-код отключены</string>
@@ -60,7 +47,6 @@
         <item quantity="one">Невозможно добавить %1$d изображение</item>
         <item quantity="other">Невозможно добавить %1$d изображений</item>
     </plurals>
-    <string name="cant_find_folder">Папка не найдена. Возможно, она была перемещена или удалена</string>
     <string name="cant_find_note">Заметка не найдена. Возможно она была удалена</string>
     <string name="cant_load_file">Файл не загружен. Возможно, он был перемещён или удалён</string>
     <string name="cant_load_image">Изображение не загружено. Проверьте, не было ли оно удалено</string>
@@ -70,7 +56,6 @@
     <string name="change_note">Изменить заметку</string>
     <string name="check_all_items">Выделить всё</string>
     <string name="choose_another_folder">Выбрать другую папку</string>
-    <string name="choose_folder">Выбрать папку</string>
     <string name="choose_other_app">Выберите приложение для импорта</string>
     <string name="clear">Очистить</string>
     <string name="clear_data">Очистить данные</string>
@@ -221,7 +206,6 @@
     <string name="locked">Заблокировано</string>
     <string name="make_feature_request">Запросить новую функцию</string>
     <string name="make_list">Создать список</string>
-    <string name="max_backups">Лимит резервных копий</string>
     <string name="max_items_to_display">Максимум отображаемых пунктов в списке</string>
     <string name="max_labels_to_display">Максимум отображаемых меток</string>
     <string name="max_lines_to_display">Максимум отображаемых строк в заметке</string>
@@ -258,7 +242,6 @@
     <string name="please_grant_notally_alarm">Разрешите memoX отправлять напоминания</string>
     <string name="please_grant_notally_audio">Разрешите доступ к микрофону.\nЗаписи остаются на вашем устройстве</string>
     <string name="please_grant_notally_notification">Разрешите отправку уведомлений</string>
-    <string name="please_grant_notally_notification_auto_backup">При сбое авторезервирования вы получите уведомление, если разрешите их отправку. </string>
     <string name="previous">Предыдущий</string>
     <string name="rate">Оценить приложение</string>
     <string name="read_only">Только чтение</string>

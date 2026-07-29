@@ -24,17 +24,6 @@
         <item quantity="other">Tài liệu đính kèm</item>
     </plurals>
     <string name="audio_recordings">Bản ghi âm</string>
-    <string name="auto_backup">Sao lưu tự động</string>
-    <string name="auto_backup_error_message">Lỗi xảy ra khi sao lưu tự động:\n\'%1$s\'\nHãy kiểm tra thiết lập hoặc báo cáo lỗi</string>
-    <string name="auto_backup_failed">memoX tự động sao lưu thất bại</string>
-    <string name="auto_backup_last">Sao lưu gần nhất</string>
-    <string name="auto_backup_on_save">Sao lưu tự động khi thoát ghi chú</string>
-    <string name="auto_backup_on_save_hint">Bật chế độ này, một bản sao lưu (\"MemoX_AutoBackup.zip\") được tự động tạo ra trong phần \"Thư mục sao lưu\" đã cài đặt mỗi khi thoát khỏi một ghi chú.\nChú ý điều này có thể ảnh hưởng hiệu suất hoạt động ứng dụng</string>
-    <string name="auto_backup_skipped_files">Bỏ qua %1$d tệp/ảnh đính kèm bị thiếu</string>
-    <string name="auto_backups_folder">Thư mục sao lưu</string>
-    <string name="auto_backups_folder_hint">Thư mục chứa các bản sao lưu.\nNếu bạn muốn dùng lưu trữ đám mây/WebDAV, hãy đọc hướng dẫn (ấn \"%1$s\")</string>
-    <string name="auto_backups_folder_rechoose">Bạn phải chọn lại Thư mục sao lưu, memoX cần được cho phép ghi dữ liệu vào đó.\nBạn cũng có thể ấn Hủy để bỏ qua việc nhập thông tin Thư mục sao lưu</string>
-    <string name="auto_backups_folder_set">Cài đặt một Thư mục sao lưu ở trên trước</string>
     <string name="auto_remove_deleted_notes">Tự động bỏ vĩnh viễn các ghi chú đã xóa</string>
     <string name="auto_remove_deleted_notes_hint">Bật chế độ này, các ghi chú đã xóa sẽ bị bỏ vĩnh viễn sau X ngày</string>
     <string name="auto_save_after_idle_time">Tự động lưu ghi chú sau một khoảng thời gian chờ định sẵn</string>
@@ -44,9 +33,6 @@
     <string name="backup">Sao lưu</string>
     <string name="backup_password">Mật khẩu sao lưu</string>
     <string name="backup_password_hint">Bật chế độ này, các bản sao lưu ZIP sắp tới sẽ được mã hóa và có mật khẩu bảo vệ</string>
-    <string name="backup_period_days">Số ngày tự động sao lưu</string>
-    <string name="backup_periodic">Sao lưu định kỳ</string>
-    <string name="backup_periodic_hint">Bật chế độ này, các bản sao lưu sẽ được tự động tạo ra trong phần \"Thư mục sao lưu\" đã cài đặt.\nNó có thể không hoạt động nếu chế độ tiết kiệm năng lượng đang bật</string>
     <string name="behaviour">Hoạt động</string>
     <string name="biometric_backup_advice">Khuyến nghị tạo một bản sao lưu đầy đủ các ghi chú trước khi bật/tắt khóa sinh trắc học, đề phòng trường hợp mã hóa sinh trắc học thất bại</string>
     <string name="biometric_lock">Khóa ứng dụng bằng sinh trắc học hoặc mã số thiết bị</string>
@@ -69,7 +55,6 @@
         <item quantity="one">Không thể thêm %1$d ảnh</item>
         <item quantity="other">Không thể thêm %1$d ảnh</item>
     </plurals>
-    <string name="cant_find_folder">Không tìm thấy thư mục. Có lẽ nó đã bị đổi tên hoặc xóa</string>
     <string name="cant_find_note">Không tìm thấy ghi chú. Có lẽ nó đã bị xóa</string>
     <string name="cant_load_file">Không thể tải tệp. Có lẽ nó đã bị di chuyển hoặc xóa</string>
     <string name="cant_load_image">Không thể tải ảnh. Có lẽ nó đã bị đổi tên hoặc xóa</string>
@@ -80,7 +65,6 @@
     <string name="change_note">Thay đổi ghi chú</string>
     <string name="check_all_items">Chọn tất cả nội dụng</string>
     <string name="choose_another_folder">Chọn thư mục khác</string>
-    <string name="choose_folder">Chọn thư mục</string>
     <string name="choose_other_app">Chọn ứng dụng để chuyển dữ liệu vào</string>
     <string name="clean_up">Dọn dẹp</string>
     <string name="cleanup_finished_summary">Đã bỏ %1$d đính kèm bị thiếu từ %2$d ghi chú</string>
@@ -111,8 +95,6 @@
     <string name="date">Ngày</string>
     <string name="date_format">Định dạng ngày tháng</string>
     <string name="date_format_hint">Áp dụng định dạng ngày tháng đã chọn trong chế độ xem tổng quan ghi chú</string>
-    <string name="date_format_note_view">Định dạng ngày tháng trong chế độ xem ghi chú</string>
-    <string name="date_format_overview">Định dạng ngày tháng trong chế độ xem tổng quan </string>
     <plurals name="days">
         <item quantity="one">Ngày</item>
         <item quantity="other">Ngày</item>
@@ -246,7 +228,6 @@
     <string name="make_default">Đặt làm mặc định</string>
     <string name="make_feature_request">Yêu cầu chức năng</string>
     <string name="make_list">Liệt kê</string>
-    <string name="max_backups">Số lượng sao lưu cần giữ</string>
     <string name="max_items_to_display">Số lượng mục liệt kê tối đa</string>
     <string name="max_lines_to_display">Số lượng dòng ghi chú tối đa</string>
     <string name="max_lines_to_display_title">Số lượng dòng tựa đề tối đa</string>
@@ -299,7 +280,6 @@
     <string name="please_grant_notally_alarm">Cho phép memoX gửi nhắc nhở</string>
     <string name="please_grant_notally_audio">Cho phép memoX ghi âm, tệp ghê âm luôn nằm trên thiết bị</string>
     <string name="please_grant_notally_notification">Cho phép memoX gửi thông báo</string>
-    <string name="please_grant_notally_notification_auto_backup">Nếu tự động sao lưu thất bại, bạn có thể được nhận thông báo nếu bạn cho phép memoX gửi thông báo</string>
     <string name="previous">Trước</string>
     <string name="quillpad_help">Để nhập ghi chú từ Quillpad bạn cần xuất các ghi chú Quillpad ở dạng ZIP. Để thực hiện, mở Quillpad, chọn Cài đặt &gt; Sao lưu &gt; Tạo sao lưu và tải tệp ZIP về điện thoại.\n\nNếu bạn đã có tệp ZIP, ấn Nhập và chọn nó.</string>
     <string name="rate">Đánh giá app</string>
@@ -369,8 +349,6 @@
     <string name="time">Thời gian</string>
     <string name="time_24h">24 giờ</string>
     <string name="time_am_pm">sáng/chiều</string>
-    <string name="time_format_note_view">Định dạng thời gian trong chế độ xem ghi chú</string>
-    <string name="time_format_overview">Định dạng thời gian trong chế độ xem tổng quan</string>
     <string name="title">Tựa đề</string>
     <string name="to_pin_note_status_bar">Để ghim một ghi chú lên thanh trạng thái, hãy cho phép memoX gửi thông báo. Ấn Cài đặt &gt; Quyền và cho phép Thông báo</string>
     <string name="to_record_audio">Để ghi âm, hãy cho phép memoX truy cập micro. Ấn Cài đặt &gt; Quyền và bật Micro</string>

@@ -8,7 +8,6 @@
     <string name="appearance">Utseende</string>
     <string name="archive">Arkivér</string>
     <string name="archived">Arkiv</string>
-    <string name="auto_backup">Sikkerhetskopiér automatisk</string>
     <string name="backup">Sikkerhetskopiering</string>
     <string name="bold">Fet</string>
     <string name="calculating">Beregner…</string>
@@ -17,13 +16,11 @@
         <item quantity="one">Kan ikke legge til %1$d bilde</item>
         <item quantity="other">Kan ikke legge til %1$d bilder</item>
     </plurals>
-    <string name="cant_find_folder">Finner ikke mappen. Den kan ha blitt flyttet eller slettet</string>
     <string name="cant_find_note">Finner ikke notat. Den kan ha blitt slettet</string>
     <string name="cant_load_image">Kan ikke laste inn bildet. Det kan ha blitt flyttet eller slettet</string>
     <string name="cant_open_link">Kan ikke åpne lenken</string>
     <string name="change_color">Endre farge</string>
     <string name="choose_another_folder">Velg en annen mappe</string>
-    <string name="choose_folder">Velg mappe</string>
     <string name="clear_formatting">Fjern formatering</string>
     <string name="content_density">Innholdstetthet</string>
     <string name="continue_">Fortsett</string>
