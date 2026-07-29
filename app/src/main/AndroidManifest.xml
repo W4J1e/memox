@@ -84,10 +84,6 @@
         </activity>
 
         <activity
-            android:name=".presentation.activity.note.EditListActivity"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name=".presentation.activity.note.EditNoteActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">

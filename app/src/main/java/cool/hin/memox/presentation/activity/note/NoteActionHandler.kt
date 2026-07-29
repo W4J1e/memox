@@ -248,7 +248,6 @@ class NoteActionHandler(
             EditAction.SHARE -> share()
             EditAction.DELETE -> delete()
             EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
-            EditAction.CONVERT -> convertTo()
             EditAction.DELETE_FOREVER -> deleteForever()
             EditAction.RESTORE -> restore()
             EditAction.LOCK_NOTE -> toggleNoteLock()
@@ -419,25 +418,6 @@ class NoteActionHandler(
             }
     }
 
-    private fun convertTo() {
-        activity.updateModel()
-        activity.lifecycleScope.launch {
-            val type = if (notallyModel.type == Type.LIST) Type.NOTE else Type.LIST
-            notallyModel.convertTo(type)
-            val intent =
-                Intent(
-                    activity,
-                    when (type) {
-                        Type.NOTE -> EditNoteActivity::class.java
-                        Type.LIST -> EditListActivity::class.java
-                    },
-                )
-            intent.putExtra(EditActivity.EXTRA_SELECTED_BASE_NOTE, notallyModel.id)
-            activity.startActivity(intent)
-            activity.finish()
-        }
-    }
-
     @RequiresApi(24)
     fun recordAudio() {
         val permission = Manifest.permission.RECORD_AUDIO
@@ -538,7 +518,7 @@ class NoteActionHandler(
                 emptyTitle = true
                 activity.getString(R.string.note)
             }
-        val noteType = Type.valueOf(getStringExtra(EXTRA_PICKED_NOTE_TYPE)!!)
+        val noteType = Type.valueOfOrDefault(getStringExtra(EXTRA_PICKED_NOTE_TYPE))
         val noteUrl = noteId.createNoteUrl(noteType)
         return Triple(noteTitle, noteUrl, emptyTitle)
     }

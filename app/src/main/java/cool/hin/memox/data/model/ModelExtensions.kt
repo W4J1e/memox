@@ -34,19 +34,13 @@ import org.json.JSONObject
 
 private const val NOTE_URL_PREFIX = "note://"
 private val NOTE_URL_POSTFIX_NOTE = "/${Type.NOTE.name}"
-private val NOTE_URL_POSTFIX_LIST = "/${Type.LIST.name}"
 
 fun CharSequence?.isNoteUrl(): Boolean {
     return this?.let { startsWith(NOTE_URL_PREFIX) } ?: false
 }
 
 fun Long.createNoteUrl(type: Type): String {
-    val postfix =
-        when (type) {
-            Type.LIST -> NOTE_URL_POSTFIX_LIST
-            Type.NOTE -> NOTE_URL_POSTFIX_NOTE
-        }
-    return "$NOTE_URL_PREFIX$this$postfix"
+    return "$NOTE_URL_PREFIX$this$NOTE_URL_POSTFIX_NOTE"
 }
 
 fun String.getNoteIdFromUrl(): Long {
@@ -54,7 +48,46 @@ fun String.getNoteIdFromUrl(): Long {
 }
 
 fun String.getNoteTypeFromUrl(): Type {
-    return Type.valueOf(substringAfterLast("/"))
+    // Legacy note links may still end with "/LIST"; fall back to NOTE for any unknown value.
+    return Type.valueOfOrDefault(substringAfterLast("/"))
+}
+
+/**
+ * Converts a list of checklist [ListItem]s into a body string using the same "☐ "/"☑ "
+ * checkbox syntax the in-note checkbox feature renders, plus matching [SpanRepresentation]s so the
+ * boxes stay toggleable. The result is appended after [existingBody] (with a separating newline if
+ * needed) and [existingSpans] are preserved.
+ *
+ * Used when importing external checklist data into a plain NOTE — the standalone checklist note
+ * type (Type.LIST) has been removed.
+ */
+fun List<ListItem>.toCheckboxBodyAndSpans(
+    existingBody: String = "",
+    existingSpans: List<SpanRepresentation> = emptyList(),
+): Pair<String, List<SpanRepresentation>> {
+    if (isEmpty()) return existingBody to existingSpans
+    val newSpans = existingSpans.toMutableList()
+    val sb = StringBuilder()
+    var offset = 0
+    if (existingBody.isNotBlank()) {
+        sb.append(existingBody)
+        offset = existingBody.length
+        if (!existingBody.endsWith("\n")) {
+            sb.append("\n")
+            offset += 1
+        }
+    }
+    for (item in this) {
+        val indent = if (item.isChild) "    " else ""
+        val char = if (item.checked) '☑' else '☐'
+        val line = "$indent$char ${item.body}\n"
+        val start = offset
+        val end = offset + 1
+        sb.append(line)
+        newSpans.add(SpanRepresentation(start, end, checkbox = true, checkboxChecked = item.checked))
+        offset += line.length
+    }
+    return sb.toString() to newSpans
 }
 
 val FileAttachment.isImage: Boolean
@@ -73,11 +106,7 @@ val String.isAudioMimeType: Boolean
 fun BaseNote.toTxt(includeTitle: Boolean = true, includeCreationDate: Boolean = true) =
     buildString {
         val date = DateFormat.getDateInstance(DateFormat.FULL).format(timestamp)
-        val body =
-            when (type) {
-                Type.NOTE -> body
-                Type.LIST -> items.toText()
-            }
+        val body = if (items.isNotEmpty()) items.toText() else body
 
         if (title.isNotEmpty() && includeTitle) {
             append("${title}\n\n")
@@ -100,15 +129,10 @@ fun BaseNote.toJson(): String {
             .put("modifiedTimestamp", modifiedTimestamp)
             .put("labels", JSONArray(labels))
 
-    when (type) {
-        Type.NOTE -> {
-            jsonObject.put("body", body)
-            jsonObject.put("spans", Converters.spansToJSONArray(spans))
-        }
-
-        Type.LIST -> {
-            jsonObject.put("items", Converters.itemsToJSONArray(items))
-        }
+    jsonObject.put("body", body)
+    jsonObject.put("spans", Converters.spansToJSONArray(spans))
+    if (items.isNotEmpty()) {
+        jsonObject.put("items", Converters.itemsToJSONArray(items))
     }
     jsonObject.put("reminders", Converters.remindersToJSONArray(reminders))
     jsonObject.put("viewMode", viewMode.name)
@@ -207,22 +231,16 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
         append("<p>$date</p>")
     }
 
-    when (type) {
-        Type.NOTE -> {
-            val body = body.applySpans(spans).withoutImagePlaceholders().toHtml()
-            append(body)
+    append(body.applySpans(spans).withoutImagePlaceholders().toHtml())
+    if (items.isNotEmpty()) {
+        append("<ol style=\"list-style: none; padding: 0;\">")
+        items.forEach { item ->
+            val itemBody = Html.escapeHtml(item.body)
+            val checked = if (item.checked) "checked" else ""
+            val child = if (item.isChild) "style=\"margin-left: 20px\"" else ""
+            append("<li><input type=\"checkbox\" $child $checked>$itemBody</li>")
         }
-
-        Type.LIST -> {
-            append("<ol style=\"list-style: none; padding: 0;\">")
-            items.forEach { item ->
-                val body = Html.escapeHtml(item.body)
-                val checked = if (item.checked) "checked" else ""
-                val child = if (item.isChild) "style=\"margin-left: 20px\"" else ""
-                append("<li><input type=\"checkbox\" $child $checked>$body</li>")
-            }
-            append("</ol>")
-        }
+        append("</ol>")
     }
     if (images.isNotEmpty()) {
         append("<h3>Attached Images</h3>")
@@ -246,13 +264,9 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
 fun List<BaseNote>.toNoteIdReminders() = map { NoteIdReminder(it.id, it.reminders) }
 
 fun BaseNote.toMarkdown(): String = buildString {
-    when (type) {
-        Type.NOTE -> {
-            append(createMarkdownFromBodyAndSpans(body, spans).withoutImagePlaceholders())
-        }
-        Type.LIST -> {
-            append(items.toMarkdownChecklist())
-        }
+    append(createMarkdownFromBodyAndSpans(body, spans).withoutImagePlaceholders())
+    if (items.isNotEmpty()) {
+        append(items.toMarkdownChecklist())
     }
 }
 

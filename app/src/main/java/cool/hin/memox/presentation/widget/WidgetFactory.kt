@@ -1,8 +1,5 @@
 package cool.hin.memox.presentation.widget
 
-import android.content.res.ColorStateList
-import android.graphics.Paint
-import android.os.Build
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
@@ -11,13 +8,10 @@ import cool.hin.memox.MemoXApplication
 import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.model.BaseNote
-import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.Type
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.presentation.viewmodel.preference.displayBodySize
 import cool.hin.memox.presentation.viewmodel.preference.displayTitleSize
 import cool.hin.memox.presentation.widget.WidgetProvider.Companion.extractWidgetColors
-import cool.hin.memox.presentation.widget.WidgetProvider.Companion.getWidgetCheckedChangeIntent
 import cool.hin.memox.presentation.widget.WidgetProvider.Companion.getWidgetOpenNoteIntent
 import cool.hin.memox.presentation.widget.WidgetProvider.Companion.getWidgetSelectNoteIntent
 import cool.hin.memox.presentation.withoutImagePlaceholders
@@ -41,13 +35,7 @@ class WidgetFactory(
     override fun onDestroy() {}
 
     override fun getCount(): Int {
-        val copy = baseNote
-        return if (copy != null) {
-            when (copy.type) {
-                Type.NOTE -> 1
-                Type.LIST -> 1 + copy.items.size
-            }
-        } else 0
+        return if (baseNote != null) 1 else 0
     }
 
     override fun onDataSetChanged() {
@@ -57,15 +45,7 @@ class WidgetFactory(
     override fun getViewAt(position: Int): RemoteViews {
         val copy = baseNote
         requireNotNull(copy, { "baseNote is null" })
-
-        return when (copy.type) {
-            Type.NOTE -> getNoteView(copy)
-            Type.LIST -> {
-                if (position > 0) {
-                    getListItemView(position - 1, copy)
-                } else getListHeaderView(copy)
-            }
-        }
+        return getNoteView(copy)
     }
 
     private fun getNoteView(note: BaseNote): RemoteViews {
@@ -92,83 +72,6 @@ class WidgetFactory(
         }
     }
 
-    private fun getListHeaderView(list: BaseNote): RemoteViews {
-        return RemoteViews(app.packageName, R.layout.widget_list_header).apply {
-            setTextViewTextSize(
-                R.id.Title,
-                TypedValue.COMPLEX_UNIT_SP,
-                preferences.textSizeNoteEditor.value.displayTitleSize,
-            )
-            setTextViewText(R.id.Title, list.title)
-            setOnClickFillInIntent(R.id.ChangeNote, getWidgetSelectNoteIntent(widgetId))
-            val openNoteWidgetIntent = getWidgetOpenNoteIntent(list.type, list.id)
-            setOnClickFillInIntent(R.id.LinearLayout, openNoteWidgetIntent)
-            setOnClickFillInIntent(R.id.Title, openNoteWidgetIntent)
-
-            val (_, controlsColor) = app.extractWidgetColors(list.color, preferences)
-            setTextViewsTextColor(listOf(R.id.Title), controlsColor)
-            setImageViewColor(R.id.ChangeNote, controlsColor)
-        }
-    }
-
-    private fun getListItemView(index: Int, list: BaseNote): RemoteViews {
-        val item = list.items[index]
-        val view =
-            if (item.isChild) {
-                RemoteViews(app.packageName, R.layout.widget_list_child_item)
-            } else {
-                RemoteViews(app.packageName, R.layout.widget_list_item)
-            }
-        return view.apply {
-            val (_, controlsColor) = app.extractWidgetColors(list.color, preferences)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                setListItemTextView(item, R.id.CheckBox, controlsColor)
-                setCompoundButtonChecked(R.id.CheckBox, item.checked)
-                val checkIntent = getWidgetCheckedChangeIntent(list.id, index)
-                setOnCheckedChangeResponse(
-                    R.id.CheckBox,
-                    RemoteViews.RemoteResponse.fromFillInIntent(checkIntent),
-                )
-                setColorStateList(
-                    R.id.CheckBox,
-                    "setButtonTintList",
-                    ColorStateList.valueOf(controlsColor),
-                )
-            } else {
-                setListItemTextView(item, R.id.CheckBoxText, controlsColor)
-                setImageViewResource(
-                    R.id.CheckBox,
-                    if (item.checked) R.drawable.checkbox_fill else R.drawable.checkbox_outline,
-                )
-                setOnClickFillInIntent(
-                    R.id.LinearLayout,
-                    getWidgetCheckedChangeIntent(list.id, index),
-                )
-                setImageViewColor(R.id.CheckBox, controlsColor)
-            }
-            setTextViewsTextColor(listOf(R.id.Title), controlsColor)
-        }
-    }
-
-    private fun RemoteViews.setListItemTextView(item: ListItem, textViewId: Int, fontColor: Int) {
-        setTextViewTextSize(
-            textViewId,
-            TypedValue.COMPLEX_UNIT_SP,
-            preferences.textSizeNoteEditor.value.displayBodySize,
-        )
-        setTextViewText(textViewId, item.body)
-        setInt(
-            textViewId,
-            "setPaintFlags",
-            if (item.checked) {
-                Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG
-            } else {
-                Paint.ANTI_ALIAS_FLAG
-            },
-        )
-        setInt(textViewId, "setTextColor", fontColor)
-    }
-
     private fun RemoteViews.setTextViewsTextColor(viewIds: List<Int>, color: Int) {
         viewIds.forEach { viewId -> setInt(viewId, "setTextColor", color) }
     }
@@ -177,7 +80,7 @@ class WidgetFactory(
         setInt(viewId, "setColorFilter", color)
     }
 
-    override fun getViewTypeCount() = 3
+    override fun getViewTypeCount() = 1
 
     override fun hasStableIds(): Boolean {
         return false

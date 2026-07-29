@@ -102,10 +102,6 @@
                 layout="@layout/preference" />
 
             <include
-                android:id="@+id/DefaultListNoteViewMode"
-                layout="@layout/preference" />
-
-            <include
                 android:id="@+id/AutoEmptyBin"
                 layout="@layout/preference_stepper" />
 

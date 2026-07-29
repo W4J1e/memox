@@ -631,34 +631,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { baseNoteDao.updateReminders(id, updatedReminders) }
     }
 
-    suspend fun convertTo(noteType: Type) {
-        when (noteType) {
-            Type.NOTE -> {
-                body = SpannableStringBuilder(items.joinToString(separator = "\n") { it.body })
-                type = Type.NOTE
-                setItems(ArrayList())
-            }
-            Type.LIST -> {
-                val text = body.toString().withoutImagePlaceholders()
-                val listSyntaxRegex =
-                    text.findListSyntaxRegex(checkContains = true, plainNewLineAllowed = true)
-                if (listSyntaxRegex != null) {
-                    setItems(text.extractListItems(listSyntaxRegex))
-                } else {
-                    setItems(
-                        text.lines().mapIndexed { idx, itemText ->
-                            ListItem(itemText, false, false, idx, mutableListOf())
-                        }
-                    )
-                }
-                type = Type.LIST
-                body = SpannableStringBuilder()
-            }
-        }
-        Cache.list = ArrayList()
-        saveNote()
-    }
-
     suspend fun refreshOriginalNote() {
         if (id == 0L) return
         val baseNote = withContext(Dispatchers.IO) { baseNoteDao.get(id) }

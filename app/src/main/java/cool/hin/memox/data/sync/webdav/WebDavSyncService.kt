@@ -453,7 +453,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
     private fun jsonToNote(json: JSONObject): BaseNote {
         return BaseNote(
             id = json.getLong("id"),
-            type = cool.hin.memox.data.model.Type.valueOf(json.getString("type")),
+            type = cool.hin.memox.data.model.Type.valueOfOrDefault(json.getString("type")),
             folder = Folder.valueOf(json.getString("folder")),
             color = json.getString("color"),
             title = json.optString("title", ""),

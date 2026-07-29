@@ -35,10 +35,8 @@ import cool.hin.memox.R
 import cool.hin.memox.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Type
-import cool.hin.memox.data.model.toText
 import cool.hin.memox.databinding.DialogErrorBinding
 import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import cool.hin.memox.presentation.activity.note.EditListActivity
 import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.setCancelButton
 import cool.hin.memox.presentation.showToast
@@ -210,12 +208,7 @@ fun Fragment.showErrorDialog(
 }
 
 fun Activity.openNote(noteId: Long, noteType: Type, clearBackStack: Boolean = false) {
-    val activity =
-        when (noteType) {
-            Type.NOTE -> EditNoteActivity::class.java
-            Type.LIST -> EditListActivity::class.java
-        }
-    val intent = Intent(this, activity)
+    val intent = Intent(this, EditNoteActivity::class.java)
     if (clearBackStack) {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
@@ -405,11 +398,7 @@ fun Context.viewFile(uri: Uri, mimeType: String) {
 }
 
 fun ContextWrapper.shareNote(note: BaseNote) {
-    val body =
-        when (note.type) {
-            Type.NOTE -> note.body.withoutImagePlaceholders()
-            Type.LIST -> note.items.toMutableList().toText()
-        }
+    val body = note.body.withoutImagePlaceholders()
     val filesUris =
         note.images
             .map { File(getCurrentImagesDirectory(), it.localName) }
@@ -447,10 +436,7 @@ fun Intent.embedIntentExtras() {
 fun Context.getOpenNotePendingIntent(note: BaseNote) = getOpenNotePendingIntent(note.id, note.type)
 
 fun Context.getOpenNoteIntent(noteId: Long, noteType: Type): Intent {
-    return when (noteType) {
-        Type.NOTE -> Intent(this, EditNoteActivity::class.java)
-        Type.LIST -> Intent(this, EditListActivity::class.java)
-    }.apply {
+    return Intent(this, EditNoteActivity::class.java).apply {
         putExtra(EXTRA_SELECTED_BASE_NOTE, noteId)
         addFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK or

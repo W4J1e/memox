@@ -2,18 +2,13 @@ package cool.hin.memox.presentation.view.main
 
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.core.view.children
 import androidx.core.view.isVisible
-import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.FileAttachment
-import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.databinding.RecyclerBaseNoteBinding
@@ -26,9 +21,6 @@ import cool.hin.memox.presentation.setControlsContrastColorForAllViews
 import cool.hin.memox.presentation.setTextSizeSp
 import cool.hin.memox.presentation.setupReminderChip
 import cool.hin.memox.presentation.view.misc.ItemListener
-import cool.hin.memox.presentation.view.misc.highlightableview.HighlightableTextView
-import cool.hin.memox.presentation.view.misc.highlightableview.SEARCH_SNIPPET_ITEM_LINES
-import cool.hin.memox.presentation.view.note.listitem.init
 import cool.hin.memox.presentation.viewmodel.preference.DateFormat
 import cool.hin.memox.presentation.viewmodel.preference.NotesSortBy
 import cool.hin.memox.presentation.viewmodel.preference.TimeFormat
@@ -98,10 +90,7 @@ class BaseNoteVH(
     fun bind(baseNote: BaseNote, imageRoot: File?, checked: Boolean, sortBy: NotesSortBy) {
         updateCheck(checked, baseNote.color)
 
-        when (baseNote.type) {
-            Type.NOTE -> bindNote(baseNote, searchKeyword)
-            Type.LIST -> bindList(baseNote, searchKeyword)
-        }
+        bindNote(baseNote, searchKeyword)
         val (date, datePrefixResId) =
             when (sortBy) {
                 NotesSortBy.CREATION_DATE -> Pair(baseNote.timestamp, R.string.creation_date)
@@ -189,106 +178,6 @@ class BaseNoteVH(
         }
     }
 
-    /** Shows a snippet of ListItems around the ListItem that contains keyword */
-    private fun LinearLayout.bindListSearch(
-        initializedItems: List<ListItem>,
-        keyword: String,
-        isTitleEmpty: Boolean,
-    ) {
-        binding.LinearLayout.visibility = VISIBLE
-        val keywordItemIdx =
-            initializedItems.indexOfFirst { it.body.contains(keyword, ignoreCase = true) }
-        if (keywordItemIdx == -1) {
-            return bindList(initializedItems, isTitleEmpty, preferences.textSize.displayBodySize)
-        }
-        val listItemViews = children.filterIsInstance(HighlightableTextView::class.java).toList()
-        listItemViews.forEach { it.visibility = GONE }
-        val startItemIdx = (keywordItemIdx - SEARCH_SNIPPET_ITEM_LINES).coerceAtLeast(0)
-        val endItemIdx =
-            (keywordItemIdx + SEARCH_SNIPPET_ITEM_LINES).coerceAtMost(initializedItems.lastIndex)
-        (startItemIdx..endItemIdx).forEachIndexed { viewIdx, itemIdx ->
-            listItemViews[viewIdx].apply {
-                val item = initializedItems[itemIdx]
-                text = item.body
-                if (itemIdx == keywordItemIdx) {
-                    highlight(keyword)
-                }
-                handleChecked(this, item.checked)
-                visibility = VISIBLE
-                updateLayoutParams<LinearLayout.LayoutParams> {
-                    marginStart = if (item.isChild) 20.dp else 0
-                }
-            }
-        }
-        bindItemsRemaining(initializedItems.size, endItemIdx - startItemIdx + 1)
-    }
-
-    private fun bindList(baseNote: BaseNote, keyword: String) {
-        binding.Note.visibility = GONE
-        if (baseNote.locked) {
-            // For locked notes, only show title - hide list items
-            binding.LinearLayout.visibility = GONE
-            return
-        }
-        val initializedItems = baseNote.items.init()
-        if (baseNote.items.isEmpty()) {
-            binding.LinearLayout.visibility = GONE
-            return
-        }
-        if (keyword.isBlank()) {
-            bindList(
-                initializedItems,
-                baseNote.title.isEmpty(),
-                preferences.textSize.displayBodySize,
-            )
-            return
-        }
-        binding.LinearLayout.bindListSearch(initializedItems, keyword, baseNote.title.isEmpty())
-    }
-
-    private fun bindItemsRemaining(totalItems: Int, displayedItems: Int) {
-        if (displayedItems > 0 && totalItems > displayedItems) {
-            binding.ItemsRemaining.apply {
-                visibility = VISIBLE
-                text = (totalItems - displayedItems).toString()
-            }
-        } else binding.ItemsRemaining.visibility = GONE
-    }
-
-    private fun bindList(initializedItems: List<ListItem>, isTitleEmpty: Boolean, textSize: Float) {
-        binding.apply {
-            // Overview is condensed: show at most one list item.
-            val maxItems = 1
-            bindItemsRemaining(initializedItems.size, maxItems)
-            if (initializedItems.isEmpty()) {
-                LinearLayout.visibility = GONE
-            } else {
-                LinearLayout.visibility = VISIBLE
-                val forceShowFirstItem = isTitleEmpty
-                val filteredList = initializedItems.take(if (forceShowFirstItem) 1 else maxItems)
-                LinearLayout.children
-                    .filterIsInstance(HighlightableTextView::class.java)
-                    .forEachIndexed { index, view ->
-                        if (index < filteredList.size) {
-                            val item = filteredList[index]
-                            view.apply {
-                                text = item.body
-                                handleChecked(this, item.checked)
-                                visibility = VISIBLE
-                                updateLayoutParams<LinearLayout.LayoutParams> {
-                                    marginStart = if (item.isChild) 20.dp else 0
-                                }
-                                if (index == filteredList.lastIndex) {
-                                    updatePadding(bottom = 0)
-                                }
-                                setTextSizeSp(textSize)
-                            }
-                        } else view.visibility = GONE
-                    }
-            }
-        }
-    }
-
     private fun setColor(color: String) {
         binding.root.apply {
             val colorInt = context.extractColor(color)
@@ -340,36 +229,11 @@ class BaseNoteVH(
         }
     }
 
-    private fun shouldOnlyDisplayTitle(baseNote: BaseNote) =
-        when (baseNote.type) {
-            Type.NOTE -> false
-            Type.LIST -> false
-        }
+    private fun shouldOnlyDisplayTitle(baseNote: BaseNote) = false
 
     private fun BaseNote.isEmpty() = title.isBlank() && hasNoContents() && images.isEmpty()
 
     private fun BaseNote.hasNoContents() = body.isEmpty() && items.isEmpty()
 
-    private fun BaseNote.getEmptyMessage() =
-        when (type) {
-            Type.NOTE -> R.string.empty_note
-            Type.LIST -> R.string.empty_list
-        }
-
-    private fun handleChecked(textView: TextView, checked: Boolean) {
-        if (checked) {
-            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                R.drawable.checkbox_16,
-                0,
-                0,
-                0,
-            )
-        } else
-            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                R.drawable.checkbox_outline_16,
-                0,
-                0,
-                0,
-            )
-    }
+    private fun BaseNote.getEmptyMessage() = R.string.empty_note
 }

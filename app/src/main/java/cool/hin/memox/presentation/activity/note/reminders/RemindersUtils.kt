@@ -24,19 +24,8 @@ fun Context.createNotification(
     summaryIconResId: Int = R.drawable.notebook_multiple,
     actions: Collection<NotificationCompat.Action> = listOf(),
 ): Pair<Notification, Notification> {
-    val contentText =
-        if (note.type == cool.hin.memox.data.model.Type.LIST) {
-            note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
-        } else {
-            note.body.withoutImagePlaceholders()
-        }
-
-    val bigText =
-        if (note.type == cool.hin.memox.data.model.Type.LIST) {
-            note.items.joinToString("\n") { (if (it.checked) "✅ " else "🔳 ") + it.body }
-        } else {
-            note.body.withoutImagePlaceholders()
-        }
+    val contentText = note.body.withoutImagePlaceholders()
+    val bigText = contentText
     val notification =
         NotificationCompat.Builder(this, channelId)
             .apply {

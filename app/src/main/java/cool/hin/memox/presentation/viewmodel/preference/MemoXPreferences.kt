@@ -69,14 +69,6 @@ class MemoXPreferences private constructor(private val context: Context) {
             R.string.list_item_auto_sort,
         )
 
-    val defaultListNoteViewMode =
-        createEnumPreference(
-            preferences,
-            "defaultListNoteViewMode",
-            DefaultListNoteViewMode.LAST_USED,
-            R.string.default_list_note_view_mode,
-        )
-
     val labelsHidden = StringSetPreference("labelsHiddenInNavigation", preferences, setOf())
     val labelTagsHiddenInOverview =
         BooleanPreference(
@@ -238,7 +230,7 @@ class MemoXPreferences private constructor(private val context: Context) {
     fun getWidgetData(id: Int) = preferences.getLong("widget:$id", 0)
 
     fun getWidgetNoteType(id: Int) =
-        preferences.getString("widgetNoteType:$id", null)?.let { Type.valueOf(it) }
+        preferences.getString("widgetNoteType:$id", null)?.let { Type.valueOfOrDefault(it) }
 
     fun deleteWidget(id: Int) {
         preferences.edit(true) {
@@ -330,7 +322,6 @@ class MemoXPreferences private constructor(private val context: Context) {
                 editNoteActivityTopActions,
                 editNoteActivityBottomAction,
                 defaultNoteColor,
-                defaultListNoteViewMode,
             )
             .forEach { it.refresh() }
     }

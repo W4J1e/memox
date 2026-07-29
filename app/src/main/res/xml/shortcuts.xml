@@ -13,16 +13,4 @@
 
     </shortcut>
 
-    <shortcut
-        android:icon="@drawable/checkbox"
-        android:shortcutId="makeList"
-        android:shortcutShortLabel="@string/make_list">
-
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetClass="cool.hin.memox.presentation.activity.note.EditListActivity"
-            android:targetPackage="cool.hin.memox" />
-
-    </shortcut>
-
 </shortcuts>

@@ -98,14 +98,10 @@ private fun XmlPullParser.parseBaseNote(rootTag: String, folder: Folder): BaseNo
         }
     }
 
-    // Can be either `note` or `list`
-    val type =
-        if (rootTag == "note") {
-            Type.NOTE
-        } else Type.LIST
+    val (finalBody, finalSpans) = items.toCheckboxBodyAndSpans(body, spans)
     return BaseNote(
         0,
-        type,
+        Type.NOTE,
         folder,
         color,
         title,
@@ -113,9 +109,9 @@ private fun XmlPullParser.parseBaseNote(rootTag: String, folder: Folder): BaseNo
         timestamp,
         timestamp,
         labels,
-        body,
-        spans,
-        items,
+        finalBody,
+        finalSpans,
+        emptyList(),
         emptyList(),
         emptyList(),
         emptyList(),

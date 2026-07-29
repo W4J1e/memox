@@ -111,3 +111,10 @@ suspend fun Application.splitOversizedNotes() {
 
     log(TAG, "Migration 2 finished. Processed $affected oversized notes. Repaired rows: $repaired")
 }
+
+/**
+ * Migration 3 was removed: the standalone "checklist" note type (Type.LIST) has been removed in
+ * favour of the in-note checkboxes, and no legacy LIST notes can exist because the creation entry
+ * was removed before any were persisted. [LATEST_DATA_SCHEMA] is kept at 2.
+ */
+

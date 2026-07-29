@@ -24,7 +24,6 @@ import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.Item
-import cool.hin.memox.data.model.Type
 import cool.hin.memox.databinding.FragmentNotesBinding
 import cool.hin.memox.presentation.activity.main.MainActivity
 import cool.hin.memox.presentation.activity.main.fragment.SearchFragment.Companion.EXTRA_INITIAL_FOLDER
@@ -34,7 +33,6 @@ import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_FO
 import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_FOLDER_TO
 import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_NOTE_ID
 import cool.hin.memox.presentation.activity.note.EditActivity.Companion.EXTRA_SELECTED_BASE_NOTE
-import cool.hin.memox.presentation.activity.note.EditListActivity
 import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.activity.note.reminders.RemindersActivity
 import cool.hin.memox.presentation.getQuantityString
@@ -141,16 +139,13 @@ abstract class MemoXFragment : Fragment(), ItemListener {
     override fun onClick(position: Int) {
         if (position != -1) {
             notesAdapter?.getItem(position)?.let { item ->
-                if (item is BaseNote) {
-                    if (model.actionMode.isEnabled()) {
-                        handleNoteSelection(item.id, position, item)
-                    } else {
-                        when (item.type) {
-                            Type.NOTE -> goToActivity(EditNoteActivity::class.java, item)
-                            Type.LIST -> goToActivity(EditListActivity::class.java, item)
-                        }
-                    }
+            if (item is BaseNote) {
+                if (model.actionMode.isEnabled()) {
+                    handleNoteSelection(item.id, position, item)
+                } else {
+                    goToActivity(EditNoteActivity::class.java, item)
                 }
+            }
             }
         }
     }
@@ -245,19 +240,27 @@ abstract class MemoXFragment : Fragment(), ItemListener {
             }
         }
         // Pull-down to reveal search bar
+        // A small `pullRevealed` guard ensures the bar is only shown once per gesture, and the
+        // scroll listener below only hides it when the list is *actually* scrolled (not on the
+        // layout shift caused by the bar appearing). This breaks the visibility-toggle <-> onScrolled
+        // feedback loop that previously produced flicker/shake.
+        var pullStartY = 0f
+        var pullRevealed = false
         binding?.MainListView?.addOnItemTouchListener(object :
             RecyclerView.OnItemTouchListener {
-            private var startY = 0f
-
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
                 when (e.action) {
-                    MotionEvent.ACTION_DOWN -> startY = e.rawY
+                    MotionEvent.ACTION_DOWN -> {
+                        pullStartY = e.rawY
+                        pullRevealed = false
+                    }
                     MotionEvent.ACTION_MOVE -> {
-                        val dy = e.rawY - startY
-                        if (dy > 30 && !rv.canScrollVertically(-1)) {
+                        val dy = e.rawY - pullStartY
+                        if (!pullRevealed && dy > 40 && !rv.canScrollVertically(-1)) {
                             val navController = rv.findNavController()
                             if (navController.currentDestination?.id != R.id.Search) {
                                 binding?.EnterSearchKeywordLayout?.visibility = View.VISIBLE
+                                pullRevealed = true
                             }
                         }
                     }
@@ -269,21 +272,23 @@ abstract class MemoXFragment : Fragment(), ItemListener {
 
             override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
         })
-        // Hide search bar on scroll up
+        // Hide search bar only when the list content is actually scrolled (content above the
+        // viewport exists). The layout shift from revealing the bar is NOT a real scroll, so it
+        // won't be mistaken for one and won't re-hide the bar.
         binding?.MainListView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                if (dy > 0) {
-                    val searchBar = binding?.EnterSearchKeywordLayout
-                    if (searchBar?.visibility == View.VISIBLE) {
-                        val navController = recyclerView.findNavController()
-                        if (navController.currentDestination?.id != R.id.Search) {
-                            searchBar.visibility = View.GONE
-                            binding?.EnterSearchKeyword?.setText("")
-                            binding?.EnterSearchKeyword?.clearFocus()
-                            activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
-                        }
-                    }
+                if (dy <= 0) return
+                val searchBar = binding?.EnterSearchKeywordLayout ?: return
+                if (searchBar.visibility != View.VISIBLE) return
+                val navController = recyclerView.findNavController()
+                if (navController.currentDestination?.id == R.id.Search) return
+                if (recyclerView.canScrollVertically(-1)) {
+                    searchBar.visibility = View.GONE
+                    binding?.EnterSearchKeyword?.setText("")
+                    binding?.EnterSearchKeyword?.clearFocus()
+                    activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
+                    pullRevealed = false
                 }
             }
         })

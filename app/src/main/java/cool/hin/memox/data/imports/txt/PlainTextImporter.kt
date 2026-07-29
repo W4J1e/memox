@@ -69,10 +69,11 @@ class PlainTextImporter : ExternalImporter {
                             }
                         } else Pair(content, emptyList())
 
+                    val (finalBody, finalSpans) = listItems.toCheckboxBodyAndSpans(body, spans)
                     notes.add(
                         BaseNote(
                             id = 0L, // Auto-generated
-                            type = if (listItems.isEmpty()) Type.NOTE else Type.LIST,
+                            type = Type.NOTE,
                             folder = Folder.NOTES,
                             color = BaseNote.COLOR_DEFAULT,
                             title = fileNameWithoutExtension,
@@ -80,9 +81,9 @@ class PlainTextImporter : ExternalImporter {
                             timestamp = timestamp,
                             modifiedTimestamp = timestamp,
                             labels = listOf(),
-                            body = if (listItems.isEmpty()) body else "",
-                            spans = if (listItems.isEmpty()) spans else listOf(),
-                            items = listItems,
+                            body = finalBody,
+                            spans = finalSpans,
+                            items = listOf(),
                             images = listOf(),
                             files = listOf(),
                             audios = listOf(),

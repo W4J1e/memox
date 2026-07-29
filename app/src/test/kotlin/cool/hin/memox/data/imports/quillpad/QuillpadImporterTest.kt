@@ -155,14 +155,12 @@ class QuillpadImporterTest {
         val actual = json.parseToBaseNote()
 
         assertThat(actual)
-            .extracting("type", "title", "items")
+            .extracting("type", "title", "body", "items")
             .containsExactly(
-                Type.LIST,
+                Type.NOTE,
                 "List Note",
-                listOf(
-                    ListItem("Task1", false, false, 0, mutableListOf()),
-                    ListItem("Task2", true, false, 1, mutableListOf()),
-                ),
+                "☐ Task1\n☑ Task2\n",
+                emptyList(),
             )
     }
 

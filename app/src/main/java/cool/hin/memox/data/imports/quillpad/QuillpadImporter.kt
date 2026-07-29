@@ -155,9 +155,10 @@ class QuillpadImporter : ExternalImporter {
         val reminders =
             this.reminders.map { Reminder(id = it.id, dateTime = Date(it.date), repetition = null) }
 
+        val (finalBody, finalSpans) = items.toCheckboxBodyAndSpans(body, spans)
         return BaseNote(
             id = 0L,
-            type = if (isList) Type.LIST else Type.NOTE,
+            type = Type.NOTE,
             folder =
                 when {
                     isDeleted -> Folder.DELETED
@@ -169,9 +170,9 @@ class QuillpadImporter : ExternalImporter {
             timestamp = creationDate.toMillis(),
             modifiedTimestamp = modifiedDate.toMillis(),
             labels = labels.sorted().toList(),
-            body = body,
-            spans = spans,
-            items = items,
+            body = finalBody,
+            spans = finalSpans,
+            items = listOf(),
             images = images,
             files = files,
             audios = audios,

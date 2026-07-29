@@ -171,6 +171,10 @@ object Converters {
 
     @TypeConverter fun jsonToReminders(json: String) = jsonToReminders(JSONArray(json))
 
+    @TypeConverter fun typeToJson(type: Type) = type.name
+
+    @TypeConverter fun jsonToType(name: String) = Type.valueOfOrDefault(name)
+
     fun jsonToReminders(jsonArray: JSONArray): List<Reminder> {
         return jsonArray.iterable<JSONObject>().map { jsonObject ->
             val id = jsonObject.getLong("id")
