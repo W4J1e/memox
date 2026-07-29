@@ -291,23 +291,22 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        textSizeNoteEditor.observe(viewLifecycleOwner) { value ->
-            binding.TextSize.setupTextSizePreference(
+        textSizeNoteEditor.merge(textSizeOverview).observe(viewLifecycleOwner) {
+            (editorValue, overviewValue) ->
+            binding.TextSize.setupTextSize(
                 textSizeNoteEditor,
-                requireContext(),
-                value = value,
-            ) { newValue ->
-                model.savePreference(textSizeNoteEditor, newValue)
-            }
-        }
-        textSizeOverview.observe(viewLifecycleOwner) { value ->
-            binding.TextSizeOverview.setupTextSizePreference(
                 textSizeOverview,
+                editorValue,
+                overviewValue,
                 requireContext(),
-                value = value,
-            ) { newValue ->
-                model.savePreference(textSizeOverview, newValue)
-            }
+                layoutInflater,
+                onEditorChange = { newValue ->
+                    model.savePreference(textSizeNoteEditor, newValue)
+                },
+                onOverviewChange = { newValue ->
+                    model.savePreference(textSizeOverview, newValue)
+                },
+            )
         }
         notesSorting.observe(viewLifecycleOwner) { notesSort ->
             binding.NotesSortOrder.setup(

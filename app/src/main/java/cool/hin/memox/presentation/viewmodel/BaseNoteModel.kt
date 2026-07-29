@@ -593,6 +593,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 app.moveBaseNotes(baseNoteDao, ids, folder)
+                // Moving between folders (e.g. to trash or restore) changes the note's folder
+                // field, which must be synced immediately
+                SyncRouter.syncNow(app)
             } finally {
                 callable?.invoke()
             }
@@ -601,7 +604,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun updateBaseNoteLabels(labels: List<String>, id: Long) {
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLabels(id, labels) }
+        viewModelScope.launch(Dispatchers.IO) {
+            baseNoteDao.updateLabels(id, labels)
+            SyncRouter.syncNow(app)
+        }
     }
 
     suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
@@ -643,16 +649,23 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             val images = ArrayList<FileAttachment>()
             val files = ArrayList<FileAttachment>()
             val audios = ArrayList<Audio>()
+            val notes: List<BaseNote>
             withContext(Dispatchers.IO) {
                 ids = baseNoteDao.getDeletedNoteIds()
+                notes = baseNoteDao.getByIds(ids)
                 val imageStrings = baseNoteDao.getDeletedNoteImages()
                 val fileStrings = baseNoteDao.getDeletedNoteFiles()
                 val audioStrings = baseNoteDao.getDeletedNoteAudios()
                 imageStrings.flatMapTo(images) { json -> Converters.jsonToFiles(json) }
                 fileStrings.flatMapTo(files) { json -> Converters.jsonToFiles(json) }
                 audioStrings.flatMapTo(audios) { json -> Converters.jsonToAudios(json) }
-                baseNoteDao.deleteFrom(Folder.DELETED)
             }
+            // Delete from the active sync provider (records tombstones) before deleting locally,
+            // otherwise a manual sync would re-download the remote copies
+            try {
+                SyncRouter.deleteRemoteNotes(app, notes)
+            } catch (_: Exception) {}
+            withContext(Dispatchers.IO) { baseNoteDao.deleteFrom(Folder.DELETED) }
             val attachments = ArrayList<Attachment>(images.size + files.size + audios.size)
             attachments.addAll(images)
             attachments.addAll(files)

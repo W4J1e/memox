@@ -6,12 +6,8 @@ import cool.hin.memox.utils.cancelPinAndReminders
 import cool.hin.memox.utils.pinAndScheduleReminders
 
 suspend fun Context.moveBaseNotes(baseNoteDao: BaseNoteDao, ids: LongArray, folder: Folder) {
-    // Only reminders of notes in NOTES folder are active
-    if (folder == Folder.DELETED) {
-        baseNoteDao.move(ids, folder, System.currentTimeMillis())
-    } else {
-        baseNoteDao.move(ids, folder)
-    }
+    // Always bump modifiedTimestamp so the folder change is picked up by sync (newer-wins)
+    baseNoteDao.move(ids, folder, System.currentTimeMillis())
     val notes = baseNoteDao.getByIds(ids)
     // Only reminders of notes in NOTES folder are active
     when (folder) {

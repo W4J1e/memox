@@ -72,11 +72,7 @@
 
             <include
                 android:id="@+id/TextSize"
-                layout="@layout/preference_seekbar" />
-
-            <include
-                android:id="@+id/TextSizeOverview"
-                layout="@layout/preference_seekbar" />
+                layout="@layout/preference" />
 
             <View
                 android:layout_width="match_parent"

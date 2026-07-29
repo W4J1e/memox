@@ -394,6 +394,9 @@
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>
     <string name="text_default">默认</string>
+    <string name="font_size">字体大小</string>
+    <string name="font_size_note_editor">编辑器</string>
+    <string name="font_size_overview">概述</string>
     <string name="text_size_note_editor">文本大小（笔记编辑器）</string>
     <string name="text_size_overview">文本大小（概述）</string>
     <string name="text_size_preview">乱数假文</string>
