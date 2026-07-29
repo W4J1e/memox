@@ -16,12 +16,10 @@
     <string name="ascending">Oplopend</string>
     <string name="attach_file">Bestand bijvoegen</string>
     <string name="audio_recordings">Audio-opnames</string>
-    <string name="auto_backup">Automatische back-up</string>
     <string name="auto_sort_by_checked">Sorteer de aangevinkte items tot het einde</string>
     <string name="backup">Back-up</string>
     <string name="backup_password">Backup Wachtwoord</string>
     <string name="backup_password_hint">Door dit in te stellen, worden alle toekomstige backup ZIP-bestanden versleuteld en met een wachtwoord beschermd</string>
-    <string name="backup_period_days">Periode van automatische back-up in dagen</string>
     <string name="biometric_lock">Vergrendel app met biometrische of PIN</string>
     <string name="biometrics_disable_success">Biometrische/PIN-vergrendeling is uitgeschakeld</string>
     <string name="biometrics_failure">Authenticatie via Biometrisch/PIN is mislukt</string>
@@ -39,7 +37,6 @@
         <item quantity="one">Kan %1$d afbeelding niet toevoegen</item>
         <item quantity="other">Kan %1$d afbeeldingen niet toevoegen</item>
     </plurals>
-    <string name="cant_find_folder">Kan map niet vinden. Deze is mogelijk verplaatst of verwijderd</string>
     <string name="cant_find_note">Kan notitie niet vinden. Misschien is deze verwijderd</string>
     <string name="cant_load_file">Kan bestand niet laden. Dit kan verplaatst of verwijderd zijn</string>
     <string name="cant_load_image">Kan afbeelding niet laden. Deze is mogelijk verplaatst of verwijderd</string>
@@ -48,7 +45,6 @@
     <string name="change_note">Wijzig Notitie</string>
     <string name="check_all_items">Alle items selecteren</string>
     <string name="choose_another_folder">Kies een andere map</string>
-    <string name="choose_folder">Kies een map</string>
     <string name="choose_other_app">Kies welke app je wilt importeren</string>
     <string name="clear">Wissen</string>
     <string name="clear_data">Wis Gegevens</string>
@@ -150,7 +146,6 @@
     <string name="locked">Vergrendeld</string>
     <string name="make_feature_request">Vraag een functie aan</string>
     <string name="make_list">Lijst maken</string>
-    <string name="max_backups">Aantal back-ups dat moet worden bewaard</string>
     <string name="max_items_to_display">Maximaal aantal items in lijst</string>
     <string name="max_labels_to_display">Maximale labels weergeven in Navigatie</string>
     <string name="max_lines_to_display">Maximaal aantal regels in notitie</string>

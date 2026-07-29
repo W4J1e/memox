@@ -50,8 +50,8 @@ open class PickNoteActivity : LockedActivity<ActivityPickNoteBinding>(), ItemLis
             with(preferences) {
                 BaseNoteAdapter(
                     Collections.emptySet(),
-                    dateFormatOverview.value,
-                    timeFormatOverview.value,
+                    dateFormat.value,
+                    timeFormat.value,
                     { adapter -> notesSorting.value.createCallback(adapter) },
                     BaseNoteVHPreferences(
                         textSizeOverview.value,

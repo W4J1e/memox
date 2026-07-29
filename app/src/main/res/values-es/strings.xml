@@ -20,17 +20,6 @@
     <string name="ascending">Ascendente</string>
     <string name="attach_file">Adjuntar fichero</string>
     <string name="audio_recordings">Grabaciones de audio</string>
-    <string name="auto_backup">Copia de seguridad automática</string>
-    <string name="auto_backup_error_message">Ha ocurrido un error durante una copia automática:\n\'%1$s’\nComprueba tus ajustes o informa de un error</string>
-    <string name="auto_backup_failed">Falló la copia de seguridad automática de memoX</string>
-    <string name="auto_backup_last">Última copia de seguridad</string>
-    <string name="auto_backup_on_save">Copia de seguridad automática al salir una nota</string>
-    <string name="auto_backup_on_save_hint">Al habilitar esta opción, se crea automáticamente una copia de seguridad (\"MemoX_AutoBackup.zip\") en la \"Directorio de copias de seguridad\" configurada cada vez que se guarda una nota.\nTenga en cuenta que esto puede afectar el rendimiento.</string>
-    <string name="auto_backup_skipped_files">Omitido %1$d ficheros o imágenes adjuntas ausentes</string>
-    <string name="auto_backups_folder">Directorio de copias de seguridad</string>
-    <string name="auto_backups_folder_hint">Carpeta donde se guardan las copias de seguridad automáticas.</string>
-    <string name="auto_backups_folder_rechoose">Debe volver a elegir su directorio de copias de seguridad para que memoX tenga permiso para escribir en ella.\nTambién puede presionar Cancelar para omitir la importación del valor del directorio de copias de seguridad</string>
-    <string name="auto_backups_folder_set">Establece primero la carpeta de copia en opción anterior</string>
     <string name="auto_remove_deleted_notes">Eliminar automáticamente las notas borradas de forma permanente después de</string>
     <string name="auto_remove_deleted_notes_hint">Al habilitar esta opción, las notas que se eliminaron se eliminarán permanentemente después de X días.</string>
     <string name="auto_save_after_idle_time">Autoguardar nota después de un lapso de inactividad</string>
@@ -40,9 +29,6 @@
     <string name="backup">Respaldar</string>
     <string name="backup_password">Contraseña de copia de seguridad</string>
     <string name="backup_password_hint">Al configurar esto, todos los archivos ZIP de respaldo futuros se cifrarán y protegerán con contraseña.</string>
-    <string name="backup_period_days">Periodo de copia automática en días</string>
-    <string name="backup_periodic">Copias de seguridad periódicas</string>
-    <string name="backup_periodic_hint">Al habilitar esta opción, las copias de seguridad se crean automáticamente en el directorio de copias de seguridad configurada.\nEs posible que esto no funcione si tiene habilitado el modo de ahorro de energía.</string>
     <string name="behaviour">Comportamiento</string>
     <string name="biometric_backup_advice">Se aconseja exportar una copia de respaldo completa de todas las notas antes de (des)habilitar el bloqueo biométrico, para el caso de que el cifrado biométrico falle</string>
     <string name="biometric_lock">Bloquear aplicación con dispositivo biométrico o con PIN</string>
@@ -65,7 +51,6 @@
         <item quantity="one">No puedo añadir %1$d imagen</item>
         <item quantity="other">No puedo añadir %1$d imágenes</item>
     </plurals>
-    <string name="cant_find_folder">No se pudo encontrar la carpeta. Quizás haya sido movida o eliminada.</string>
     <string name="cant_find_note">No se pudo encontrar la nota. Puede haber sido borrada</string>
     <string name="cant_load_file">No se pudo cargar el fichero. Puede haber sido movido o borrado</string>
     <string name="cant_load_image">No se pudo cargar la imagen. Puede haber sido movida o borrada</string>
@@ -76,7 +61,6 @@
     <string name="change_note">Cambiar nota</string>
     <string name="check_all_items">Marcar todos los elementos</string>
     <string name="choose_another_folder">Elegir otra carpeta</string>
-    <string name="choose_folder">Elegir carpeta</string>
     <string name="choose_other_app">Elegir aplicación de la que importar</string>
     <string name="clean_up">Limpiar</string>
     <string name="cleanup_finished_summary">Eliminados %1$d adjuntos ausentes de %2$d notas</string>
@@ -239,7 +223,6 @@
     <string name="make_default">Establecer por defecto</string>
     <string name="make_feature_request">Hacer petición de característica</string>
     <string name="make_list">Hacer lista</string>
-    <string name="max_backups">Cantidad de copias a mantener</string>
     <string name="max_items_to_display">Número máximo de elementos para mostrar en lista</string>
     <string name="max_labels_to_display">Número máximo de etiquetas para mostrar en navegación</string>
     <string name="max_lines_to_display">Número máximo de elementos para mostrar en nota</string>
@@ -287,7 +270,6 @@
     <string name="please_grant_notally_alarm">Otorgar permiso a memoX para enviar recordatorios</string>
     <string name="please_grant_notally_audio">Otorgar permiso de grabación de audio a memoX.\nLas grabaciones nunca abandonarán su dispositivo</string>
     <string name="please_grant_notally_notification">Otorgar permisos para enviar notificaciones a memoX</string>
-    <string name="please_grant_notally_notification_auto_backup">Si falla una copia de seguridad automática, puede recibir una notificación, si otorga permiso a memoX para enviar notificaciones</string>
     <string name="previous">Anterior</string>
     <string name="rate">Calificar esta app</string>
     <string name="read_only">Solo lectura</string>

@@ -53,7 +53,6 @@ import cool.hin.memox.presentation.withoutImagePlaceholders
 import cool.hin.memox.utils.Cache
 import cool.hin.memox.utils.Event
 import cool.hin.memox.utils.FileError
-import cool.hin.memox.utils.backup.checkBackupOnSave
 import cool.hin.memox.utils.backup.importAudio
 import cool.hin.memox.utils.backup.importFile
 import cool.hin.memox.utils.cancelPinAndReminders
@@ -445,7 +444,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         return baseNote.copy(id = id)
     }
 
-    suspend fun deleteBaseNote(checkAutoSave: Boolean = true) {
+    suspend fun deleteBaseNote() {
         app.cancelPinAndReminders(id, reminders.value)
         // Delete from the active sync provider before deleting locally (need note data for filename/attachments)
         try {
@@ -457,9 +456,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         if (attachments.isNotEmpty()) {
             withContext(Dispatchers.IO) { app.deleteAttachments(attachments) }
         }
-        if (checkAutoSave) {
-            app.checkBackupOnSave(preferences, forceFullBackup = true)
-        }
     }
 
     fun setItems(items: List<ListItem>) {
@@ -467,13 +463,10 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
         this.items.addAll(items)
     }
 
-    suspend fun saveNote(checkBackupOnSave: Boolean = true): Long {
+    suspend fun saveNote(): Long {
         return withContext(Dispatchers.IO) {
             val note = getBaseNote()
             val id = baseNoteDao.insertSafe(app, note)
-            if (checkBackupOnSave) {
-                checkBackupOnSave(note)
-            }
             if (!note.equalContents(originalNote)) {
                 app.sendBroadcast(
                     Intent(app, ReminderReceiver::class.java).apply {
@@ -485,14 +478,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             originalNote = note.deepCopy()
             return@withContext id
         }
-    }
-
-    suspend fun checkBackupOnSave(note: BaseNote = getBaseNote()) {
-        app.checkBackupOnSave(
-            preferences,
-            note = note,
-            forceFullBackup = originalNote?.attachmentsDifferFrom(note) == true,
-        )
     }
 
     fun isEmpty(): Boolean {
@@ -671,7 +656,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             }
         }
         Cache.list = ArrayList()
-        saveNote(checkBackupOnSave = false)
+        saveNote()
     }
 
     suspend fun refreshOriginalNote() {

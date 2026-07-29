@@ -24,17 +24,6 @@
         <item quantity="other">Вкладення</item>
     </plurals>
     <string name="audio_recordings">Аудіозаписи</string>
-    <string name="auto_backup">Автоматичне резервне копіювання</string>
-    <string name="auto_backup_error_message">Під час автоматичного резервного копіювання сталася помилка:\n\'%1$s\'\nБудь ласка, перевірте налаштування або повідомте про помилку</string>
-    <string name="auto_backup_failed">Збій автоматичного резервного копіювання memoX</string>
-    <string name="auto_backup_last">Останнє резервне копіювання</string>
-    <string name="auto_backup_on_save">Автоматично створювати резервну копію при виході з додатка</string>
-    <string name="auto_backup_on_save_hint">Якщо ввімкнути цей параметр, резервна копія («MemoX_AutoBackup.zip») автоматично створюватиметься у вибраній папці щоразу при виході з нотатки.\nЗверніть увагу: це може вплинути на продуктивність пристрою</string>
-    <string name="auto_backup_skipped_files">Пропущено відсутніх вкладень (файлів/зображень): %1$d</string>
-    <string name="auto_backups_folder">Папка резервних копій</string>
-    <string name="auto_backups_folder_hint">Папка, у якій зберігатимуться всі автоматичні резервні копії.\nЯкщо ви хочете використовувати хмарне сховище або WebDAV, ознайомтеся з документацією (натисніть \"%1$s\")</string>
-    <string name="auto_backups_folder_rechoose">Потрібно заново вибрати папку резервних копій, щоб memoX мав дозвіл на запис у неї.\nВи також можете натиснути «Скасувати», щоб пропустити імпорт налаштувань папки</string>
-    <string name="auto_backups_folder_set">Спочатку виберіть папку резервних копій вище</string>
     <string name="auto_remove_deleted_notes">Автоматично видаляти нотатки назавжди через</string>
     <string name="auto_remove_deleted_notes_hint">Якщо ввімкнути цю опцію, видалені нотатки будуть остаточно видалені через X днів</string>
     <string name="auto_save_after_idle_time">Автозбереження нотатки після вказаного часу бездіяльності</string>
@@ -44,9 +33,6 @@
     <string name="backup">Резервне копіювання</string>
     <string name="backup_password">Пароль резервної копії</string>
     <string name="backup_password_hint">Якщо встановити цей параметр, усі майбутні ZIP-архіви резервних копій будуть зашифровані та захищені паролем</string>
-    <string name="backup_period_days">Період автоматичного створення копій</string>
-    <string name="backup_periodic">Періодичне резервне копіювання</string>
-    <string name="backup_periodic_hint">Якщо ввімкнути цей параметр, резервні копії автоматично створюватимуться у вибраній папці.\nЦе може не працювати, якщо ввімкнено режим енергозбереження</string>
     <string name="behaviour">Поведінка</string>
     <string name="biometric_backup_advice">Рекомендовано створити повну резервну копію всіх нотаток перед тим, як вмикати або вимикати біометричне блокування, на випадок збою шифрування через біометрію</string>
     <string name="biometric_lock">Блокувати додаток біометрією або PIN-кодом</string>
@@ -69,7 +55,6 @@
         <item quantity="one">Не вдалося додати стільки зображень: %1$d</item>
         <item quantity="other">Не вдалося додати стільки зображень: %1$d</item>
     </plurals>
-    <string name="cant_find_folder">Не вдалося знайти папку. Можливо, її перейменували, перемістили або видалили</string>
     <string name="cant_find_note">Не вдалося знайти нотатку. Можливо, її було видалено</string>
     <string name="cant_load_file">Не вдалося завантажити файл. Можливо, його перемістили або видалили</string>
     <string name="cant_load_image">Не вдалося завантажити зображення. Можливо, його перемістили або видалили</string>
@@ -80,7 +65,6 @@
     <string name="change_note">Змінити нотатку</string>
     <string name="check_all_items">Позначити всі пункти</string>
     <string name="choose_another_folder">Вибрати іншу папку</string>
-    <string name="choose_folder">Вибрати папку</string>
     <string name="choose_other_app">Оберіть додаток, з якого потрібно імпортувати</string>
     <string name="clean_up">Очистити</string>
     <string name="cleanup_finished_summary">Вилучено відсутні вкладення (%1$d) із нотаток (%2$d)</string>
@@ -111,8 +95,6 @@
     <string name="date">Дата</string>
     <string name="date_format">Формат дати</string>
     <string name="date_format_hint">Застосовує вибраний формат дати у списку нотаток</string>
-    <string name="date_format_note_view">Формат дати й часу в нотатці</string>
-    <string name="date_format_overview">Формат дати й часу в огляді нотаток</string>
     <plurals name="days">
         <item quantity="few">Дні</item>
         <item quantity="many">Днів</item>
@@ -252,7 +234,6 @@
     <string name="make_default">Встановити за замовчуванням</string>
     <string name="make_feature_request">Запропонувати функцію</string>
     <string name="make_list">Створити список</string>
-    <string name="max_backups">Кількість резервних копій для зберігання</string>
     <string name="max_items_to_display">Макс. кількість пунктів у списку</string>
     <string name="max_labels_to_display">Макс. кількість міток у навігації</string>
     <string name="max_lines_to_display">Макс. кількість рядків в нотатці</string>
@@ -314,7 +295,6 @@
     <string name="please_grant_notally_alarm">Надайте memoX дозвіл на надсилання нагадувань</string>
     <string name="please_grant_notally_audio">Надайте memoX дозвіл на запис аудіо. Записи ніколи не залишають ваш пристрій</string>
     <string name="please_grant_notally_notification">Надайте memoX дозвіл на надсилання сповіщень</string>
-    <string name="please_grant_notally_notification_auto_backup">Якщо автоматичне резервне копіювання не вдасться, ви можете отримати сповіщення, якщо надасте memoX дозвіл на надсилання сповіщень</string>
     <string name="previous">Попередній</string>
     <string name="quillpad_help">Щоб імпортувати ваші Нотатки з Quillpad, ви повинні експортувати ваші Нотатки Quillpad як ZIP-файл резервної копії. Для цього відкрийте Quillpad, перейдіть у Налаштування &gt; Резервне копіювання &gt; Створити резервну копію та збережіть .ZIP на своєму телефоні.\nЯкщо у вас уже є ZIP-файл резервної копії Quillpad, натисніть Імпортувати та виберіть його.</string>
     <string name="rate">Оцініть цей додаток</string>
@@ -384,8 +364,6 @@
     <string name="time">Час</string>
     <string name="time_24h">24-годинний</string>
     <string name="time_am_pm">12-годинний</string>
-    <string name="time_format_note_view">Формат часу в нотатці</string>
-    <string name="time_format_overview">Формат часу в огляді нотаток</string>
     <string name="title">Назва</string>
     <string name="to_pin_note_status_bar">Щоб закріпити нотатку в рядку стану, дозвольте memoX надсилати сповіщення. Перейдіть у Налаштування &gt; Дозволи та дозвольте Сповіщення</string>
     <string name="to_record_audio">Щоб записувати аудіо, дозвольте застосунку memoX доступ до мікрофона. Торкніться Налаштування &gt; Дозволи та ввімкніть Мікрофон</string>

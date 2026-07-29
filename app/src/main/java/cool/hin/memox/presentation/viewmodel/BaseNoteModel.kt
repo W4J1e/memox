@@ -3,13 +3,11 @@ package cool.hin.memox.presentation.viewmodel
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.print.PdfPrintListener
 import android.view.View
 import androidx.annotation.RequiresApi
-import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -17,7 +15,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
@@ -43,7 +40,6 @@ import cool.hin.memox.data.model.Item
 import cool.hin.memox.data.model.Label
 import cool.hin.memox.data.model.SearchResult
 import cool.hin.memox.data.model.deepCopy
-import cool.hin.memox.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
 import cool.hin.memox.presentation.activity.note.refreshStatusBarPin
 import cool.hin.memox.presentation.exportedText
 import cool.hin.memox.presentation.getQuantityString
@@ -56,7 +52,6 @@ import cool.hin.memox.presentation.view.misc.Progress
 import cool.hin.memox.presentation.viewmodel.preference.BasePreference
 import cool.hin.memox.presentation.viewmodel.preference.BiometricLock
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.START_VIEW_DEFAULT
 import cool.hin.memox.presentation.viewmodel.preference.Theme
 import cool.hin.memox.presentation.viewmodel.progress.ExportNotesProgress
@@ -141,7 +136,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     val actionMode = ActionMode()
 
-    internal var showRefreshBackupsFolderAfterThemeChange = false
     private var labelsHiddenObserver: Observer<Set<String>>? = null
 
     fun startObserving() {
@@ -221,33 +215,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private fun transform(list: List<BaseNote>) = transform(list, pinned, others)
-
-    fun disableBackups() {
-        val value = preferences.backupsFolder.value
-        if (value != EMPTY_PATH) {
-            clearPersistedUriPermissions(value)
-        }
-        savePreference(preferences.backupsFolder, EMPTY_PATH)
-        savePreference(
-            preferences.periodicBackups,
-            preferences.periodicBackups.value.copy(periodInDays = 0),
-        )
-    }
-
-    fun setupBackupsFolder(uri: Uri) {
-        val oldBackupsFolder = preferences.backupsFolder.value
-        val newBackupsFolder = uri.toString()
-        if (newBackupsFolder != oldBackupsFolder) {
-            val flags =
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            app.contentResolver.takePersistableUriPermission(uri, flags)
-            if (oldBackupsFolder != EMPTY_PATH) {
-                clearPersistedUriPermissions(oldBackupsFolder)
-            }
-            savePreference(preferences.backupsFolder, newBackupsFolder)
-        }
-        showRefreshBackupsFolderAfterThemeChange = false
-    }
 
     fun enableDataInPublic(callback: (() -> Unit)? = null) {
         viewModelScope.launch {
@@ -366,21 +333,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun <T> savePreference(preference: BasePreference<T>, value: T) {
         viewModelScope.launch(Dispatchers.IO) { preference.save(value) }
-    }
-
-    /**
-     * Release previously persisted permissions, if any There is a hard limit of 128 before Android
-     * 11, 512 after Check ->
-     * https://commonsware.com/blog/2020/06/13/count-your-saf-uri-permission-grants.html
-     */
-    private fun clearPersistedUriPermissions(folderPath: String) {
-        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        app.contentResolver.persistedUriPermissions.forEach { permission ->
-            val uriPath = permission.uri.path
-            if (uriPath?.contains(folderPath) == true) {
-                app.contentResolver.releasePersistableUriPermission(permission.uri, flags)
-            }
-        }
     }
 
     fun exportBackup(uri: Uri, onComplete: (() -> Unit)? = null) {
@@ -784,38 +736,29 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     suspend fun resetPreferences(callback: (restartRequired: Boolean) -> Unit) {
-        val backupsFolder = preferences.backupsFolder.value
         val publicFolder = preferences.dataInPublicFolder.value
         val isThemeDefault = preferences.theme.value == Theme.FOLLOW_SYSTEM
         val finishCallback = { callback(!isThemeDefault) }
         if (preferences.isLockEnabled) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 disableBiometricLock {
-                    finishResetPreferencesAfterBiometric(
-                        publicFolder,
-                        backupsFolder,
-                        finishCallback,
-                    )
+                    finishResetPreferencesAfterBiometric(publicFolder, finishCallback)
                 }
-            } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
-        } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
+            } else finishResetPreferencesAfterBiometric(publicFolder, finishCallback)
+        } else finishResetPreferencesAfterBiometric(publicFolder, finishCallback)
     }
 
     private fun finishResetPreferencesAfterBiometric(
         publicFolder: Boolean,
-        backupsFolder: String,
         callback: (() -> Unit),
     ) {
         if (publicFolder) {
-            refreshDataInPublicFolder(false) { finishResetPreferences(backupsFolder, callback) }
-        } else finishResetPreferences(backupsFolder, callback)
+            refreshDataInPublicFolder(false) { finishResetPreferences(callback) }
+        } else finishResetPreferences(callback)
     }
 
-    private fun finishResetPreferences(backupsFolder: String, callback: () -> Unit) {
+    private fun finishResetPreferences(callback: () -> Unit) {
         preferences.reset()
-        if (backupsFolder != EMPTY_PATH) {
-            clearPersistedUriPermissions(backupsFolder)
-        }
         callback()
         app.restartApplication(R.id.Settings)
     }
@@ -823,11 +766,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun importPreferences(
         context: Context,
         uri: Uri,
-        askForUriPermissions: (uri: Uri) -> Unit,
         onSuccess: () -> Unit,
         onFailure: () -> Unit,
     ) {
-        val oldBackupsFolder = preferences.backupsFolder.value
         val dataInPublicFolderBefore = preferences.dataInPublicFolder.value
         val themeBefore = preferences.theme.value
         val useDynamicColorsBefore = preferences.useDynamicColors.value
@@ -840,12 +781,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             refreshDataInPublicFolder(dataInPublicFolder) {
                 preferences.dataInPublicFolder.refresh()
                 finishImportPreferences(
-                    oldBackupsFolder,
                     themeBefore,
                     useDynamicColorsBefore,
                     oldStartView,
                     context,
-                    askForUriPermissions,
                 ) {
                     if (success) {
                         onSuccess()
@@ -854,12 +793,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             }
         } else
             finishImportPreferences(
-                oldBackupsFolder,
                 themeBefore,
                 useDynamicColorsBefore,
                 oldStartView,
                 context,
-                askForUriPermissions,
             ) {
                 if (success) {
                     onSuccess()
@@ -868,55 +805,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private fun finishImportPreferences(
-        oldBackupsFolder: String,
         themeBefore: Theme,
         useDynamicColorsBefore: Boolean,
         oldStartView: String,
         context: Context,
-        askForUriPermissions: (uri: Uri) -> Unit,
         callback: () -> Unit,
     ) {
-        val backupFolder = preferences.backupsFolder.getFreshValue()
-        val hasUseDynamicColorsChange =
-            useDynamicColorsBefore != preferences.useDynamicColors.getFreshValue()
-        if (oldBackupsFolder != backupFolder) {
-            showRefreshBackupsFolderAfterThemeChange = true
-            if (themeBefore == preferences.theme.getFreshValue() && !hasUseDynamicColorsChange) {
-                refreshBackupsFolder(context, backupFolder, askForUriPermissions)
-            }
-        } else {
-            showRefreshBackupsFolderAfterThemeChange = false
-        }
         val startView = preferences.startView.getFreshValue()
         if (oldStartView != startView) {
             refreshStartView(startView, oldStartView)
         }
         preferences.theme.refresh()
         callback()
-        if (showRefreshBackupsFolderAfterThemeChange) {
-            app.restartApplication(R.id.Settings, EXTRA_SHOW_IMPORT_BACKUPS_FOLDER to true)
-        }
-    }
-
-    fun refreshBackupsFolder(
-        context: Context,
-        backupFolder: String = preferences.backupsFolder.value,
-        askForUriPermissions: (uri: Uri) -> Unit,
-    ) {
-        try {
-            val backupFolderUri = backupFolder.toUri()
-            MaterialAlertDialogBuilder(context)
-                .setMessage(R.string.auto_backups_folder_rechoose)
-                .setCancelButton { _, _ -> showRefreshBackupsFolderAfterThemeChange = false }
-                .setOnDismissListener { showRefreshBackupsFolderAfterThemeChange = false }
-                .setPositiveButton(R.string.choose_folder) { _, _ ->
-                    askForUriPermissions(backupFolderUri)
-                }
-                .show()
-        } catch (_: Exception) {
-            showRefreshBackupsFolderAfterThemeChange = false
-            disableBackups()
-        }
     }
 
     private fun refreshDataInPublicFolder(dataInPublicFolder: Boolean, callback: () -> Unit) {

@@ -67,11 +67,7 @@
                 layout="@layout/preference" />
 
             <include
-                android:id="@+id/DateFormatOverview"
-                layout="@layout/preference" />
-
-            <include
-                android:id="@+id/DateFormatNoteView"
+                android:id="@+id/DateFormat"
                 layout="@layout/preference" />
 
             <include
@@ -161,40 +157,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider" />
-
-            <TextView
-                style="@style/PreferenceHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/auto_backup" />
-
-            <include
-                android:id="@+id/BackupsFolder"
-                layout="@layout/preference" />
-
-            <include
-                android:id="@+id/BackupOnSave"
-                layout="@layout/preference" />
-
-            <include
-                android:id="@+id/PeriodicBackups"
-                layout="@layout/preference" />
-
-            <TextView
-                android:id="@+id/PeriodicBackupLastExecution"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <include
-                android:id="@+id/PeriodicBackupsPeriodInDays"
-                layout="@layout/preference_stepper" />
-
-            <include
-                android:id="@+id/PeriodicBackupsMax"
-                layout="@layout/preference_stepper" />
 
             <!-- WebDAV Sync -->
             <include

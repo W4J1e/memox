@@ -7,15 +7,12 @@
     <string name="appearance">အက်ပ် အသွင်အပြင်</string>
     <string name="archive">သိမ်းဆည်းမည်</string>
     <string name="archived">သိမ်းဆည်းထား​သော</string>
-    <string name="auto_backup">Auto backup</string>
     <string name="backup">Backup</string>
     <string name="bold">စာထူ</string>
     <string name="cancel">ပယ်ဖျက်ပါ</string>
-    <string name="cant_find_folder">ဖိုဒါကို ရှာမ​တွေ့ပါ။ဖိုဒါဖျက်ခံရတာ သို့မဟုတ် နေရာ​ပြောင်းတာဖြစ်နိုင်ပါတယ်။ </string>
     <string name="cant_open_link">လင့်ကိုမဖွင့်နိုင်ပါ။</string>
     <string name="change_color">အ​ရောင်​ပြောင်းမည်</string>
     <string name="choose_another_folder">အခြား ဖိုဒါကို​ရွေးပါ။</string>
-    <string name="choose_folder">ဖိုဒါ ရွေးပါ</string>
     <string name="clear_formatting">ပုံစံချထားသည်များ ဖျက်မည်</string>
     <string name="content_density">စာစု </string>
     <string name="dark">အ​​မှောင်</string>

@@ -307,7 +307,7 @@ class NoteActionHandler(
                 if (notallyModel.id != 0L) {
                     notallyModel.id
                 } else {
-                    notallyModel.id = activity.saveNote(false)
+                    notallyModel.id = activity.saveNote()
                     notallyModel.id
                 }
             val intent = Intent(activity, RemindersActivity::class.java)
@@ -361,7 +361,7 @@ class NoteActionHandler(
 
     private fun duplicate() {
         activity.lifecycleScope.launch {
-            activity.saveNote(true)
+            activity.saveNote()
             val duplicateId = activity.baseModel.duplicateNote(notallyModel.getBaseNote())
             activity.openNote(duplicateId, notallyModel.type, clearBackStack = true)
         }

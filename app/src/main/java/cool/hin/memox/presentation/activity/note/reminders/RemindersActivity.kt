@@ -165,8 +165,8 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
     private fun setupRecyclerView() {
         reminderAdapter =
             ReminderAdapter(
-                preferences.dateFormatNoteView.value,
-                preferences.timeFormatNoteView.value,
+                preferences.dateFormat.value,
+                preferences.timeFormat.value,
                 this,
             )
         binding.MainListView.apply {
@@ -470,8 +470,8 @@ class RemindersActivity : LockedActivity<ActivityRemindersBinding>(), ReminderLi
             .setTitle(R.string.delete_reminder_question)
             .setMessage(
                 "${reminder.dateTime.format(
-                    preferences.dateFormatNoteView.value,
-                    preferences.timeFormatNoteView.value,
+                    preferences.dateFormat.value,
+                    preferences.timeFormat.value,
                     ensureFullFormat = true,)}\n${reminder.repetition?.toText(this) ?: getString(R.string.reminder_no_repetition)}"
             )
             .setPositiveButton(R.string.delete) { _, _ ->

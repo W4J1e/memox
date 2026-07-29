@@ -1,6 +1,5 @@
 package cool.hin.memox.presentation.activity.main.fragment.settings
 
-import android.Manifest
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.Intent.ACTION_OPEN_DOCUMENT_TREE
@@ -8,7 +7,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.provider.Settings
 import android.text.method.PasswordTransformationMethod
 import android.util.Log
@@ -19,7 +17,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.core.net.toUri
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -48,18 +45,11 @@ import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.misc.TextWithIconAdapter
 import cool.hin.memox.presentation.viewmodel.BaseNoteModel
 import cool.hin.memox.presentation.viewmodel.preference.Constants.PASSWORD_EMPTY
-import cool.hin.memox.presentation.viewmodel.preference.LongPreference
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
-import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences.Companion.EMPTY_PATH
-import cool.hin.memox.presentation.viewmodel.preference.PeriodicBackup
-import cool.hin.memox.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_MAX_MIN
-import cool.hin.memox.presentation.viewmodel.preference.PeriodicBackup.Companion.BACKUP_PERIOD_DAYS_MIN
-import cool.hin.memox.presentation.viewmodel.preference.PeriodicBackupsPreference
 import cool.hin.memox.scheduleAutoRemoveOldDeletedNotes
 import cool.hin.memox.utils.MIME_TYPE_JSON
 import cool.hin.memox.utils.MIME_TYPE_ZIP
 import cool.hin.memox.utils.backup.exportPreferences
-import cool.hin.memox.utils.getExtraBooleanFromBundleOrIntent
 import cool.hin.memox.utils.log
 import cool.hin.memox.utils.security.DecryptionException
 import cool.hin.memox.utils.security.EncryptionException
@@ -79,7 +69,6 @@ class SettingsFragment : Fragment() {
     private lateinit var importBackupActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var importOtherActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportBackupActivityResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var chooseBackupFolderActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var setupLockActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var disableLockActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportSettingsActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -96,7 +85,6 @@ class SettingsFragment : Fragment() {
         model.preferences.apply {
             setupAppearance(binding)
             setupBackup(binding)
-            setupAutoBackups(binding)
             setupWebDav(binding)
             setupOneDrive(binding)
             setupSecurity(binding)
@@ -157,27 +145,6 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupActivityResultLaunchers()
-        val showImportBackupsFolder =
-            getExtraBooleanFromBundleOrIntent(
-                savedInstanceState,
-                EXTRA_SHOW_IMPORT_BACKUPS_FOLDER,
-                false,
-            )
-        showImportBackupsFolder.let {
-            if (it) {
-                model.refreshBackupsFolder(
-                    requireContext(),
-                    askForUriPermissions = ::askForUriPermissions,
-                )
-            }
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        if (model.showRefreshBackupsFolderAfterThemeChange) {
-            outState.putBoolean(EXTRA_SHOW_IMPORT_BACKUPS_FOLDER, true)
-        }
     }
 
     private fun setupActivityResultLaunchers() {
@@ -210,33 +177,6 @@ class SettingsFragment : Fragment() {
                     pendingBiometricContinuation = null
                 }
             }
-        chooseBackupFolderActivityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    result.data?.data?.let { uri ->
-                        model.setupBackupsFolder(uri)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            activity?.let {
-                                val permission = Manifest.permission.POST_NOTIFICATIONS
-                                if (
-                                    it.checkSelfPermission(permission) !=
-                                        PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    MaterialAlertDialogBuilder(it)
-                                        .setMessage(
-                                            R.string.please_grant_notally_notification_auto_backup
-                                        )
-                                        .setNegativeButton(R.string.skip, null)
-                                        .setPositiveButton(R.string.continue_) { _, _ ->
-                                            it.requestPermissions(arrayOf(permission), 0)
-                                        }
-                                        .show()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         setupLockActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 showEnableBiometricLock()
@@ -264,7 +204,6 @@ class SettingsFragment : Fragment() {
                         model.importPreferences(
                             requireContext(),
                             uri,
-                            ::askForUriPermissions,
                             { showToast(R.string.import_settings_success) },
                         ) {
                             showToast(R.string.import_settings_failure)
@@ -339,29 +278,16 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        dateFormatOverview.merge(timeFormatOverview).observe(viewLifecycleOwner) { (date, time) ->
-            binding.DateFormatOverview.setupDateTimeFormat(
-                R.string.date_format_overview,
-                dateFormatOverview,
-                timeFormatOverview,
+        dateFormat.merge(timeFormat).observe(viewLifecycleOwner) { (date, time) ->
+            binding.DateFormat.setupDateTimeFormat(
+                R.string.date_format,
+                dateFormat,
+                timeFormat,
                 requireContext(),
                 layoutInflater,
             ) { newDate, newTime ->
-                model.savePreference(dateFormatOverview, newDate)
-                model.savePreference(timeFormatOverview, newTime)
-            }
-        }
-
-        dateFormatNoteView.merge(timeFormatNoteView).observe(viewLifecycleOwner) { (date, time) ->
-            binding.DateFormatNoteView.setupDateTimeFormat(
-                R.string.date_format_note_view,
-                dateFormatNoteView,
-                timeFormatNoteView,
-                requireContext(),
-                layoutInflater,
-            ) { newDate, newTime ->
-                model.savePreference(dateFormatNoteView, newDate)
-                model.savePreference(timeFormatNoteView, newTime)
+                model.savePreference(dateFormat, newDate)
+                model.savePreference(timeFormat, newTime)
             }
         }
 
@@ -536,41 +462,6 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun MemoXPreferences.setupAutoBackups(binding: FragmentSettingsBinding) {
-        backupsFolder.observe(viewLifecycleOwner) { value ->
-            binding.BackupsFolder.setupBackupsFolder(
-                value,
-                requireContext(),
-                ::displayChooseBackupFolderDialog,
-            ) {
-                model.disableBackups()
-            }
-        }
-        backupOnSave.merge(backupsFolder).observe(viewLifecycleOwner) { (onSave, backupFolder) ->
-            binding.BackupOnSave.setup(
-                backupOnSave,
-                onSave,
-                requireContext(),
-                layoutInflater,
-                messageResId = R.string.auto_backup_on_save,
-                enabled = backupFolder != EMPTY_PATH,
-                disabledTextResId = R.string.auto_backups_folder_set,
-            ) { enabled ->
-                model.savePreference(backupOnSave, enabled)
-            }
-        }
-        periodicBackups.merge(backupsFolder).observe(viewLifecycleOwner) {
-            (periodicBackup, backupFolder) ->
-            setupPeriodicBackup(
-                binding,
-                periodicBackup,
-                backupFolder,
-                periodicBackups,
-                periodicBackupLastExecution,
-            )
-        }
-    }
-
     private fun importFromOtherApp() {
         val notallyItem =
             mutableListOf(
@@ -679,78 +570,6 @@ class SettingsFragment : Fragment() {
             }
             .setCancelButton()
             .show()
-    }
-
-    private fun setupPeriodicBackup(
-        binding: FragmentSettingsBinding,
-        value: PeriodicBackup,
-        backupFolder: String,
-        preference: PeriodicBackupsPreference,
-        lastExecutionPreference: LongPreference,
-    ) {
-        val periodicBackupsEnabled = value.periodInDays > 0 && backupFolder != EMPTY_PATH
-        binding.PeriodicBackups.setupPeriodicBackup(
-            periodicBackupsEnabled,
-            requireContext(),
-            layoutInflater,
-            enabled = backupFolder != EMPTY_PATH,
-        ) { enabled ->
-            if (enabled) {
-                val periodInDays =
-                    preference.value.periodInDays.let {
-                        if (it >= BACKUP_PERIOD_DAYS_MIN) it else BACKUP_PERIOD_DAYS_MIN
-                    }
-                val maxBackups =
-                    preference.value.maxBackups.let {
-                        if (it >= BACKUP_MAX_MIN) it else BACKUP_MAX_MIN
-                    }
-                model.savePreference(
-                    preference,
-                    preference.value.copy(periodInDays = periodInDays, maxBackups = maxBackups),
-                )
-            } else {
-                model.savePreference(preference, preference.value.copy(periodInDays = 0))
-            }
-        }
-        lastExecutionPreference
-            .merge(model.preferences.dateFormatOverview, model.preferences.timeFormatOverview)
-            .observe(viewLifecycleOwner) { (time, _, _) ->
-                binding.PeriodicBackupLastExecution.apply {
-                    if (time != -1L) {
-                        isVisible = true
-                        text =
-                            Date(time)
-                                .format(
-                                    model.preferences.dateFormatOverview.value,
-                                    model.preferences.timeFormatOverview.value,
-                                    ensureFullFormat = true,
-                                )
-                                .let { lastBackupFormatted ->
-                                    "${requireContext().getString(R.string.auto_backup_last)}: $lastBackupFormatted"
-                                }
-                    } else isVisible = false
-                }
-            }
-        binding.PeriodicBackupsPeriodInDays.setup(
-            value.periodInDays,
-            R.string.backup_period_days,
-            PeriodicBackup.BACKUP_PERIOD_DAYS_MIN,
-            PeriodicBackup.BACKUP_PERIOD_DAYS_MAX,
-            requireContext(),
-            enabled = periodicBackupsEnabled,
-        ) { newValue ->
-            model.savePreference(preference, preference.value.copy(periodInDays = newValue))
-        }
-        binding.PeriodicBackupsMax.setup(
-            value.maxBackups,
-            R.string.max_backups,
-            PeriodicBackup.BACKUP_MAX_MIN,
-            PeriodicBackup.BACKUP_MAX_MAX,
-            requireContext(),
-            enabled = periodicBackupsEnabled,
-        ) { newValue: Int ->
-            model.savePreference(preference, preference.value.copy(maxBackups = newValue))
-        }
     }
 
     private fun MemoXPreferences.setupSecurity(binding: FragmentSettingsBinding) {
@@ -877,20 +696,6 @@ class SettingsFragment : Fragment() {
                 VersionText.text = "v$version"
             } catch (_: PackageManager.NameNotFoundException) {}
         }
-    }
-
-    private fun displayChooseBackupFolderDialog() {
-        showDialog(
-            getString(R.string.auto_backups_folder_hint, getString(R.string.documentation)),
-            R.string.choose_folder,
-            { _, _ ->
-                val intent = Intent(ACTION_OPEN_DOCUMENT_TREE).wrapWithChooser(requireContext())
-                chooseBackupFolderActivityResultLauncher.launch(intent)
-            },
-            R.string.documentation,
-            { _, _ -> openDocsLink("features/backups#using-cloud-storagewebdav") },
-            fullSize = true,
-        )
     }
 
     // Holds a continuation to run (enable/disable biometric) after user-triggered export completes
@@ -1020,20 +825,8 @@ class SettingsFragment : Fragment() {
         openLink("https://crustack.github.io/memoX/docs/$docPath")
     }
 
-    private fun askForUriPermissions(uri: Uri) {
-        chooseBackupFolderActivityResultLauncher.launch(
-            Intent(ACTION_OPEN_DOCUMENT_TREE).apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri)
-                }
-            }
-        )
-    }
-
     companion object {
         private const val TAG = "SettingsFragment"
-        const val EXTRA_SHOW_IMPORT_BACKUPS_FOLDER =
-            "memox.intent.extra.SHOW_IMPORT_BACKUPS_FOLDER"
 
         const val EXTRA_SETTINGS_CATEGORY = "category"
         const val CATEGORY_ROOT = "root"

@@ -42,33 +42,19 @@ class MemoXPreferences private constructor(private val context: Context) {
         )
     val textSizeOverview =
         FloatPreference("textSizeOverview", preferences, 16f, 12f, 32f, R.string.text_size_overview)
-    val dateFormatOverview =
+    val dateFormat =
         createEnumPreference(
             preferences,
-            "dateFormatOverview",
+            "dateFormat",
             DateFormat.DD_MM_YY_GER,
-            R.string.date_format_overview,
+            R.string.date_format,
         )
-    val timeFormatOverview =
+    val timeFormat =
         createEnumPreference(
             preferences,
-            "timeFormatOverview",
-            TimeFormat.NONE,
-            R.string.time_format_overview,
-        )
-    val dateFormatNoteView =
-        createEnumPreference(
-            preferences,
-            "dateFormatNoteView",
-            DateFormat.DD_MM_YY_GER,
-            R.string.date_format_note_view,
-        )
-    val timeFormatNoteView =
-        createEnumPreference(
-            preferences,
-            "timeFormatNoteView",
+            "timeFormat",
             TimeFormat.TWENTY_FOUR_H,
-            R.string.time_format_note_view,
+            R.string.time_format,
         )
 
     val notesView = createEnumPreference(preferences, "view", NotesView.LIST, R.string.view)
@@ -109,13 +95,6 @@ class MemoXPreferences private constructor(private val context: Context) {
             R.string.max_labels_to_display,
         )
 
-    val backupsFolder =
-        StringPreference("autoBackup", preferences, EMPTY_PATH, R.string.auto_backups_folder)
-    val backupOnSave =
-        BooleanPreference("backupOnSave", preferences, false, R.string.auto_backup_on_save)
-    val periodicBackups = PeriodicBackupsPreference(preferences)
-    val periodicBackupLastExecution =
-        LongPreference("periodicBackupLastExecution", preferences, -1L)
     val autoRemoveDeletedNotesAfterDays =
         IntPreference(
             "autoRemoveDeletedNotesAfterDays",
@@ -298,8 +277,8 @@ class MemoXPreferences private constructor(private val context: Context) {
     }
 
     fun showDateCreated(): Boolean {
-        return dateFormatNoteView.value != DateFormat.NONE ||
-            timeFormatNoteView.value != TimeFormat.NONE
+        return dateFormat.value != DateFormat.NONE ||
+            timeFormat.value != TimeFormat.NONE
     }
 
     fun toJsonString(): String {
@@ -323,7 +302,6 @@ class MemoXPreferences private constructor(private val context: Context) {
     fun reset() {
         preferences.edit().clear().commit()
         encryptedPreferences.edit().clear().apply()
-        backupsFolder.refresh()
         dataInPublicFolder.refresh()
         theme.refresh()
         reload()
@@ -337,10 +315,8 @@ class MemoXPreferences private constructor(private val context: Context) {
         setOf(
                 textSizeNoteEditor,
                 textSizeOverview,
-                dateFormatOverview,
-                timeFormatOverview,
-                dateFormatNoteView,
-                timeFormatNoteView,
+                dateFormat,
+                timeFormat,
                 notesView,
                 notesSorting,
                 listItemSorting,
@@ -348,9 +324,7 @@ class MemoXPreferences private constructor(private val context: Context) {
                 labelsHidden,
                 labelTagsHiddenInOverview,
                 maxLabels,
-                periodicBackups,
                 backupPassword,
-                backupOnSave,
                 autoSaveAfterIdleTime,
                 autoRemoveDeletedNotesAfterDays,
                 editNoteActivityTopActions,

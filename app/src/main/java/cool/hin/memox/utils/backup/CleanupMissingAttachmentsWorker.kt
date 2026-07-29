@@ -103,7 +103,7 @@ class CleanupMissingAttachmentsWorker(appContext: Context, params: WorkerParamet
     companion object {
         private const val TAG = "CleanupMissingAttachmentsWorker"
         // Reuse the same channel name as backups for simplicity
-        private const val WORKER_NOTIFICATION_CHANNEL_ID = "AutoBackups"
+        private const val WORKER_NOTIFICATION_CHANNEL_ID = "AttachmentsCleanup"
         private const val WORKER_NOTIFICATION_ID = 123416
     }
 }
