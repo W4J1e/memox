@@ -14,6 +14,7 @@ import com.google.android.material.color.DynamicColors
 import cool.hin.memox.MemoXApplication.Companion.AUTO_REMOVE_DELETED_NOTES
 import cool.hin.memox.MemoXApplication.Companion.TAG
 import cool.hin.memox.data.MemoXDatabase
+import cool.hin.memox.data.sync.SyncAlarmScheduler
 import cool.hin.memox.presentation.setEnabledSecureFlag
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.presentation.viewmodel.preference.Theme
@@ -38,6 +39,7 @@ class MemoXApplication : Application(), Application.ActivityLifecycleCallbacks {
         registerActivityLifecycleCallbacks(this)
         if (isTestRunner()) return
         preferences = MemoXPreferences.getInstance(this)
+        SyncAlarmScheduler.schedule(this)
         if (preferences.useDynamicColors.value) {
             if (DynamicColors.isDynamicColorAvailable()) {
                 DynamicColors.applyToActivitiesIfAvailable(this)

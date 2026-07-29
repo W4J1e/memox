@@ -3,4 +3,5 @@
     <integer name="config_navAnimTime">300</integer>
     <dimen name="afs_min_touch_target_size">14dp</dimen>
     <fraction name="alpha_secondary">0.65</fraction>
+    <dimen name="sync_island_max_width">240dp</dimen>
 </resources>

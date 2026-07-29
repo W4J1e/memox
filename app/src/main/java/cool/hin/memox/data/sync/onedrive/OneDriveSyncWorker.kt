@@ -4,13 +4,13 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.util.Log
 import androidx.work.CoroutineWorker
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
-import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import cool.hin.memox.data.sync.SyncAlarmScheduler
 import cool.hin.memox.data.sync.SyncResult
+import cool.hin.memox.data.sync.SyncStatus
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import java.util.concurrent.TimeUnit
 
@@ -23,20 +23,25 @@ class OneDriveSyncWorker(
         val appContext = applicationContext as ContextWrapper
         val preferences = MemoXPreferences.getInstance(appContext)
         if (!preferences.onedriveSyncEnabled.value || !preferences.onedriveAutoSync.value) {
+            SyncStatus.setIdle()
             return Result.success()
         }
         if (!OneDriveAuthHelper.isLoggedIn(appContext)) {
+            SyncStatus.setIdle()
             return Result.success()
         }
 
+        SyncStatus.setSyncing()
         val syncService = OneDriveSyncService(appContext)
         return when (val result = syncService.sync()) {
             is SyncResult.Success -> {
                 Log.i(TAG, "OneDrive auto sync succeeded")
+                SyncStatus.setCompleted()
                 Result.success()
             }
             is SyncResult.Error -> {
                 Log.w(TAG, "OneDrive auto sync failed: ${result.message}")
+                SyncStatus.setIdle()
                 Result.retry()
             }
         }
@@ -48,20 +53,7 @@ class OneDriveSyncWorker(
         private const val WORK_NAME_IMMEDIATE = "onedrive_sync_immediate"
 
         fun schedule(context: ContextWrapper) {
-            val preferences = MemoXPreferences.getInstance(context)
-            if (preferences.onedriveSyncEnabled.value && preferences.onedriveAutoSync.value) {
-                val request =
-                    PeriodicWorkRequest.Builder(OneDriveSyncWorker::class.java, 30, TimeUnit.MINUTES)
-                        .build()
-                WorkManager.getInstance(context)
-                    .enqueueUniquePeriodicWork(
-                        WORK_NAME_PERIODIC,
-                        ExistingPeriodicWorkPolicy.KEEP,
-                        request,
-                    )
-            } else {
-                WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME_PERIODIC)
-            }
+            SyncAlarmScheduler.schedule(context)
         }
 
         fun syncNow(context: Context) {
@@ -76,7 +68,7 @@ class OneDriveSyncWorker(
         }
 
         fun cancel(context: ContextWrapper) {
-            WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME_PERIODIC)
+            SyncAlarmScheduler.cancel(context)
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME_IMMEDIATE)
         }
     }

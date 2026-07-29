@@ -750,8 +750,14 @@ class OneDriveSyncService(private val context: ContextWrapper) {
             val localHidden = preferences.labelsHidden.value
 
             val result = client.download(REMOTE_LABELS_FILE)
+            if (result.isFailure) {
+                // Download failed (network/auth/transient). Do NOT overwrite the remote labels
+                // file with local state here, otherwise a transient failure on this device would
+                // clobber another device's (e.g. hidden-label) changes that are already on the server.
+                Log.w(TAG, "syncLabels: download failed, skipping: ${result.exceptionOrNull()?.message}")
+                return
+            }
             val bytes = result.getOrNull()
-
             if (bytes == null) {
                 uploadLabels(client)
                 return

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/RelativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -45,5 +46,54 @@
         android:tooltipText="@string/take_note"
         style="@style/FloatingActionButtonPrimary"
         app:srcCompat="@drawable/edit" />
+
+    <!-- Dynamic-Island style sync status indicator: centered in the toolbar row,
+         between the title and the labels/settings buttons. Hidden by default. -->
+    <FrameLayout
+        android:id="@+id/SyncIsland"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_alignTop="@id/Toolbar"
+        android:layout_alignBottom="@id/Toolbar"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:visibility="gone"
+        android:clickable="false"
+        android:focusable="false"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/sync_island_bg"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <ProgressBar
+                android:id="@+id/SyncIslandSpinner"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:indeterminate="true"
+                android:indeterminateTint="#FFFFFF"
+                android:visibility="gone"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/SyncIslandText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:maxWidth="@dimen/sync_island_max_width"
+                android:singleLine="true"
+                android:ellipsize="end"
+                tools:text="正在同步……" />
+        </LinearLayout>
+    </FrameLayout>
 
 </RelativeLayout>

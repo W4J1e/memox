@@ -3,6 +3,7 @@ package cool.hin.memox.data.sync
 import android.content.Context
 import android.content.ContextWrapper
 import cool.hin.memox.data.model.BaseNote
+import cool.hin.memox.data.sync.SyncAlarmScheduler
 import cool.hin.memox.data.sync.onedrive.OneDriveSyncService
 import cool.hin.memox.data.sync.onedrive.OneDriveSyncWorker
 import cool.hin.memox.data.sync.webdav.WebDavSyncService
@@ -24,25 +25,11 @@ object SyncRouter {
     }
 
     /**
-     * Schedule (or cancel) the periodic auto-sync for the active provider and cancel the
-     * other provider's pending work so they never run at the same time.
+     * Schedule (or cancel) the periodic auto-sync. A single AlarmManager-based alarm drives
+     * periodic syncing and routes to the active provider via [syncNow].
      */
     fun schedule(context: ContextWrapper) {
-        val prefs = MemoXPreferences.getInstance(context)
-        when (prefs.syncProvider.value) {
-            MemoXPreferences.PROVIDER_WEBDAV -> {
-                WebDavSyncWorker.schedule(context)
-                OneDriveSyncWorker.cancel(context)
-            }
-            MemoXPreferences.PROVIDER_ONEDRIVE -> {
-                OneDriveSyncWorker.schedule(context)
-                WebDavSyncWorker.cancel(context)
-            }
-            else -> {
-                WebDavSyncWorker.cancel(context)
-                OneDriveSyncWorker.cancel(context)
-            }
-        }
+        SyncAlarmScheduler.schedule(context)
     }
 
     /** Delete a single note (and its attachments) from the active provider's remote store. */

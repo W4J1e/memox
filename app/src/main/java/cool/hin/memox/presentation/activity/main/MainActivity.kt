@@ -3,6 +3,8 @@ package cool.hin.memox.presentation.activity.main
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.transition.TransitionManager
 import android.view.Menu
 import android.view.MenuItem
@@ -25,6 +27,8 @@ import com.google.android.material.transition.platform.MaterialFade
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.sync.SyncRouter
+import cool.hin.memox.data.sync.SyncState
+import cool.hin.memox.data.sync.SyncStatus
 import cool.hin.memox.data.sync.onedrive.OneDriveAuthHelper
 import cool.hin.memox.databinding.ActivityMainBinding
 import cool.hin.memox.presentation.activity.LockedActivity
@@ -56,6 +60,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private var pendingIdentityVerifiedAction: (() -> Unit)? = null
 
     private var isStartViewFragment = false
+
+    private val syncHideHandler = Handler(Looper.getMainLooper())
+    private val syncHideRunnable = Runnable { hideSyncIsland() }
     private val actionModeCancelCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -102,6 +109,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         setupFAB()
         setupActionMode()
         setupNavigation()
+        setupSyncIsland()
 
         setupActivityResultLaunchers()
 
@@ -280,6 +288,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             if (enabled) {
                 binding.Toolbar.visibility = View.GONE
                 binding.ActionMode.visibility = View.VISIBLE
+                syncHideHandler.removeCallbacks(syncHideRunnable)
+                binding.SyncIsland.visibility = View.GONE
             } else {
                 binding.Toolbar.visibility = View.VISIBLE
                 binding.ActionMode.visibility = View.GONE
@@ -291,6 +301,50 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         baseModel.folder.observe(this@MainActivity, ModelFolderObserver(this, menu, baseModel))
         baseModel.actionMode.loading.observe(this@MainActivity) { loading ->
             menu.setGroupEnabled(Menu.NONE, !loading)
+        }
+    }
+
+    private fun setupSyncIsland() {
+        SyncStatus.state.observe(this) { state ->
+            when (state) {
+                SyncState.SYNCING -> {
+                    syncHideHandler.removeCallbacks(syncHideRunnable)
+                    showSyncIsland(syncing = true)
+                }
+                SyncState.COMPLETED -> {
+                    showSyncIsland(syncing = false)
+                    syncHideHandler.removeCallbacks(syncHideRunnable)
+                    syncHideHandler.postDelayed(syncHideRunnable, 3000)
+                }
+                SyncState.IDLE -> {
+                    syncHideHandler.removeCallbacks(syncHideRunnable)
+                    hideSyncIsland()
+                }
+            }
+        }
+    }
+
+    private fun showSyncIsland(syncing: Boolean) {
+        val island = binding.SyncIsland
+        binding.SyncIslandText.text =
+            if (syncing) getString(R.string.sync_status_syncing)
+            else getString(R.string.sync_status_completed)
+        binding.SyncIslandSpinner.visibility = if (syncing) View.VISIBLE else View.GONE
+        if (island.visibility != View.VISIBLE) {
+            island.alpha = 0f
+            island.scaleX = 0.85f
+            island.scaleY = 0.85f
+            island.visibility = View.VISIBLE
+            island.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(200).start()
+        }
+    }
+
+    private fun hideSyncIsland() {
+        val island = binding.SyncIsland
+        if (island.visibility == View.VISIBLE) {
+            island.animate().alpha(0f).scaleX(0.85f).scaleY(0.85f).setDuration(250)
+                .withEndAction { island.visibility = View.GONE }
+                .start()
         }
     }
 
