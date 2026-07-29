@@ -483,17 +483,17 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     PIN(R.string.pin, R.drawable.pin),
     REMINDERS(R.string.reminders, R.drawable.notifications),
     LABELS(R.string.labels, R.drawable.label),
-    CHANGE_COLOR(R.string.change_color, R.drawable.change_color),
     DUPLICATE(R.string.duplicate, R.drawable.content_copy),
     EXPORT(R.string.export, R.drawable.export),
     SHARE(R.string.share, R.drawable.share),
     DELETE(R.string.delete, R.drawable.delete),
     TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
+    CHANGE_COLOR(R.string.change_color, R.drawable.change_color),
     RESTORE(R.string.restore, R.drawable.restore),
+    ATTACH_FILE(R.string.attach_file, R.drawable.text_file),
     PIN_TO_STATUS(R.string.pin_to_status_bar, R.drawable.pinboard),
     LOCK_NOTE(R.string.lock_note, R.drawable.lock_big),
-    ATTACH_FILE(R.string.attach_file, R.drawable.text_file),
     LINK_NOTE(R.string.link_note, R.drawable.notebook);
 
     fun getTitleAndIcon(

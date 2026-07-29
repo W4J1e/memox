@@ -102,9 +102,14 @@ private fun Context.createReminderAlarmIntent(noteId: Long, reminderId: Long): P
     val intent = Intent(this, ReminderReceiver::class.java)
     intent.putExtra(ReminderReceiver.EXTRA_REMINDER_ID, reminderId)
     intent.putExtra(ReminderReceiver.EXTRA_NOTE_ID, noteId)
+    // Combine the two long ids into a single 32-bit PendingIntent request code. Parsing a
+    // concatenated string overflowed Integer (NumberFormatException) for large reminder ids, so
+    // derive it deterministically instead. The result stays within Int range and keeps each
+    // (noteId, reminderId) pair uniquely identifiable for scheduling/cancellation.
+    val requestCode = ((noteId * 31L) + reminderId).toInt()
     return PendingIntent.getBroadcast(
         this,
-        (noteId.toString() + reminderId.toString()).toInt(),
+        requestCode,
         intent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
     )
