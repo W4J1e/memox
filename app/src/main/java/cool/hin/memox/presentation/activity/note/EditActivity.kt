@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.transition.platform.MaterialFadeThrough
 import cool.hin.memox.R
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.NoteViewMode
@@ -188,12 +189,21 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.requestFeature(android.view.Window.FEATURE_ACTIVITY_TRANSITIONS)
         actionHandler.setupActivityResultLaunchers()
         inputMethodManager =
             ContextCompat.getSystemService(baseContext, InputMethodManager::class.java)
         notallyModel.type = type
         initialiseBinding()
         setContentView(binding.root)
+        // Material "fade through" enter/return transition.
+        // NOTE: We deliberately avoid the shared-element MaterialContainerTransform here.
+        // As an *activity-to-activity* transition the framework passes the DecorView as the
+        // sceneRoot, so MaterialContainerTransform.findAncestorById(sceneRoot,
+        // android.R.id.content) throws "android:id/content is not a valid ancestor" and the
+        // note screen crashes on open. A fade-through is a safe Material motion alternative.
+        window.enterTransition = MaterialFadeThrough().apply { duration = 250 }
+        window.returnTransition = MaterialFadeThrough().apply { duration = 200 }
         configureEdgeToEdgeInsets()
 
         noteLockActivityResultLauncher =

@@ -1,312 +1,339 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp">
 
         <!-- Landing page: category entries. Only visible in "root" mode. -->
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/SettingsLanding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:contentPadding="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
 
-            <TextView
-                android:id="@+id/GoToAppearance"
-                style="@style/Preference"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/appearance" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/GoToBackup"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/backup" />
+                <TextView
+                    android:id="@+id/GoToAppearance"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/appearance" />
 
-            <TextView
-                android:id="@+id/GoToData"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/data" />
+                <TextView
+                    android:id="@+id/GoToBackup"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup" />
 
-            <TextView
-                android:id="@+id/GoToAbout"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/about" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/GoToData"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/data" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Appearance category -->
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/SectionAppearance"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:contentPadding="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
             android:visibility="gone">
 
-            <TextView
-                style="@style/PreferenceHeader"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/appearance" />
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/View"
-                layout="@layout/preference" />
+                <TextView
+                    style="@style/PreferenceHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/appearance" />
 
-            <include
-                android:id="@+id/Theme"
-                layout="@layout/preference" />
+                <include
+                    android:id="@+id/View"
+                    layout="@layout/preference" />
 
-            <include
-                android:id="@+id/DateFormat"
-                layout="@layout/preference" />
+                <include
+                    android:id="@+id/Theme"
+                    layout="@layout/preference" />
 
-            <include
-                android:id="@+id/TextSize"
-                layout="@layout/preference" />
+                <include
+                    android:id="@+id/DateFormat"
+                    layout="@layout/preference" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
+                <include
+                    android:id="@+id/TextSize"
+                    layout="@layout/preference" />
 
-            <TextView
-                style="@style/PreferenceHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/behaviour" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider" />
 
-            <include
-                android:id="@+id/NotesSortOrder"
-                layout="@layout/preference" />
+                <TextView
+                    style="@style/PreferenceHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/behaviour" />
 
-            <include
-                android:id="@+id/CheckedListItemSorting"
-                layout="@layout/preference" />
+                <include
+                    android:id="@+id/NotesSortOrder"
+                    layout="@layout/preference" />
 
-            <include
-                android:id="@+id/StartView"
-                layout="@layout/preference" />
+                <include
+                    android:id="@+id/CheckedListItemSorting"
+                    layout="@layout/preference" />
 
-            <include
-                android:id="@+id/AutoEmptyBin"
-                layout="@layout/preference_stepper" />
+                <include
+                    android:id="@+id/StartView"
+                    layout="@layout/preference" />
 
-            <include
-                android:id="@+id/MaxLabels"
-                layout="@layout/preference_stepper" />
+                <include
+                    android:id="@+id/AutoEmptyBin"
+                    layout="@layout/preference_stepper" />
 
-            <include
-                android:id="@+id/LabelsHiddenInOverview"
-                layout="@layout/preference" />
-        </LinearLayout>
+                <include
+                    android:id="@+id/MaxLabels"
+                    layout="@layout/preference_stepper" />
+
+                <include
+                    android:id="@+id/LabelsHiddenInOverview"
+                    layout="@layout/preference" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Backup category (manual + auto backups merged) -->
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/SectionBackup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:contentPadding="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
             android:visibility="gone">
 
-            <TextView
-                style="@style/PreferenceHeader"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/backup" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/ImportBackup"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/import_backup" />
+                <TextView
+                    style="@style/PreferenceHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup" />
 
-            <TextView
-                android:id="@+id/ImportOther"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/import_other" />
+                <TextView
+                    android:id="@+id/ImportBackup"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/import_backup" />
 
-            <TextView
-                android:id="@+id/ExportBackup"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/export_backup" />
+                <TextView
+                    android:id="@+id/ImportOther"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/import_other" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
+                <TextView
+                    android:id="@+id/ExportBackup"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/export_backup" />
 
-            <!-- WebDAV Sync -->
-            <include
-                layout="@layout/preference"
-                android:id="@+id/WebDavSync" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider" />
 
-            <!-- OneDrive Sync -->
-            <include
-                layout="@layout/preference"
-                android:id="@+id/OneDriveSync" />
-        </LinearLayout>
+                <!-- WebDAV Sync -->
+                <include
+                    layout="@layout/preference"
+                    android:id="@+id/WebDavSync" />
+
+                <!-- OneDrive Sync -->
+                <include
+                    layout="@layout/preference"
+                    android:id="@+id/OneDriveSync" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Data category (security + settings) -->
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/SectionData"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:contentPadding="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
             android:visibility="gone">
 
-            <TextView
-                style="@style/PreferenceHeader"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/navigation" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/GoToDeleted"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/deleted"
-                android:drawableStart="@drawable/delete"
-                android:drawablePadding="16dp" />
+                <TextView
+                    style="@style/PreferenceHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/security" />
 
-            <TextView
-                android:id="@+id/GoToReminders"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/reminders"
-                android:drawableStart="@drawable/notifications"
-                android:drawablePadding="16dp" />
+                <include
+                    android:id="@+id/BackupPassword"
+                    layout="@layout/preference" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
+                <include
+                    android:id="@+id/SecureFlag"
+                    layout="@layout/preference" />
 
-            <TextView
-                style="@style/PreferenceHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/security" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider" />
 
-            <include
-                android:id="@+id/BackupPassword"
-                layout="@layout/preference" />
+                <TextView
+                    style="@style/PreferenceHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings" />
 
-            <include
-                android:id="@+id/SecureFlag"
-                layout="@layout/preference" />
+                <TextView
+                    android:id="@+id/ImportSettings"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/import_settings" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
+                <TextView
+                    android:id="@+id/ExportSettings"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/export_settings" />
 
-            <TextView
-                style="@style/PreferenceHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings" />
+                <TextView
+                    android:id="@+id/ResetSettings"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reset_settings" />
 
-            <TextView
-                android:id="@+id/ImportSettings"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/import_settings" />
+                <include
+                    android:id="@+id/DataInPublicFolder"
+                    layout="@layout/preference" />
 
-            <TextView
-                android:id="@+id/ExportSettings"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/export_settings" />
+                <include
+                    android:id="@+id/AutoSaveAfterIdle"
+                    layout="@layout/preference_stepper" />
 
-            <TextView
-                android:id="@+id/ResetSettings"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/reset_settings" />
-
-            <include
-                android:id="@+id/DataInPublicFolder"
-                layout="@layout/preference" />
-
-            <include
-                android:id="@+id/AutoSaveAfterIdle"
-                layout="@layout/preference_stepper" />
-
-            <TextView
-                android:id="@+id/ClearData"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/clear_data" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/ClearData"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/clear_data" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- About category (page-like) -->
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/SectionAbout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:contentPadding="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
             android:visibility="gone">
 
-            <ImageView
-                android:id="@+id/AboutAppIcon"
-                android:layout_width="96dp"
-                android:layout_height="96dp"
-                android:layout_marginTop="32dp"
-                android:src="@mipmap/memox"
-                android:contentDescription="@string/app_name" />
-
-            <TextView
-                android:id="@+id/VersionText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?android:attr/textColorSecondary" />
-
-            <TextView
-                android:id="@+id/AuthorLink"
-                style="@style/Preference"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="@string/about_author" />
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
 
-            <TextView
-                android:id="@+id/SourceCode"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/source_code" />
+                <ImageView
+                    android:id="@+id/AboutAppIcon"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:layout_marginTop="32dp"
+                    android:src="@mipmap/memox"
+                    android:contentDescription="@string/app_name" />
 
-            <TextView
-                android:id="@+id/ViewLogs"
-                style="@style/Preference"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/view_logs" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/VersionText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+                <TextView
+                    android:id="@+id/AuthorLink"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/about_author" />
+
+                <TextView
+                    android:id="@+id/SourceCode"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/source_code" />
+
+                <TextView
+                    android:id="@+id/ViewLogs"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/view_logs" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

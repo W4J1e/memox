@@ -49,8 +49,7 @@ enum class SortDirection(val textResId: Int, val iconResId: Int) {
 enum class NotesSortBy(val textResId: Int, val iconResId: Int, val value: String) {
     TITLE(R.string.title, R.drawable.sort_by_alpha, "autoSortByTitle"),
     CREATION_DATE(R.string.creation_date, R.drawable.calendar_add_on, "autoSortByCreationDate"),
-    MODIFIED_DATE(R.string.modified_date, R.drawable.edit_calendar, "autoSortByModifiedDate"),
-    COLOR(R.string.color, R.drawable.change_color, "autoSortByColor");
+    MODIFIED_DATE(R.string.modified_date, R.drawable.edit_calendar, "autoSortByModifiedDate");
 
     companion object {
         fun fromValue(value: String): NotesSortBy? {

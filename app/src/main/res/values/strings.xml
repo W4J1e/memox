@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="about">About</string>
     <string name="about_author">Author: W4J1e</string>
+    <string name="connected">Connected</string>
+    <string name="not_connected">Not connected</string>
+    <string name="add">Add</string>
     <string name="add_images">Add images</string>
     <string name="add_checkbox">Add checkbox</string>
     <string name="add_item">Add Item</string>
@@ -20,8 +25,9 @@
         <item quantity="one">Archived %1$d note</item>
         <item quantity="other">Archived %1$d notes</item>
     </plurals>
+    <string name="search_notes">Search notes</string>
     <string name="ascending">Ascending</string>
-    <string name="attach_file">Attach file</string>
+    <string name="attach_file">Add attachment</string>
     <plurals name="attachments">
         <item quantity="one">Attachment</item>
         <item quantity="other">Attachments</item>
@@ -123,7 +129,6 @@
     <string name="clear_data_message">All Notes, Images, Files, Audios will be permanently deleted</string>
     <string name="clear_formatting">Clear formatting</string>
     <string name="cleared_data">All Data has been cleared</string>
-    <string name="color">Color</string>
     <string name="color_exists">This color already exists!</string>
     <string name="content_density">Content density</string>
     <string name="continue_">Continue</string>
@@ -185,7 +190,7 @@
     <string name="documentation">Documentation</string>
     <string name="donate">Make a Donation</string>
     <string name="drag_handle">Drag Handle</string>
-    <string name="duplicate">Duplicate</string>
+    <string name="duplicate">Create copy</string>
     <plurals name="duplicates">
         <item quantity="one">%1$d duplicate</item>
         <item quantity="other">%1$d duplicates</item>

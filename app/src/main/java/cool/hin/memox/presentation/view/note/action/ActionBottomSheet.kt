@@ -1,6 +1,7 @@
 package cool.hin.memox.presentation.view.note.action
 
 import android.app.Dialog
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,9 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCa
 import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import cool.hin.memox.databinding.BottomSheetActionBinding
 import cool.hin.memox.presentation.dp
 import cool.hin.memox.presentation.getColorFromAttr
@@ -88,10 +92,9 @@ open class ActionBottomSheet(
         }
 
         color?.let {
-            layout.apply {
-                setBackgroundColor(it)
-                setControlsContrastColorForAllViews(it, overwriteBackground = false)
-            }
+            // The sheet background itself is tinted in onCreateDialog so the rounded top corners
+            // survive; here only the content colors are adjusted for contrast.
+            layout.setControlsContrastColorForAllViews(it, overwriteBackground = false)
         }
         return scrollView
     }
@@ -111,6 +114,25 @@ open class ActionBottomSheet(
         dialog.setOnShowListener {
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.let {
                 bottomSheet ->
+                // Rounded top corners, square bottom - same silhouette as the account sheet.
+                val radius = 28.dp.toFloat()
+                bottomSheet.background =
+                    MaterialShapeDrawable(
+                            ShapeAppearanceModel.builder()
+                                .setTopLeftCorner(CornerFamily.ROUNDED, radius)
+                                .setTopRightCorner(CornerFamily.ROUNDED, radius)
+                                .build()
+                        )
+                        .apply {
+                            fillColor =
+                                ColorStateList.valueOf(
+                                    color
+                                        ?: bottomSheet.context.getColorFromAttr(
+                                            com.google.android.material.R.attr
+                                                .colorSurfaceContainerLow
+                                        )
+                                )
+                        }
                 BottomSheetBehavior.from(bottomSheet).apply {
                     state = BottomSheetBehavior.STATE_EXPANDED
                     isHideable = true

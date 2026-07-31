@@ -18,19 +18,40 @@ class MoreNoteBottomSheet(
     companion object {
         const val TAG = "MoreNoteBottomSheet"
 
+        /**
+         * Explicit display order of the "more options" sheet.
+         *
+         * [EditAction.DELETE] and [EditAction.ATTACH_FILE] are intentionally absent: deleting is
+         * done from the note list, attaching files moved to the "+" menu in the bottom left.
+         * [EditAction.PIN_TO_STATUS] sits last because it has the longest label.
+         */
+        private val SHEET_ACTION_ORDER =
+            listOf(
+                EditAction.SEARCH,
+                EditAction.PIN,
+                EditAction.REMINDERS,
+                EditAction.LABELS,
+                EditAction.EXPORT,
+                EditAction.DUPLICATE,
+                EditAction.SHARE,
+                EditAction.TOGGLE_VIEW_MODE,
+                EditAction.CHANGE_COLOR,
+                EditAction.LINK_NOTE,
+                EditAction.RESTORE,
+                EditAction.DELETE_FOREVER,
+                EditAction.PIN_TO_STATUS,
+            )
+
         internal fun createActions(
             model: MemoXModel,
             actionHandler: NoteActionHandler,
             topActions: Collection<EditAction>,
             bottomAction: EditAction? = null,
         ): List<Action> {
-            val allPossibleActions = EditAction.entries
-
             val actionsInBottomSheet =
-                allPossibleActions.filter {
+                SHEET_ACTION_ORDER.filter {
                     it !in topActions &&
                         it != bottomAction &&
-                        it != EditAction.LOCK_NOTE &&
                         (it != EditAction.RESTORE || model.folder == Folder.DELETED)
                 }
 

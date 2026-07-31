@@ -128,8 +128,17 @@
     </style>
 
     <style name="ModalBottomSheet" parent="Widget.Material3.BottomSheet.Modal">
-        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.None</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.App.BottomSheet</item>
         <item name="behavior_draggable">true</item>
+    </style>
+
+    <!-- Rounded on top, square at the bottom (matches the account sheet). -->
+    <style name="ShapeAppearance.App.BottomSheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
     <style name="FloatingActionButtonPrimary" parent="Widget.Material3.FloatingActionButton.Primary">

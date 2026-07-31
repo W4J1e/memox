@@ -450,6 +450,9 @@ val TextSizeSp.displayBodySize: Float
 val TextSizeSp.displaySmallerSize: Float
     get() = (this - 3)
 
+val TextSizeSp.displayLabelSize: Float
+    get() = (this - 6)
+
 val TextSizeSp.displayTitleSize: Float
     get() = this
 

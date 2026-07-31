@@ -113,6 +113,7 @@ import cool.hin.memox.presentation.viewmodel.BaseNoteModel
 import cool.hin.memox.presentation.viewmodel.preference.DateFormat
 import cool.hin.memox.presentation.viewmodel.preference.TimeFormat
 import cool.hin.memox.presentation.viewmodel.preference.displayBodySize
+import cool.hin.memox.presentation.viewmodel.preference.displayLabelSize
 import cool.hin.memox.utils.backup.NotesAndAttachments
 import cool.hin.memox.utils.changehistory.ChangeHistory
 import cool.hin.memox.utils.changehistory.EditTextState
@@ -405,6 +406,7 @@ fun Folder.movedToResId(): Int {
     return when (this) {
         Folder.DELETED -> R.plurals.deleted_selected_notes
         Folder.NOTES -> R.plurals.restored_selected_notes
+        Folder.ARCHIVED -> R.plurals.archived_selected_notes
     }
 }
 
@@ -1078,10 +1080,10 @@ fun ChipGroup.bindLabels(
         apply {
             visibility = View.VISIBLE
             removeAllViews()
-            updatePadding(top = if (paddingTop) 8.dp else 0)
+            updatePadding(top = if (paddingTop) 1.dp else 0)
         }
         val inflater = LayoutInflater.from(context)
-        val labelSize = textSize.displayBodySize
+        val labelSize = textSize.displayLabelSize
         for (label in labels) {
             LabelBinding.inflate(inflater, this, true).root.apply {
                 background = getOutlinedDrawable(this@bindLabels.context)

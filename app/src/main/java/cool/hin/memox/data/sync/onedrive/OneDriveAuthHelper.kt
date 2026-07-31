@@ -9,6 +9,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.File
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
@@ -32,6 +33,8 @@ object OneDriveAuthHelper {
     private const val AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
     private const val TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     private const val GRAPH_ME_URL = "https://graph.microsoft.com/v1.0/me"
+    private const val GRAPH_PHOTO_URL = "https://graph.microsoft.com/v1.0/me/photo/\$value"
+    private const val AVATAR_FILE_NAME = "onedrive_avatar.jpg"
 
     private val httpClient: OkHttpClient =
         OkHttpClient.Builder()
@@ -99,8 +102,9 @@ object OneDriveAuthHelper {
             // Clean up PKCE state
             prefs.onedrivePkceVerifier.save("")
             prefs.onedriveOauthState.save("")
-            // Fetch and store the display account name
+            // Fetch and store the display account name + profile picture
             fetchAndStoreAccountName(context)
+            fetchAndStoreAvatar(context)
             null
         } catch (e: Exception) {
             e.message ?: "Token exchange failed"
@@ -142,6 +146,7 @@ object OneDriveAuthHelper {
         prefs.onedriveAccount.save("")
         prefs.onedrivePkceVerifier.save("")
         prefs.onedriveOauthState.save("")
+        File(context.filesDir, AVATAR_FILE_NAME).takeIf { it.exists() }?.delete()
     }
 
     private suspend fun exchangeCodeForTokens(code: String, verifier: String): JSONObject {
@@ -233,6 +238,37 @@ object OneDriveAuthHelper {
             // Non-fatal: account name is only used for display
         }
     }
+
+    /**
+     * Downloads the Microsoft account profile picture and caches it locally so the toolbar avatar
+     * can show it. A 404 simply means the account has no picture; the stale cache is dropped then.
+     */
+    suspend fun fetchAndStoreAvatar(context: Context): Unit = withContext(Dispatchers.IO) {
+        val token = MemoXPreferences.getInstance(context).onedriveAccessToken.value
+        if (token.isEmpty()) return@withContext
+        val file = File(context.filesDir, AVATAR_FILE_NAME)
+        try {
+            val request =
+                Request.Builder()
+                    .url(GRAPH_PHOTO_URL)
+                    .header("Authorization", "Bearer $token")
+                    .build()
+            httpClient.newCall(request).execute().use { response ->
+                val bytes = if (response.isSuccessful) response.body?.bytes() else null
+                if (bytes != null && bytes.isNotEmpty()) {
+                    file.writeBytes(bytes)
+                } else if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (_: Exception) {
+            // Non-fatal: fall back to the default avatar icon
+        }
+    }
+
+    /** Locally cached Microsoft account picture, or null when there is none. */
+    fun getAvatarFile(context: Context): File? =
+        File(context.filesDir, AVATAR_FILE_NAME).takeIf { it.exists() && it.length() > 0L }
 
     private fun generateCodeVerifier(): String {
         val bytes = ByteArray(32)
