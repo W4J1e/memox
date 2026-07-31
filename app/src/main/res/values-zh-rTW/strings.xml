@@ -57,7 +57,6 @@
     <string name="clear_data_message">所有筆記、圖片、檔案、音訊將永遠刪除</string>
     <string name="clear_formatting">清除格式</string>
     <string name="cleared_data">所有資料已清除</string>
-    <string name="color">顏色</string>
     <string name="color_exists">此顏色已經存在</string>
     <string name="content_density">內容密度</string>
     <string name="continue_">繼續</string>

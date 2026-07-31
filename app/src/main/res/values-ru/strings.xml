@@ -62,7 +62,6 @@
     <string name="clear_data_message">Все Заметки, Изображения, Файлы и Аудиозаписи будут навсегда удалены</string>
     <string name="clear_formatting">Стандартный стиль</string>
     <string name="cleared_data">Все данные удалены</string>
-    <string name="color">Цвет</string>
     <string name="color_exists">Этот цвет уже существует!</string>
     <string name="content_density">Плотность контента</string>
     <string name="continue_">Продолжить</string>

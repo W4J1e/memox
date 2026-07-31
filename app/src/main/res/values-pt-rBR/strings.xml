@@ -63,7 +63,6 @@
     <string name="clear_data_message">Todas as notas, imagens, arquivos e áudios serão excluídos permanentemente</string>
     <string name="clear_formatting">Limpar formatação</string>
     <string name="cleared_data">Todos os dados foram limpos</string>
-    <string name="color">Cor</string>
     <string name="color_exists">Esta cor já existe!</string>
     <string name="content_density">Densidade do conteúdo</string>
     <string name="continue_">Continuar</string>

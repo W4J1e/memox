@@ -74,7 +74,6 @@
     <string name="clear_data_message">Усі нотатки, зображення, файли та аудіозаписи будуть видалені назавжди</string>
     <string name="clear_formatting">Очистити форматування</string>
     <string name="cleared_data">Усі дані очищено</string>
-    <string name="color">Колір</string>
     <string name="color_exists">Цей колір уже існує!</string>
     <string name="content_density">Щільність вмісту</string>
     <string name="continue_">Продовжити</string>
