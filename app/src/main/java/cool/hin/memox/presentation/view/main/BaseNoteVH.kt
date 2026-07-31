@@ -2,7 +2,9 @@ package cool.hin.memox.presentation.view.main
 
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.graphics.Color
 import androidx.core.view.isVisible
+import com.google.android.material.color.MaterialColors
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -59,9 +61,9 @@ class BaseNoteVH(
             Date.setTextSizeSp(bodyTextSize)
             Note.setTextSizeSp(bodyTextSize)
 
-            // Overview is always condensed: one title line and one body line.
+            // Overview: one title line, up to four body lines (no forced blank space).
             Title.maxLines = 1
-            Note.maxLines = 1
+            Note.maxLines = 4
 
             root.setOnClickListener { listener.onClick(absoluteAdapterPosition) }
 
@@ -79,10 +81,25 @@ class BaseNoteVH(
     }
 
     fun updateCheck(checked: Boolean, color: String) {
+        val ctx = binding.root.context
+        val outline = MaterialColors.getColor(
+            ctx,
+            com.google.android.material.R.attr.colorOutline,
+            Color.GRAY,
+        )
+        val primary = MaterialColors.getColor(
+            ctx,
+            com.google.android.material.R.attr.colorPrimary,
+            Color.BLUE,
+        )
         if (checked) {
-            binding.root.strokeWidth = 3.dp
+            binding.root.strokeWidth = 2.dp
+            binding.root.setStrokeColor(primary)
+            binding.root.cardElevation = 4.dp.toFloat()
         } else {
             binding.root.strokeWidth = if (color == BaseNote.COLOR_DEFAULT) 1.dp else 0
+            binding.root.setStrokeColor(outline)
+            binding.root.cardElevation = 1.dp.toFloat()
         }
         binding.root.isChecked = checked
     }
@@ -171,9 +188,8 @@ class BaseNoteVH(
             // Strip inline image placeholders for the overview; spans auto-adjust to the remaining
             // text. The full images are still shown via setImages(..) below.
             text = body.applySpans(spans).withoutImagePlaceholders()
-            // Always show exactly one line of body in the overview, regardless of how long the
-            // note is.
-            maxLines = 1
+            // Show up to four lines of body in the overview (short notes don't get blank padding).
+            maxLines = 4
             isVisible = body.isNotEmpty()
         }
     }
@@ -188,35 +204,31 @@ class BaseNoteVH(
 
     private fun setImages(baseNote: BaseNote, mediaRoot: File?) {
         binding.apply {
-            // Always hide the legacy top gallery and its placeholders in the overview.
-            ImageLayout.visibility = GONE
+            // Hide legacy placeholders that are no longer used in the overview.
             Message.visibility = GONE
             ImageViewMore.visibility = GONE
-            ImageView.visibility = GONE
-            Glide.with(ImageView.context).clear(ImageView)
+            NoteThumbnail.visibility = GONE
+            Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
 
-            val showThumbnail = baseNote.type == Type.NOTE && !baseNote.locked
+            val showBanner = baseNote.type == Type.NOTE && !baseNote.locked
             val firstImage = baseNote.images.firstOrNull()
-            when {
-                // Locked notes hide their body/list, so the thumbnail area is free: show a lock
-                // icon there (same 64dp box as the preview image) instead of a left title icon.
-                baseNote.locked -> {
-                    Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+            if (showBanner && firstImage != null && mediaRoot != null) {
+                // Top banner: full-width centerCrop image, clipped to the card's rounded corners.
+                val file = File(mediaRoot, firstImage.localName)
+                ImageLayout.visibility = VISIBLE
+                ImageView.visibility = VISIBLE
+                ImageView.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                Glide.with(ImageView.context).load(file).centerCrop().into(ImageView)
+            } else {
+                ImageLayout.visibility = GONE
+                ImageView.visibility = GONE
+                Glide.with(ImageView.context).clear(ImageView)
+                if (baseNote.locked) {
+                    // Locked notes hide their body/list; show a lock icon in the thumbnail slot.
                     NoteThumbnail.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
                     NoteThumbnail.setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                     NoteThumbnail.setImageResource(R.drawable.lock_big)
                     NoteThumbnail.visibility = VISIBLE
-                }
-                showThumbnail && firstImage != null && mediaRoot != null -> {
-                    val file = File(mediaRoot, firstImage.localName)
-                    NoteThumbnail.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                    NoteThumbnail.setPadding(0, 0, 0, 0)
-                    Glide.with(NoteThumbnail.context).load(file).centerCrop().into(NoteThumbnail)
-                    NoteThumbnail.visibility = VISIBLE
-                }
-                else -> {
-                    Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
-                    NoteThumbnail.visibility = GONE
                 }
             }
         }

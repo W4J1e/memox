@@ -123,9 +123,6 @@ class SettingsFragment : Fragment() {
                 binding.GoToData.setOnClickListener {
                     findNavController().navigate(R.id.SettingsData)
                 }
-                binding.GoToAbout.setOnClickListener {
-                    findNavController().navigate(R.id.SettingsAbout)
-                }
             }
         }
     }
@@ -274,7 +271,7 @@ class SettingsFragment : Fragment() {
                     }
                 mainIntent.setPackage(requireContext().packageName)
                 requireContext().startActivity(mainIntent)
-                Runtime.getRuntime().exit(0)
+                requireActivity().finish()
             }
         }
 
@@ -584,12 +581,6 @@ class SettingsFragment : Fragment() {
 
     private fun MemoXPreferences.setupSettings(binding: FragmentSettingsBinding) {
         binding.apply {
-            GoToDeleted.setOnClickListener {
-                findNavController().navigate(R.id.Deleted)
-            }
-            GoToReminders.setOnClickListener {
-                findNavController().navigate(R.id.Reminders)
-            }
             ImportSettings.setOnClickListener {
                 showDialog(
                     R.string.import_settings_message,

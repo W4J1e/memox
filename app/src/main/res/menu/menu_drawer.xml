@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/Notes"
+            android:icon="@drawable/notes"
+            android:title="@string/notes" />
+        <item
+            android:id="@+id/Reminders"
+            android:icon="@drawable/reminders"
+            android:title="@string/reminders" />
+        <item
+            android:id="@+id/Archive"
+            android:icon="@drawable/archive"
+            android:title="@string/archived" />
+        <item
+            android:id="@+id/Deleted"
+            android:icon="@drawable/delete"
+            android:title="@string/deleted" />
+        <item
+            android:id="@+id/Labels"
+            android:icon="@drawable/label"
+            android:title="@string/labels" />
+        <item
+            android:id="@+id/Settings"
+            android:icon="@drawable/settings"
+            android:title="@string/settings" />
+        <item
+            android:id="@+id/SettingsAbout"
+            android:icon="@drawable/info"
+            android:title="@string/about" />
+    </group>
+
+</menu>

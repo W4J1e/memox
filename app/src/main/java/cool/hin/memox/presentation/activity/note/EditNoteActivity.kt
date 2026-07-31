@@ -31,6 +31,7 @@ import cool.hin.memox.presentation.setOnNextAction
 import cool.hin.memox.presentation.showKeyboard
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.note.TextFormattingAdapter
+import cool.hin.memox.presentation.view.note.action.AddBottomSheet
 import cool.hin.memox.presentation.viewmodel.preference.EditAction
 import cool.hin.memox.presentation.view.note.CheckboxSpan
 import cool.hin.memox.utils.LinkMovementMethod
@@ -176,19 +177,14 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         binding.BottomAppBarLeft.apply {
             removeAllViews()
             updateLayoutParams<ConstraintLayout.LayoutParams> { endToStart = -1 }
-            // Image
-            addIconButton(R.string.add_images, R.drawable.add_images, colorInt, marginStart = 0) {
-                actionHandler.addImages()
-            }
-            // Recording
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                addIconButton(R.string.record_audio, R.drawable.record_audio, colorInt) {
-                    actionHandler.recordAudio()
-                }
-            }
-            // Checkbox (insert interactive checkbox)
-            addIconButton(R.string.add_checkbox, R.drawable.checkbox, colorInt) {
-                insertCheckboxAtCursor()
+            // Single "+" entry point (Keep style): images / recording / attachment / checkbox
+            addIconButton(R.string.add, R.drawable.add, colorInt, marginStart = 0) {
+                AddBottomSheet(
+                        actionHandler,
+                        colorInt,
+                        onInsertCheckbox = { insertCheckboxAtCursor() },
+                    )
+                    .show(supportFragmentManager, AddBottomSheet.TAG)
             }
         }
         // Right side: view/edit, lock, more

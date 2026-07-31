@@ -31,6 +31,7 @@ class SearchFragment : MemoXFragment() {
                 when (initialFolder ?: model.folder.value) {
                     Folder.NOTES -> R.id.Notes
                     Folder.DELETED -> R.id.Deleted
+                    else -> R.id.Notes
                 }
 
             binding?.ChipGroup?.apply {

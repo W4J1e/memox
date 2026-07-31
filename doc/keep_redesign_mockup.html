@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>memoX · Keep 风格重设计模拟 v2</title>
+<style>
+  :root{
+    --bg:#f1f3f4;
+    --card:#ffffff;
+    --text:#202124;
+    --text-2:#5f6368;
+    --chip-bg:#f1f3f4;
+    --divider:#e6e8eb;
+    --accent:#6750a4;
+    --accent-soft:#eaddff;
+    --bar:#ffffff;
+    --radius:14px;
+    --shadow-card:0 1px 2px rgba(60,64,67,.18), 0 1px 3px 1px rgba(60,64,67,.10);
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',"Noto Sans SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:#e9ebef;display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:24px;color:var(--text);
+  }
+
+  /* ---------- phone shell ---------- */
+  .phone{
+    position:relative;width:392px;height:812px;background:var(--bg);
+    border-radius:38px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.28);
+    border:10px solid #111418;
+  }
+  .statusbar{height:30px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;font-weight:600;color:var(--text);background:var(--bg);}
+  .statusbar .dots{letter-spacing:2px;}
+
+  /* ---------- app bar ---------- */
+  .appbar{
+    height:64px;display:flex;align-items:center;gap:8px;padding:0 10px 0 6px;
+    background:var(--bg);position:sticky;top:0;z-index:20;
+  }
+  .icon-btn{width:42px;height:42px;border:none;background:transparent;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--text);flex:0 0 auto;}
+  .icon-btn:hover{background:#00000008;}
+  .icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .icon-btn.active{color:var(--accent);}
+
+  /* search box (Keep style: no leading icon, trailing actions) */
+  .searchbox{flex:1;height:46px;background:#ffffff;border:1px solid var(--divider);border-radius:24px;display:flex;align-items:center;
+    padding:0 6px 0 18px;min-width:0;box-shadow:0 1px 2px rgba(60,64,67,.08);}
+  .searchbox input{flex:1;border:none;background:transparent;font-size:15px;color:var(--text);
+    outline:none;font-family:inherit;min-width:0;}
+  .searchbox input::placeholder{color:#80868b;}
+  .search-actions{display:flex;align-items:center;gap:2px;}
+
+  /* avatar button (outside search box, right) */
+  .avatar-btn{width:42px;height:42px;border:none;background:transparent;border-radius:50%;
+    cursor:pointer;flex:0 0 auto;display:flex;align-items:center;justify-content:center;padding:0;}
+  .avatar-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:17px;color:#5f6368;background:#dadce0;overflow:hidden;}
+  .avatar-circle.od{background:#0078d4;color:#fff;font-size:15px;}
+  .avatar-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* backup account popup */
+  .pop-backdrop{position:absolute;inset:0;z-index:40;display:none;}
+  .pop-backdrop.show{display:block;}
+  .backup-pop{position:absolute;top:62px;right:10px;width:236px;background:#fff;border-radius:14px;
+    box-shadow:0 6px 20px rgba(60,64,67,.22);z-index:45;padding:8px;display:none;}
+  .backup-pop.show{display:block;}
+  .bp-head{font-size:13px;font-weight:600;color:#80868b;padding:8px 12px 6px;}
+  .bp-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;}
+  .bp-item:hover{background:#f1f3f4;}
+  .bp-item.active{background:var(--accent-soft);}
+  .bp-ico{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:18px;background:#f1f3f4;flex:0 0 auto;}
+  .bp-item.active .bp-ico{background:#fff;}
+  .bp-title{font-size:14px;font-weight:500;color:var(--text);}
+  .bp-sub{font-size:12px;color:#80868b;margin-top:1px;}
+
+  /* ---------- drawer ---------- */
+  .drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.32);opacity:0;
+    pointer-events:none;transition:opacity .25s var(--ease);z-index:55;}
+  .drawer-overlay.show{opacity:1;pointer-events:auto;}
+  .drawer{position:absolute;top:0;left:0;height:100%;width:284px;background:#fff;
+    transform:translateX(-100%);transition:transform .26s var(--ease);z-index:60;
+    box-shadow:2px 0 14px rgba(0,0,0,.18);display:flex;flex-direction:column;padding-top:8px;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{font-size:22px;font-weight:600;padding:16px 20px 14px;color:var(--text);}
+  .nav-item{display:flex;align-items:center;gap:18px;height:48px;margin:2px 8px;
+    padding:0 0 0 16px;border-radius:0 24px 24px 0;cursor:pointer;
+    font-size:15px;color:var(--text);}
+  .nav-item .ni-ico{width:24px;text-align:center;font-size:19px;color:var(--text-2);}
+  .nav-item:hover{background:#00000007;}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent);font-weight:500;}
+  .nav-item.active .ni-ico{color:var(--accent);}
+  .drawer-foot{margin-top:auto;padding:16px 20px 22px;font-size:13px;font-weight:600;
+    color:#9aa0a6;letter-spacing:.3px;border-top:1px solid var(--divider);}
+
+  /* ---------- home grid ---------- */
+  .home{position:absolute;top:94px;left:0;right:0;bottom:0;overflow-y:auto;
+    padding:10px 10px 24px;column-count:2;column-gap:10px;transition:column-count .2s var(--ease);}
+  .home.single{column-count:1;}
+  .home.single .card{margin:0 0 12px;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-card);
+    margin:0 0 10px;break-inside:avoid;overflow:hidden;cursor:pointer;
+    transition:box-shadow .18s var(--ease),transform .18s var(--ease);will-change:transform;}
+  .card:hover{box-shadow:0 3px 8px rgba(60,64,67,.22);}
+  .card:active{transform:scale(.985);}
+  /* color-note tints (color as card background) */
+  .tint-yellow{background:#fff8c4;}
+  .tint-green{background:#d7f0db;}
+  .tint-blue{background:#cfe3fb;}
+  .tint-pink{background:#fcdada;}
+  .tint-purple{background:#e6d6f5;}
+  .card-img{width:100%;display:block;}
+  .card-body{padding:12px 14px 6px;}
+  .card-title{font-size:15px;font-weight:600;line-height:1.3;margin-bottom:4px;color:var(--text);}
+  .card-text{font-size:13px;line-height:1.45;color:var(--text-2);
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+  .labels{display:flex;flex-wrap:wrap;gap:5px;padding:6px 14px 12px;}
+  .chip{font-size:11px;line-height:1;color:#80868b;background:var(--chip-bg);
+    padding:4px 9px;border-radius:8px;font-weight:500;letter-spacing:.2px;display:inline-flex;align-items:center;}
+  .chip .dot{width:6px;height:6px;border-radius:50%;background:#c5c8cc;margin-right:5px;display:inline-block;}
+
+  /* ---------- detail (container transform) ---------- */
+  .detail{position:absolute;background:#fff;overflow:hidden;display:none;z-index:50;
+    transition:left .3s var(--ease),top .3s var(--ease),width .3s var(--ease),
+    height .3s var(--ease),border-radius .3s var(--ease);}
+  .detail.show{display:block;}
+  .detail.open{left:0!important;top:0!important;width:100%!important;height:100%!important;border-radius:0!important;}
+  .detail-bar{height:56px;display:flex;align-items:center;gap:4px;padding:0 6px;
+    background:#fff;box-shadow:0 1px 0 var(--divider);}
+  .detail-img{width:100%;object-fit:cover;display:block;}
+  .detail-scroll{position:absolute;top:56px;left:0;right:0;bottom:64px;overflow-y:auto;padding:18px 22px;}
+  .detail-title{font-size:22px;font-weight:500;margin-bottom:10px;}
+  .detail-text{font-size:15px;line-height:1.6;color:#3c4043;white-space:pre-wrap;}
+  .detail-foot{position:absolute;bottom:0;left:0;right:0;height:60px;display:flex;
+    align-items:center;gap:4px;padding:0 10px;background:#fff;box-shadow:0 -1px 0 var(--divider);}
+  .legend{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11px;color:#9aa0a6;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+  <div class="phone" id="phone">
+    <div class="statusbar"><span>9:41</span><span class="dots">●●● 5G ▮</span></div>
+
+    <!-- app bar: no title text, search box with trailing view/sort actions -->
+    <div class="appbar">
+      <button class="icon-btn" id="hamburger" aria-label="打开菜单">☰</button>
+      <div class="searchbox">
+        <input type="text" placeholder="搜索笔记" aria-label="搜索笔记" />
+        <div class="search-actions">
+          <button class="icon-btn active" id="viewToggle" aria-label="切换视图" title="切换视图（单列/双列）">▦</button>
+          <button class="icon-btn" id="sortBtn" aria-label="排序" title="排序">⇅</button>
+        </div>
+      </div>
+      <button class="avatar-btn" id="avatarBtn" aria-label="备份账户" title="备份账户">
+        <span class="avatar-circle" id="avatarCircle">👤</span>
+      </button>
+    </div>
+
+    <!-- backup account popup -->
+    <div class="pop-backdrop" id="popBackdrop"></div>
+    <div class="backup-pop" id="backupPop" role="menu" aria-label="选择备份账户">
+      <div class="bp-head">备份账户</div>
+      <div class="bp-item" data-acct="onedrive" id="bpOd">
+        <span class="bp-ico">☁️</span>
+        <div><div class="bp-title">OneDrive</div><div class="bp-sub" id="odSub">未连接（点击模拟登录）</div></div>
+      </div>
+      <div class="bp-item active" data-acct="webdav" id="bpWd">
+        <span class="bp-ico">🗄️</span>
+        <div><div class="bp-title">WebDAV</div><div class="bp-sub">默认头像</div></div>
+      </div>
+    </div>
+
+    <!-- drawer: memoX brand at top, version at bottom -->
+    <div class="drawer-overlay" id="overlay"></div>
+    <nav class="drawer" id="drawer" aria-label="侧边导航">
+      <div class="drawer-head">memoX</div>
+      <div class="nav-item active"><span class="ni-ico">📝</span>笔记</div>
+      <div class="nav-item"><span class="ni-ico">🔔</span>提醒</div>
+      <div class="nav-item"><span class="ni-ico">📥</span>归档</div>
+      <div class="nav-item"><span class="ni-ico">🗑️</span>回收站</div>
+      <div class="nav-item"><span class="ni-ico">🏷️</span>标签</div>
+      <div class="nav-item"><span class="ni-ico">⚙️</span>设置</div>
+      <div class="drawer-foot">v1.0.91</div>
+    </nav>
+
+    <!-- home: two-column masonry by default -->
+    <main class="home" id="home">
+      <!-- colored + image header (4-line text) -->
+      <div class="card tint-yellow" data-title="周末旅行计划" data-labels="旅行|重要"
+           data-text="打包清单：相机、充电器、护照、防晒霜。\n周六早上出发，周日傍晚返程，记得提前定好闹钟，酒店已确认可免费取消。"
+           data-img="linear-gradient(135deg,#ff9a6c,#ff5e8e)" data-h="120">
+        <img class="card-img" style="height:120px;background:linear-gradient(135deg,#ff9a6c,#ff5e8e)" alt="" />
+        <div class="card-body"><div class="card-title">周末旅行计划</div>
+          <div class="card-text">打包清单：相机、充电器、护照、防晒霜。周六早上出发，周日傍晚返程，记得提前定好闹钟，酒店已确认可免费取消。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>旅行</span><span class="chip"><span class="dot"></span>重要</span></div>
+      </div>
+
+      <!-- short note, no image, no blank below -->
+      <div class="card" data-title="购物清单" data-labels="生活"
+           data-text="牛奶、鸡蛋、咖啡豆、全麦面包、西红柿。"
+           data-img="" data-h="0">
+        <div class="card-body"><div class="card-title">购物清单</div>
+          <div class="card-text">牛奶、鸡蛋、咖啡豆、全麦面包、西红柿。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>生活</span></div>
+      </div>
+
+      <!-- green tint + image header (2-3 lines) -->
+      <div class="card tint-green" data-title="读书笔记 ·《设计心理学》" data-labels="阅读"
+           data-text="可见性设计：让用户一眼知道能做什么、做到哪一步。映射关系要符合直觉，别让用户去猜。"
+           data-img="linear-gradient(135deg,#34d399,#059669)" data-h="96">
+        <img class="card-img" style="height:96px;background:linear-gradient(135deg,#34d399,#059669)" alt="" />
+        <div class="card-body"><div class="card-title">读书笔记 ·《设计心理学》</div>
+          <div class="card-text">可见性设计：让用户一眼知道能做什么、做到哪一步。映射关系要符合直觉，别让用户去猜。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>阅读</span></div>
+      </div>
+
+      <!-- medium note, no image, 4 lines -->
+      <div class="card" data-title="会议纪要 7/30" data-labels="工作|项目"
+           data-text="确定 v1.1 发布时间节点；归档与回收站入口移至侧栏；图片头图方案通过。下周三前完成抽屉导航联调。"
+           data-img="" data-h="0">
+        <div class="card-body"><div class="card-title">会议纪要 7/30</div>
+          <div class="card-text">确定 v1.1 发布时间节点；归档与回收站入口移至侧栏；图片头图方案通过。下周三前完成抽屉导航联调。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>工作</span><span class="chip"><span class="dot"></span>项目</span></div>
+      </div>
+
+      <!-- blue tint + image header -->
+      <div class="card tint-blue" data-title="健身打卡" data-labels="健康"
+           data-text="今日：胸 + 三头。卧推 4×8、上斜飞鸟 3×12、绳索下压 3×15。"
+           data-img="linear-gradient(135deg,#60a5fa,#2563eb)" data-h="110">
+        <img class="card-img" style="height:110px;background:linear-gradient(135deg,#60a5fa,#2563eb)" alt="" />
+        <div class="card-body"><div class="card-title">健身打卡</div>
+          <div class="card-text">今日：胸 + 三头。卧推 4×8、上斜飞鸟 3×12、绳索下压 3×15。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>健康</span></div>
+      </div>
+
+      <!-- single short line, no blank -->
+      <div class="card" data-title="一个小想法" data-labels=""
+           data-text="做一个本地优先、隐私至上、打开即写的笔记 App。"
+           data-img="" data-h="0">
+        <div class="card-body"><div class="card-title">一个小想法</div>
+          <div class="card-text">做一个本地优先、隐私至上、打开即写的笔记 App。</div></div>
+      </div>
+
+      <!-- purple tint + image header -->
+      <div class="card tint-purple" data-title="灵感收集" data-labels="灵感"
+           data-text="给卡片加一点呼吸感：圆角再大一点、阴影更柔、选中时主色描边轻轻浮起——像 keep 那样不抢眼但很舒服。"
+           data-img="linear-gradient(135deg,#a78bfa,#7c3aed)" data-h="100">
+        <img class="card-img" style="height:100px;background:linear-gradient(135deg,#a78bfa,#7c3aed)" alt="" />
+        <div class="card-body"><div class="card-title">灵感收集</div>
+          <div class="card-text">给卡片加一点呼吸感：圆角再大一点、阴影更柔、选中时主色描边轻轻浮起——像 keep 那样不抢眼但很舒服。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>灵感</span></div>
+      </div>
+
+      <!-- pink tint, no image, 3 lines -->
+      <div class="card tint-pink" data-title="给妈妈打电话" data-labels="提醒"
+           data-text="周末记得问体检报告结果；顺带说下旅行计划，免得她担心。"
+           data-img="" data-h="0">
+        <div class="card-body"><div class="card-title">给妈妈打电话</div>
+          <div class="card-text">周末记得问体检报告结果；顺带说下旅行计划，免得她担心。</div></div>
+        <div class="labels"><span class="chip"><span class="dot"></span>提醒</span></div>
+      </div>
+    </main>
+
+    <!-- detail -->
+    <div class="detail" id="detail">
+      <div class="detail-bar">
+        <button class="icon-btn" id="back" aria-label="返回">←</button>
+        <div style="font-size:16px;font-weight:500;flex:1">笔记</div>
+        <button class="icon-btn" aria-label="更多">⋮</button>
+      </div>
+      <img class="detail-img" id="detailImg" style="display:none" alt="" />
+      <div class="detail-scroll">
+        <div class="detail-title" id="dTitle"></div>
+        <div class="detail-text" id="dText"></div>
+      </div>
+      <div class="detail-foot">
+        <button class="icon-btn" aria-label="提醒">🔔</button>
+        <button class="icon-btn" aria-label="归档">📥</button>
+        <button class="icon-btn" aria-label="删除">🗑️</button>
+        <button class="icon-btn" aria-label="分享">↗</button>
+        <button class="icon-btn" aria-label="标签">🏷️</button>
+      </div>
+      <div class="legend">点击左上角 ← 体验缩放回收动效</div>
+    </div>
+  </div>
+
+<script>
+  const phone = document.getElementById('phone');
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('overlay');
+  const detail = document.getElementById('detail');
+  const home = document.getElementById('home');
+  let activeCard = null;
+
+  function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('show'); }
+  function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('show'); }
+  document.getElementById('hamburger').addEventListener('click', openDrawer);
+  overlay.addEventListener('click', closeDrawer);
+  document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+    n.classList.add('active'); closeDrawer();
+  }));
+
+  // ---- view switching: single button toggles single <-> two-column ----
+  const viewToggle = document.getElementById('viewToggle');
+  viewToggle.addEventListener('click', ()=>{
+    const isSingle = home.classList.toggle('single');
+    viewToggle.textContent = isSingle ? '▤' : '▦';
+  });
+  document.getElementById('sortBtn').addEventListener('click', ()=>{
+    alert('排序菜单（模拟）：修改时间 / 创建时间 / 标题 / 颜色');
+  });
+
+  // ---- backup account avatar popup ----
+  const avatarBtn = document.getElementById('avatarBtn');
+  const avatarCircle = document.getElementById('avatarCircle');
+  const popBackdrop = document.getElementById('popBackdrop');
+  const backupPop = document.getElementById('backupPop');
+  const bpOd = document.getElementById('bpOd');
+  const bpWd = document.getElementById('bpWd');
+  const odSub = document.getElementById('odSub');
+  function openPop(){ backupPop.classList.add('show'); popBackdrop.classList.add('show'); }
+  function closePop(){ backupPop.classList.remove('show'); popBackdrop.classList.remove('show'); }
+  avatarBtn.addEventListener('click', ()=>{ backupPop.classList.contains('show') ? closePop() : openPop(); });
+  popBackdrop.addEventListener('click', closePop);
+  bpOd.addEventListener('click', ()=>{
+    avatarCircle.className = 'avatar-circle od';
+    avatarCircle.textContent = 'OD';
+    odSub.textContent = '已连接 OneDrive（显示微软账户头像）';
+    bpOd.classList.add('active'); bpWd.classList.remove('active'); closePop();
+  });
+  bpWd.addEventListener('click', ()=>{
+    avatarCircle.className = 'avatar-circle';
+    avatarCircle.textContent = '👤';
+    odSub.textContent = '未连接（点击模拟登录）';
+    bpWd.classList.add('active'); bpOd.classList.remove('active'); closePop();
+  });
+
+  // ---- detail container transform ----
+  function openDetail(card){
+    activeCard = card;
+    const r = card.getBoundingClientRect();
+    const p = phone.getBoundingClientRect();
+    detail.style.left = (r.left - p.left)+'px'; detail.style.top = (r.top - p.top)+'px';
+    detail.style.width = r.width+'px'; detail.style.height = r.height+'px';
+    detail.style.borderRadius = '14px';
+    document.getElementById('dTitle').textContent = card.dataset.title || '';
+    document.getElementById('dText').textContent = card.dataset.text || '';
+    const img = document.getElementById('detailImg');
+    if(card.dataset.img){ img.style.display='block'; img.style.height='220px'; img.style.background=card.dataset.img; }
+    else { img.style.display='none'; }
+    detail.classList.add('show'); detail.getBoundingClientRect(); detail.classList.add('open');
+  }
+  function closeDetail(){
+    if(!activeCard) return;
+    const r = activeCard.getBoundingClientRect();
+    const p = phone.getBoundingClientRect();
+    detail.style.left = (r.left - p.left)+'px';
+    detail.style.top  = (r.top  - p.top)+'px';
+    detail.style.width = r.width+'px'; detail.style.height = r.height+'px';
+    detail.style.borderRadius = '14px';
+    detail.classList.remove('open');
+    setTimeout(()=>{ if(!detail.classList.contains('open')) detail.classList.remove('show'); }, 320);
+  }
+  document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>openDetail(c)));
+  document.getElementById('back').addEventListener('click', closeDetail);
+</script>
+</body>
+</html>

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="about">关于</string>
+    <string name="connected">已连接</string>
+    <string name="not_connected">未连接</string>
     <string name="add_images">添加图片</string>
     <string name="add_checkbox">添加复选框</string>
+    <string name="add">添加</string>
     <string name="add_item">添加项目</string>
     <string name="add_label">添加标签</string>
     <string name="add_reminder">添加提醒</string>
@@ -18,8 +21,9 @@
         <item quantity="one">存档了 %1$d 则笔记</item>
         <item quantity="other">存档了 %1$d 则笔记</item>
     </plurals>
+    <string name="search_notes">搜索笔记</string>
     <string name="ascending">升序</string>
-    <string name="attach_file">附件文件</string>
+    <string name="attach_file">添加附件</string>
     <plurals name="attachments">
         <item quantity="one">附件</item>
         <item quantity="other">附件</item>
@@ -121,7 +125,6 @@
     <string name="clear_data_message">所有笔记、图像、文件和音频都将永久删除</string>
     <string name="clear_formatting">清除格式</string>
     <string name="cleared_data">所有数据已被清除</string>
-    <string name="color">颜色</string>
     <string name="color_exists">此颜色已存在！</string>
     <string name="content_density">内容密度</string>
     <string name="continue_">继续</string>
@@ -180,7 +183,7 @@
     <string name="documentation">文档</string>
     <string name="donate">捐赠</string>
     <string name="drag_handle">拖动处理</string>
-    <string name="duplicate">复用</string>
+    <string name="duplicate">创建副本</string>
     <plurals name="duplicates">
         <item quantity="one">%1$d 个重复项</item>
         <item quantity="other">%1$d 个重复项</item>

@@ -9,6 +9,7 @@ import android.transition.TransitionManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.PopupMenu
 import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
@@ -18,14 +19,27 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.NavigationUI
+import androidx.navigation.ui.setupWithNavController
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.core.view.GravityCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.transition.platform.MaterialFade
+import cool.hin.memox.presentation.activity.main.fragment.SearchFragment
+import cool.hin.memox.presentation.viewmodel.preference.NotesSort
+import cool.hin.memox.presentation.viewmodel.preference.NotesSortBy
+import cool.hin.memox.presentation.viewmodel.preference.NotesView
+import cool.hin.memox.presentation.viewmodel.preference.SortDirection
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.sync.SyncRouter
@@ -76,7 +90,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     override fun onSupportNavigateUp(): Boolean {
         baseModel.keyword = ""
-        return navController.navigateUp()
+        return NavigationUI.navigateUp(navController, configuration)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -111,6 +125,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         setupFAB()
         setupActionMode()
         setupNavigation()
+        setupToolbar()
         setupSyncIsland()
 
         setupActivityResultLaunchers()
@@ -128,6 +143,13 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (baseModel.actionMode.enabled.value) {
+                        return
+                    }
+                    // 下拉呼出的搜索框（尚未进入 Search 页面）优先收起
+                    if (binding.SearchPill.visibility == View.VISIBLE &&
+                        navController.currentDestination?.id != R.id.Search
+                    ) {
+                        hideSearchBar()
                         return
                     }
                     // Let Navigation handle back first (e.g. Settings sub-page -> Settings root)
@@ -375,10 +397,65 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.NavHostFragment) as NavHostFragment
         navController = navHostFragment.navController
-        configuration = AppBarConfiguration(setOf(R.id.Notes))
-        setupActionBarWithNavController(navController, configuration)
+        val topLevelDestinations =
+            setOf(
+                R.id.Notes,
+                R.id.Reminders,
+                R.id.Archive,
+                R.id.Deleted,
+                R.id.Labels,
+                R.id.Settings,
+                R.id.SettingsAbout,
+            )
+        configuration = AppBarConfiguration(topLevelDestinations, binding.DrawerLayout)
+        binding.NavView.setupWithNavController(navController)
+
+        // Explicit drawer toggle. The NavigationUI auto-wiring (setupActionBarWithNavController)
+        // was not opening the drawer on this device, so we wire the hamburger explicitly.
+        val toggle =
+            ActionBarDrawerToggle(
+                this,
+                binding.DrawerLayout,
+                binding.Toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close,
+            )
+        binding.DrawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
 
         navController.addOnDestinationChangedListener { _, destination, bundle ->
+            val isTopLevel = destination.id in topLevelDestinations
+            if (isTopLevel) {
+                toggle.isDrawerIndicatorEnabled = true
+                toggle.syncState()
+            } else {
+                // 非顶层（设置二级页等）：显式显示带 tint 的返回箭头。
+                // ActionBarDrawerToggle 自带的箭头在某些设备因未着色而不可见。
+                toggle.isDrawerIndicatorEnabled = false
+                binding.Toolbar.setNavigationIcon(R.drawable.back)
+                binding.Toolbar.navigationIcon?.setTint(
+                    MaterialColors.getColor(
+                        binding.Toolbar,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        0,
+                    ),
+                )
+            }
+
+            toggle.setToolbarNavigationClickListener {
+                if (destination.id in topLevelDestinations) {
+                    binding.DrawerLayout.openDrawer(GravityCompat.START)
+                } else {
+                    NavigationUI.navigateUp(navController, configuration)
+                }
+            }
+            // 搜索栏显隐：进入 Search 目的显示搜索栏，否则显示常态栏
+            if (destination.id == R.id.Search) {
+                showSearchBar()
+            } else {
+                hideSearchBar()
+                binding.SearchEditText.setText(baseModel.keyword)
+            }
             when (destination.id) {
                 R.id.DisplayLabel ->
                     bundle?.getString(EXTRA_DISPLAYED_LABEL)?.let {
@@ -399,6 +476,172 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
             isStartViewFragment = isStartViewFragment(destination.id, bundle)
         }
+    }
+
+    private fun setupToolbar() {
+        val searchEditText = binding.SearchEditText
+        val viewToggle = binding.ViewToggleButton
+        val sortButton = binding.SortButton
+        val homeViewToggle = binding.HomeViewToggleButton
+        val homeSort = binding.HomeSortButton
+        val avatar = binding.AvatarButton
+
+        searchEditText.setText(baseModel.keyword)
+        searchEditText.doAfterTextChanged { text ->
+            val keyword = text?.toString().orEmpty()
+            if (baseModel.keyword != keyword) {
+                baseModel.keyword = keyword
+            }
+            val isSearch = navController.currentDestination?.id == R.id.Search
+            if (keyword.isNotEmpty() && !isSearch) {
+                navController.navigate(
+                    R.id.Search,
+                    Bundle().apply {
+                        putSerializable(SearchFragment.EXTRA_INITIAL_FOLDER, baseModel.folder.value)
+                        putSerializable(SearchFragment.EXTRA_INITIAL_LABEL, baseModel.currentLabel)
+                    },
+                )
+            } else if (keyword.isEmpty() && isSearch) {
+                navController.popBackStack()
+            }
+        }
+
+        fun updateToggleIcon() {
+            val isGrid = baseModel.preferences.notesView.value == NotesView.GRID
+            val icon = if (isGrid) R.drawable.view_list else R.drawable.view_grid
+            viewToggle.setImageResource(icon)
+            homeViewToggle.setImageResource(icon)
+            viewToggle.contentDescription = getString(if (isGrid) R.string.list else R.string.grid)
+            homeViewToggle.contentDescription =
+                getString(if (isGrid) R.string.list else R.string.grid)
+        }
+        updateToggleIcon()
+        val onToggleClick = View.OnClickListener {
+            val next =
+                if (baseModel.preferences.notesView.value == NotesView.GRID) {
+                    NotesView.LIST
+                } else {
+                    NotesView.GRID
+                }
+            baseModel.preferences.notesView.save(next)
+            updateToggleIcon()
+        }
+        viewToggle.setOnClickListener(onToggleClick)
+        homeViewToggle.setOnClickListener(onToggleClick)
+
+        fun updateSortIcon() {
+            // 排序按钮固定显示「上下箭头组合」图标（↑↓），点击弹出排序字段菜单
+            sortButton.setImageResource(R.drawable.sort_arrows)
+            homeSort.setImageResource(R.drawable.sort_arrows)
+        }
+        val onSortClick = View.OnClickListener { showSortMenu(it) }
+        sortButton.setOnClickListener(onSortClick)
+        homeSort.setOnClickListener(onSortClick)
+        updateSortIcon()
+
+        avatar.setOnClickListener {
+            AccountSheetDialog().show(supportFragmentManager, AccountSheetDialog.TAG)
+        }
+
+        baseModel.preferences.onedriveSyncEnabled.observe(this) { enabled ->
+            updateAvatar(enabled)
+        }
+    }
+
+    /**
+     * Shows the Microsoft account picture once OneDrive is connected, falling back to the tinted
+     * default icon. If the picture has not been cached yet it is downloaded in the background.
+     */
+    private fun updateAvatar(onedriveEnabled: Boolean) {
+        val avatar = binding.AvatarButton
+        val photo = if (onedriveEnabled) OneDriveAuthHelper.getAvatarFile(this) else null
+        if (photo != null) {
+            avatar.clearColorFilter()
+            avatar.imageTintList = null
+            Glide.with(this)
+                .load(photo)
+                .signature(ObjectKey(photo.lastModified()))
+                .circleCrop()
+                .placeholder(R.drawable.account_circle)
+                .into(avatar)
+            return
+        }
+
+        Glide.with(this).clear(avatar)
+        avatar.setImageResource(R.drawable.account_circle)
+        val color =
+            if (onedriveEnabled) {
+                MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, 0)
+            } else {
+                MaterialColors.getColor(
+                    this,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    0,
+                )
+            }
+        avatar.setColorFilter(color)
+
+        if (onedriveEnabled) {
+            lifecycleScope.launch {
+                OneDriveAuthHelper.fetchAndStoreAvatar(this@MainActivity)
+                if (OneDriveAuthHelper.getAvatarFile(this@MainActivity) != null) {
+                    updateAvatar(true)
+                }
+            }
+        }
+    }
+
+    internal fun showSearchBar() {
+        if (binding.SearchPill.visibility != View.VISIBLE) {
+            binding.SearchPill.visibility = View.VISIBLE
+            binding.HomeBar.visibility = View.GONE
+        }
+    }
+
+    internal fun hideSearchBar() {
+        if (binding.SearchPill.visibility != View.GONE) {
+            binding.SearchPill.visibility = View.GONE
+            binding.HomeBar.visibility = View.VISIBLE
+        }
+    }
+
+    fun isSearchBarVisible(): Boolean = binding.SearchPill.visibility == View.VISIBLE
+
+    private fun showSortMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        val current = baseModel.preferences.notesSorting.value
+        NotesSortBy.entries.forEach { sortBy ->
+            val label = getString(sortBy.textResId)
+            val title =
+                if (sortBy == current.sortedBy) {
+                    "$label  ${if (current.sortDirection == SortDirection.DESC) "▼" else "▲"}"
+                } else {
+                    label
+                }
+            val item = popup.menu.add(Menu.NONE, sortBy.ordinal, Menu.NONE, title)
+            item.isChecked = (sortBy == current.sortedBy)
+        }
+        popup.menu.setGroupCheckable(Menu.NONE, true, true)
+        popup.setOnMenuItemClickListener { item ->
+            val sortBy = NotesSortBy.entries[item.itemId]
+            val cur = baseModel.preferences.notesSorting.value
+            val next =
+                if (sortBy == cur.sortedBy) {
+                    cur.copy(
+                        sortDirection =
+                            if (cur.sortDirection == SortDirection.DESC) {
+                                SortDirection.ASC
+                            } else {
+                                SortDirection.DESC
+                            },
+                    )
+                } else {
+                    cur.copy(sortedBy = sortBy)
+                }
+            baseModel.preferences.notesSorting.save(next)
+            true
+        }
+        popup.show()
     }
 
     private fun isStartViewFragment(id: Int, bundle: Bundle?): Boolean {
@@ -469,15 +712,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val currentDestinationId = navController.currentDestination?.id
-        if (!ACTIVITES_WITHOUT_TOOLBAR_ICONS.contains(currentDestinationId)) {
-            menu.add(Menu.NONE, ACTION_LABELS, Menu.NONE, R.string.labels)
-                .setIcon(R.drawable.label_more)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu.add(Menu.NONE, ACTION_SETTINGS, Menu.NONE, R.string.settings)
-                .setIcon(R.drawable.settings)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        }
+        // Labels and Settings are now reached from the navigation drawer, so the top bar
+        // only hosts the search pill and the account avatar (wired in setupToolbar).
         return true
     }
 

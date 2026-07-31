@@ -10,7 +10,6 @@ import cool.hin.memox.data.model.Header
 import cool.hin.memox.data.model.Item
 import cool.hin.memox.databinding.RecyclerBaseNoteBinding
 import cool.hin.memox.databinding.RecyclerHeaderBinding
-import cool.hin.memox.presentation.view.main.sorting.BaseNoteColorSort
 import cool.hin.memox.presentation.view.main.sorting.BaseNoteCreationDateSort
 import cool.hin.memox.presentation.view.main.sorting.BaseNoteModifiedDateSort
 import cool.hin.memox.presentation.view.main.sorting.BaseNoteTitleSort
@@ -171,5 +170,4 @@ fun NotesSort.createCallback(adapter: RecyclerView.Adapter<*>?) =
         NotesSortBy.TITLE -> BaseNoteTitleSort(adapter, sortDirection)
         NotesSortBy.MODIFIED_DATE -> BaseNoteModifiedDateSort(adapter, sortDirection)
         NotesSortBy.CREATION_DATE -> BaseNoteCreationDateSort(adapter, sortDirection)
-        NotesSortBy.COLOR -> BaseNoteColorSort(adapter, sortDirection)
     }

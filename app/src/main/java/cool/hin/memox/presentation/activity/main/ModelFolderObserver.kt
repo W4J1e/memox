@@ -45,7 +45,7 @@ class ModelFolderObserver(
         // Lock toggle, placed left of "select all". Available everywhere except the trash, where
         // locking a deleted note does not make sense.
         val lock: MenuItem? =
-            if (value != Folder.DELETED) {
+            if (value != Folder.DELETED && value != Folder.ARCHIVED) {
                 menu.add(R.string.lock_note, R.drawable.lock_big, MenuItem.SHOW_AS_ACTION_ALWAYS) {}
             } else null
 
@@ -59,12 +59,16 @@ class ModelFolderObserver(
         when (value) {
             Folder.NOTES -> initNotesFolderMenu(lock)
             Folder.DELETED -> initDeletedFolderMenu()
+            Folder.ARCHIVED -> initArchivedFolderMenu()
         }
     }
 
     private fun initNotesFolderMenu(lock: MenuItem?) {
         val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu.add(R.string.archive, R.drawable.archive, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+            moveNotes(Folder.ARCHIVED)
+        }
         menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.add(R.string.duplicate, R.drawable.content_copy) {
             baseModel.duplicateSelectedBaseNotes()
@@ -78,6 +82,19 @@ class ModelFolderObserver(
 
     private fun initDeletedFolderMenu() {
         menu.add(R.string.restore, R.drawable.restore, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+            moveNotes(Folder.NOTES)
+        }
+        menu.add(R.string.delete_forever, R.drawable.delete, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+            deleteForever()
+        }
+        menu.addExportMenu()
+        menu.addChangeColor()
+        val share = menu.add(R.string.share, R.drawable.share) { share() }
+        model.actionMode.count.observeCount(activity, share)
+    }
+
+    private fun initArchivedFolderMenu() {
+        menu.add(R.string.unarchive, R.drawable.restore, MenuItem.SHOW_AS_ACTION_ALWAYS) {
             moveNotes(Folder.NOTES)
         }
         menu.add(R.string.delete_forever, R.drawable.delete, MenuItem.SHOW_AS_ACTION_ALWAYS) {

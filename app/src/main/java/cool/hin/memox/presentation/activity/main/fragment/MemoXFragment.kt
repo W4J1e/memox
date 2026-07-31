@@ -3,6 +3,7 @@ package cool.hin.memox.presentation.activity.main.fragment
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -14,8 +15,9 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
-import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedListAdapterCallback
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -44,6 +46,7 @@ import cool.hin.memox.presentation.view.main.BaseNoteVHPreferences
 import cool.hin.memox.presentation.view.main.createCallback
 import cool.hin.memox.presentation.view.misc.ItemListener
 import cool.hin.memox.presentation.viewmodel.BaseNoteModel
+import cool.hin.memox.presentation.dp
 import cool.hin.memox.presentation.viewmodel.preference.NotesView
 
 abstract class MemoXFragment : Fragment(), ItemListener {
@@ -83,6 +86,7 @@ abstract class MemoXFragment : Fragment(), ItemListener {
         setupRecyclerView()
         setupObserver()
         setupSearch()
+        setupPullToSearch()
 
         setupActivityResultLaunchers()
 
@@ -143,7 +147,7 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                 if (model.actionMode.isEnabled()) {
                     handleNoteSelection(item.id, position, item)
                 } else {
-                    goToActivity(EditNoteActivity::class.java, item)
+                    goToActivity(EditNoteActivity::class.java, item, position)
                 }
             }
             }
@@ -196,116 +200,71 @@ abstract class MemoXFragment : Fragment(), ItemListener {
     }
 
     private fun setupSearch() {
-        binding?.EnterSearchKeyword?.apply {
-            setText(model.keyword)
-            val navController = findNavController()
-            navController.addOnDestinationChangedListener { controller, destination, arguments ->
-                if (destination.id == R.id.Search) {
-                    // Always show search bar in Search fragment
-                    binding?.EnterSearchKeywordLayout?.visibility = View.VISIBLE
-                    requestFocus()
-                    activity?.showKeyboard(this)
-                    notesAdapter?.setSearchKeyword(model.keyword)
-                } else {
-                    // Hide search bar by default on other fragments
-                    binding?.EnterSearchKeywordLayout?.visibility = View.GONE
-                    setText("")
-                    clearFocus()
-                    activity?.hideKeyboard(this)
-                    notesAdapter?.setSearchKeyword("")
-                }
-            }
-            doAfterTextChanged { text ->
-                val isSearchFragment = navController.currentDestination?.id == R.id.Search
-                if (isSearchFragment) {
-                    val newKeyword = text?.toString().orEmpty()
-                    if (model.keyword != newKeyword) {
-                        model.keyword = newKeyword
-                    }
-                }
-                if (text?.isNotEmpty() == true && !isSearchFragment) {
-                    setText("")
-                    model.keyword = text.toString()
-                    navController.navigate(
-                        R.id.Search,
-                        Bundle().apply {
-                            putSerializable(EXTRA_INITIAL_FOLDER, model.folder.value)
-                            putSerializable(EXTRA_INITIAL_LABEL, model.currentLabel)
-                        },
-                    )
-                }
-                this@MemoXFragment.binding?.MainListView?.apply {
-                    postOnAnimationDelayed({ scrollToPosition(0) }, 10)
-                }
-            }
+        // Search is now driven entirely by the top-bar search pill in MainActivity. The
+        // in-fragment EnterSearchKeyword box is kept only for result highlighting and stays
+        // hidden, so we just keep the adapter's highlight keyword in sync with the destination.
+        val navController = findNavController()
+        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+            binding?.EnterSearchKeywordLayout?.visibility = View.GONE
+            notesAdapter?.setSearchKeyword(if (destination.id == R.id.Search) model.keyword else "")
         }
-        // Pull-down to reveal search bar
-        // A small `pullRevealed` guard ensures the bar is only shown once per gesture, and the
-        // scroll listener below only hides it when the list is *actually* scrolled (not on the
-        // layout shift caused by the bar appearing). This breaks the visibility-toggle <-> onScrolled
-        // feedback loop that previously produced flicker/shake.
-        var pullStartY = 0f
-        var pullRevealed = false
-        binding?.MainListView?.addOnItemTouchListener(object :
-            RecyclerView.OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                when (e.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        pullStartY = e.rawY
-                        pullRevealed = false
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        val dy = e.rawY - pullStartY
-                        if (!pullRevealed && dy > 40 && !rv.canScrollVertically(-1)) {
-                            val navController = rv.findNavController()
-                            if (navController.currentDestination?.id != R.id.Search) {
-                                binding?.EnterSearchKeywordLayout?.visibility = View.VISIBLE
-                                pullRevealed = true
-                            }
-                        }
-                    }
-                }
-                return false
-            }
-
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
-
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-        })
-        // Hide search bar only when the list content is actually scrolled (content above the
-        // viewport exists). The layout shift from revealing the bar is NOT a real scroll, so it
-        // won't be mistaken for one and won't re-hide the bar.
-        binding?.MainListView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (dy <= 0) return
-                val searchBar = binding?.EnterSearchKeywordLayout ?: return
-                if (searchBar.visibility != View.VISIBLE) return
-                val navController = recyclerView.findNavController()
-                if (navController.currentDestination?.id == R.id.Search) return
-                if (recyclerView.canScrollVertically(-1)) {
-                    searchBar.visibility = View.GONE
-                    binding?.EnterSearchKeyword?.setText("")
-                    binding?.EnterSearchKeyword?.clearFocus()
-                    activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
-                    pullRevealed = false
-                }
-            }
-        })
     }
 
-    fun toggleSearchBar() {
-        binding?.EnterSearchKeywordLayout?.let { searchBar ->
-            if (searchBar.visibility == View.VISIBLE) {
-                searchBar.visibility = View.GONE
-                binding?.EnterSearchKeyword?.setText("")
-                binding?.EnterSearchKeyword?.clearFocus()
-                activity?.hideKeyboard(binding?.EnterSearchKeyword ?: return)
-            } else {
-                searchBar.visibility = View.VISIBLE
-                binding?.EnterSearchKeyword?.requestFocus()
-                activity?.showKeyboard(binding?.EnterSearchKeyword ?: return)
-            }
+    /**
+     * 首页下拉呼出搜索框：当列表处于顶部时，向下拖动超过阈值即显示顶栏搜索框。
+     * 呼出后若未输入且用户开始浏览列表或按下返回键，则由对应逻辑收起（见 MainActivity）。
+     */
+    private var isListAtTop = true
+    private val pullToSearchThresholdPx by lazy(LazyThreadSafetyMode.NONE) { 80.dp }
+
+    private fun setupPullToSearch() {
+        val recyclerView = binding?.MainListView ?: return
+        val detector =
+            GestureDetector(
+                requireContext(),
+                object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onScroll(
+                        e1: MotionEvent?,
+                        e2: MotionEvent,
+                        distanceX: Float,
+                        distanceY: Float,
+                    ): Boolean {
+                        if (isListAtTop && e1 != null && (e2.y - e1.y) > pullToSearchThresholdPx) {
+                            (activity as? MainActivity)?.showSearchBar()
+                        }
+                        return false
+                    }
+                },
+            )
+
+        recyclerView.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                    val lm = rv.layoutManager as? LinearLayoutManager
+                    isListAtTop =
+                        if (lm != null) {
+                            lm.findFirstVisibleItemPosition() == 0 &&
+                                (lm.findViewByPosition(0)?.top ?: 0) >= 0
+                        } else {
+                            rv.computeVerticalScrollOffset() == 0
+                        }
+                    // 下拉呼出搜索框后若未输入且用户开始浏览列表，则收起搜索框
+                    val main = activity as? MainActivity
+                    if (main != null &&
+                        main.isSearchBarVisible() &&
+                        findNavController().currentDestination?.id != R.id.Search &&
+                        binding?.EnterSearchKeyword?.text.toString().isEmpty() &&
+                        dy != 0
+                    ) {
+                        main.hideSearchBar()
+                    }
+                }
+            },
+        )
+
+        recyclerView.setOnTouchListener { _, event ->
+            detector.onTouchEvent(event)
+            false
         }
     }
 
@@ -373,6 +332,11 @@ abstract class MemoXFragment : Fragment(), ItemListener {
             notesAdapter?.setNotesSort(notesSort)
         }
 
+        model.preferences.notesView.observe(viewLifecycleOwner) {
+            // Rebuild the layout manager when the view (grid/list) is toggled from the top bar.
+            setupRecyclerView()
+        }
+
         model.actionMode.closeListener.observe(viewLifecycleOwner) { event ->
             event.handle { ids ->
                 notesAdapter?.currentList?.forEachIndexed { index, item ->
@@ -389,17 +353,27 @@ abstract class MemoXFragment : Fragment(), ItemListener {
             if (model.preferences.notesView.value == NotesView.GRID) {
                 StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
             } else LinearLayoutManager(requireContext())
+        binding?.MainListView?.itemAnimator = DefaultItemAnimator().apply {
+            addDuration = 200
+            removeDuration = 200
+            moveDuration = 250
+            changeDuration = 200
+        }
     }
 
-    private fun goToActivity(activity: Class<*>, baseNote: BaseNote) {
+    private fun goToActivity(activity: Class<*>, baseNote: BaseNote, position: Int) {
         val intent = Intent(requireContext(), activity)
         intent.putExtra(EXTRA_SELECTED_BASE_NOTE, baseNote.id)
         // If launched from Search fragment with a non-empty keyword, pass it to the editor to
         // auto-highlight
-        val isInSearch = view?.findNavController()?.currentDestination?.id == R.id.Search
+        val isInSearch = findNavController().currentDestination?.id == R.id.Search
         if (isInSearch && model.keyword.isNotBlank()) {
             intent.putExtra(EditActivity.EXTRA_INITIAL_SEARCH_QUERY, model.keyword)
         }
+        // Open the editor with a plain launch. The note screen uses a Material "fade through"
+        // window transition; we intentionally do NOT use a shared-element MaterialContainerTransform
+        // here because as an activity-to-activity transition its sceneRoot is the DecorView, which
+        // makes MaterialContainerTransform crash with "android:id/content is not a valid ancestor".
         openNoteActivityResultLauncher.launch(intent)
     }
 
