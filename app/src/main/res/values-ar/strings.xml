@@ -70,7 +70,6 @@
     <string name="clear_data_message">سيتم حذف جميع الملاحظات ,الصور ,الملفات , و التسجيلات الصوتية نهائيًا</string>
     <string name="clear_formatting">مسح التنسيق</string>
     <string name="cleared_data">تم مسح جميع البيانات</string>
-    <string name="color">لون</string>
     <string name="color_exists">هذا اللون موجود بالفعل!</string>
     <string name="content_density">كثافة المحتوى</string>
     <string name="continue_">متابعة</string>

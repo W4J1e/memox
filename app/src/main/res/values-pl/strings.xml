@@ -63,7 +63,6 @@
     <string name="clear_data_message">Wszystkie notatki, obrazy, pliki i nagrania zostaną bezpowrotnie usunięte</string>
     <string name="clear_formatting">Usuń formatowanie</string>
     <string name="cleared_data">Wszystkie dane zostały usunięte</string>
-    <string name="color">Kolor</string>
     <string name="color_exists">Ten kolor już istnieje!</string>
     <string name="content_density">Zagęszczenie treści</string>
     <string name="continue_">Kontynuuj</string>

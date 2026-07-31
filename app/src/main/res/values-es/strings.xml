@@ -70,7 +70,6 @@
     <string name="clear_data_message">Todas las notas, imágenes, ficheros, audios serán borrados permanentemente</string>
     <string name="clear_formatting">Borrar formato</string>
     <string name="cleared_data">Se han limpiado todos los datos</string>
-    <string name="color">Color</string>
     <string name="color_exists">¡Este color ya existe!</string>
     <string name="content_density">Densidad de contenido</string>
     <string name="continue_">Continuar</string>
