@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
-import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.databinding.RecyclerBaseNoteBinding
@@ -121,14 +120,11 @@ class BaseNoteVH(
         }
 
         setImages(baseNote, imageRoot)
-        setFiles(baseNote.files)
+        setFiles()
 
         binding.Title.apply {
             isVisible = baseNote.title.isNotEmpty() || baseNote.locked
-            updatePadding(
-                bottom =
-                    if (baseNote.hasNoContents() || shouldOnlyDisplayTitle(baseNote)) 0 else 8.dp
-            )
+            updatePadding(bottom = if (baseNote.hasNoContents()) 0 else 8.dp)
             if (searchKeyword.isNotBlank()) {
                 val snippet = extractSearchSnippet(baseNote.title, searchKeyword)
                 if (snippet != null) {
@@ -234,14 +230,12 @@ class BaseNoteVH(
         }
     }
 
-    private fun setFiles(files: List<FileAttachment>) {
+    private fun setFiles() {
         binding.apply {
             // Always hide files in overview to avoid OBJ icon display issue
             FileViewLayout.visibility = GONE
         }
     }
-
-    private fun shouldOnlyDisplayTitle(baseNote: BaseNote) = false
 
     private fun BaseNote.isEmpty() = title.isBlank() && hasNoContents() && images.isEmpty()
 

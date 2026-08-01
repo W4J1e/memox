@@ -1,6 +1,7 @@
 package cool.hin.memox.data.sync.onedrive
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.net.Uri
 import android.util.Base64
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
@@ -105,6 +106,12 @@ object OneDriveAuthHelper {
             // Fetch and store the display account name + profile picture
             fetchAndStoreAccountName(context)
             fetchAndStoreAvatar(context)
+            // Successful sign-in: enable sync + auto-sync so the user does not have to
+            // toggle them again after returning from the browser.
+            prefs.onedriveSyncEnabled.save(true)
+            prefs.onedriveAutoSync.save(true)
+            prefs.syncProvider.save(MemoXPreferences.PROVIDER_ONEDRIVE)
+            OneDriveSyncWorker.schedule(ContextWrapper(context))
             null
         } catch (e: Exception) {
             e.message ?: "Token exchange failed"

@@ -8,6 +8,7 @@ import cool.hin.memox.data.model.Converters
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.Label
 import cool.hin.memox.data.sync.SyncLog
+import cool.hin.memox.data.sync.SyncMetaCache
 import cool.hin.memox.data.sync.SyncResult
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.utils.SUBFOLDER_AUDIOS
@@ -19,10 +20,16 @@ import cool.hin.memox.utils.getCurrentFilesDirectory
 import cool.hin.memox.utils.getCurrentImagesDirectory
 import cool.hin.memox.utils.resolveAttachmentFile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Handles synchronization with a WebDAV server.
@@ -46,6 +53,12 @@ class WebDavSyncService(private val context: ContextWrapper) {
         const val REMOTE_FILES_DIR = "memoX/attachments/files"
         const val REMOTE_SYNC_META = "memoX/sync_meta.json"
         const val REMOTE_LABELS_FILE = "memoX/labels.json"
+
+        /** 附件目录，用于一次性建立远端附件索引。 */
+        private val ATTACHMENT_DIRS = listOf(REMOTE_IMAGES_DIR, REMOTE_FILES_DIR, REMOTE_AUDIOS_DIR)
+
+        /** 并发上限。取小值以免部分 WebDAV 网关限速或返回 429。 */
+        private const val SYNC_CONCURRENCY = 4
 
         /** Generate a safe filename for a note: {title}_{id}.json or {id}.json */
         fun noteFileName(note: BaseNote): String {
@@ -74,6 +87,21 @@ class WebDavSyncService(private val context: ContextWrapper) {
     }
 
     private val preferences: MemoXPreferences by lazy { MemoXPreferences.getInstance(context) }
+
+    /**
+     * 本次操作期间的远端附件索引：远端目录 -> (文件名 -> 字节数)。
+     *
+     * 由一次目录列表填充，之后被三处共用：
+     * - 上传前比对：远端已有同名同大小则跳过（旧实现无任何校验，每次同步全量重传所有附件）
+     * - 下载前比对：本地已有同名同大小则跳过（旧实现同样无条件重下）
+     * - 清理孤儿附件：直接复用，省掉重复的目录列表请求
+     *
+     * 为 null 表示索引不可用，此时退化为旧的"总是传输"行为，正确性不受影响。
+     */
+    private var remoteAttachmentIndex: Map<String, ConcurrentHashMap<String, Long>>? = null
+
+    /** 远端目录是否已确认存在，避免每次同步都无条件发 6 个 MKCOL。 */
+    private var remoteDirsEnsured = false
 
     private fun createClient(): WebDavClient? {
         val url = preferences.webdavUrl.value
@@ -424,6 +452,55 @@ class WebDavSyncService(private val context: ContextWrapper) {
         client.createDirectory(REMOTE_IMAGES_DIR)    // memoX/attachments/images
         client.createDirectory(REMOTE_AUDIOS_DIR)    // memoX/attachments/audios
         client.createDirectory(REMOTE_FILES_DIR)     // memoX/attachments/files
+        remoteDirsEnsured = true
+    }
+
+    /**
+     * 只在确实需要时建目录。
+     * 旧实现每次同步开头无条件发 6 个 MKCOL；实际上目录只需建一次，
+     * 后续靠"目录列表失败"来兜底自愈即可。
+     */
+    private suspend fun ensureRemoteDirsOnce(client: WebDavClient) {
+        if (remoteDirsEnsured) return
+        ensureRemoteDirs(client)
+    }
+
+    /**
+     * 一次性拉取三个附件目录的清单，建立索引。
+     * 这三次请求原本就要在清理孤儿附件时发一遍，现在提前发、全流程共用，总请求数反而更少。
+     */
+    private suspend fun loadRemoteAttachmentIndex(client: WebDavClient) {
+        val index = mutableMapOf<String, ConcurrentHashMap<String, Long>>()
+        var anyDirMissing = false
+        for (dir in ATTACHMENT_DIRS) {
+            val map = ConcurrentHashMap<String, Long>()
+            val files = client.listFiles(dir).getOrNull()
+            if (files == null) {
+                anyDirMissing = true
+            } else {
+                for (file in files) if (!file.isDirectory) map[file.name] = file.size
+            }
+            index[dir] = map
+        }
+        // 列不出来通常意味着目录还没建过，补一次 MKCOL；空索引正好等价于"远端什么都没有"
+        if (anyDirMissing) ensureRemoteDirsOnce(client)
+        remoteAttachmentIndex = index
+    }
+
+    /** 限流并发执行。部分 WebDAV 网关对并发敏感，故上限取小值。 */
+    private suspend fun <T> Collection<T>.forEachParallel(action: suspend (T) -> Unit) {
+        when {
+            isEmpty() -> return
+            size == 1 -> action(first())
+            else ->
+                coroutineScope {
+                    val semaphore = Semaphore(SYNC_CONCURRENCY)
+                    map { item ->
+                            async(Dispatchers.IO) { semaphore.withPermit { action(item) } }
+                        }
+                        .awaitAll()
+                }
+        }
     }
 
     private fun noteToJson(note: BaseNote): String {
@@ -488,76 +565,84 @@ class WebDavSyncService(private val context: ContextWrapper) {
         return result
     }
 
-    /** Upload all attachments for a note */
+    /** Upload all attachments for a note (skips what the server already has) */
     private fun uploadAttachments(client: WebDavClient, note: BaseNote) {
-        val imgCount = note.images.size
-        val fileCount = note.files.size
-        val audioCount = note.audios.size
-        Log.d(TAG, "uploadAttachments: note ${note.id} has $imgCount images, $fileCount files, $audioCount audios")
-
         for (img in note.images) {
-            val file = getLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
-            Log.d(TAG, "uploadAttachments: image ${img.localName}, file=$file, exists=${file?.exists()}")
-            if (file != null && file.exists()) {
-                val result = client.upload("$REMOTE_IMAGES_DIR/${img.localName}", file.readBytes())
-                if (result.isFailure) {
-                    Log.w(TAG, "uploadAttachments: failed to upload image ${img.localName}: ${result.exceptionOrNull()?.message}")
-                }
-            }
+            uploadAttachment(client, REMOTE_IMAGES_DIR, SUBFOLDER_IMAGES, img.localName)
         }
         for (f in note.files) {
-            val file = getLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
-            Log.d(TAG, "uploadAttachments: file ${f.localName}, localFile=$file, exists=${file?.exists()}")
-            if (file != null && file.exists()) {
-                val result = client.upload("$REMOTE_FILES_DIR/${f.localName}", file.readBytes())
-                if (result.isFailure) {
-                    Log.w(TAG, "uploadAttachments: failed to upload file ${f.localName}: ${result.exceptionOrNull()?.message}")
-                }
-            }
+            uploadAttachment(client, REMOTE_FILES_DIR, SUBFOLDER_FILES, f.localName)
         }
         for (audio in note.audios) {
-            val file = getLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
-            Log.d(TAG, "uploadAttachments: audio ${audio.name}, file=$file, exists=${file?.exists()}")
-            if (file != null && file.exists()) {
-                val result = client.upload("$REMOTE_AUDIOS_DIR/${audio.name}", file.readBytes())
-                if (result.isFailure) {
-                    Log.w(TAG, "uploadAttachments: failed to upload audio ${audio.name}: ${result.exceptionOrNull()?.message}")
-                }
-            }
+            uploadAttachment(client, REMOTE_AUDIOS_DIR, SUBFOLDER_AUDIOS, audio.name)
         }
     }
 
-    /** Download all attachments for a note */
+    /**
+     * 上传单个附件。远端已存在同名且字节数一致时直接跳过。
+     *
+     * 附件名由本地生成且唯一，"同名 + 同大小"即同一份内容。
+     * 旧实现没有任何校验：只要笔记被判定为需要上传，它的全部图片/音频/附件就整体重传一遍，
+     * 与 `>=` 的时间戳判断叠加后，等于每次同步都把所有附件字节重新推一遍。
+     */
+    private fun uploadAttachment(
+        client: WebDavClient,
+        remoteDir: String,
+        subfolder: String,
+        name: String,
+    ) {
+        val file = getLocalAttachmentFile(subfolder, name)
+        if (file == null || !file.exists()) {
+            Log.d(TAG, "uploadAttachment: local file missing, skip $subfolder/$name")
+            return
+        }
+        val localSize = file.length()
+        val known = remoteAttachmentIndex?.get(remoteDir)
+        if (known != null && known[name] == localSize) return
+
+        val result = client.upload("$remoteDir/$name", file.readBytes())
+        if (result.isSuccess) {
+            known?.put(name, localSize)
+        } else {
+            Log.w(
+                TAG,
+                "uploadAttachment: failed $remoteDir/$name: ${result.exceptionOrNull()?.message}",
+            )
+        }
+    }
+
+    /** Download all attachments for a note (skips what is already on disk) */
     private fun downloadAttachments(client: WebDavClient, note: BaseNote) {
         for (img in note.images) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
-            if (localFile != null) {
-                val result = client.download("$REMOTE_IMAGES_DIR/${img.localName}")
-                result.getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_IMAGES_DIR, SUBFOLDER_IMAGES, img.localName)
         }
         for (f in note.files) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
-            if (localFile != null) {
-                val result = client.download("$REMOTE_FILES_DIR/${f.localName}")
-                result.getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_FILES_DIR, SUBFOLDER_FILES, f.localName)
         }
         for (audio in note.audios) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
-            if (localFile != null) {
-                val result = client.download("$REMOTE_AUDIOS_DIR/${audio.name}")
-                result.getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_AUDIOS_DIR, SUBFOLDER_AUDIOS, audio.name)
+        }
+    }
+
+    /** 下载单个附件。本地已有同名非空文件（且大小与远端一致）时跳过。 */
+    private fun downloadAttachment(
+        client: WebDavClient,
+        remoteDir: String,
+        subfolder: String,
+        name: String,
+    ) {
+        val localFile = ensureLocalAttachmentFile(subfolder, name) ?: return
+        val remoteSize = remoteAttachmentIndex?.get(remoteDir)?.get(name)
+        if (
+            localFile.exists() &&
+                localFile.length() > 0 &&
+                (remoteSize == null || remoteSize == localFile.length())
+        ) {
+            return
+        }
+        client.download("$remoteDir/$name").getOrNull()?.let { bytes ->
+            localFile.parentFile?.mkdirs()
+            localFile.writeBytes(bytes)
         }
     }
 
@@ -593,11 +678,17 @@ class WebDavSyncService(private val context: ContextWrapper) {
     }
 
     private fun cleanupOrphanedDir(client: WebDavClient, dir: String, referencedNames: Set<String>) {
-        val files = client.listFiles(dir).getOrNull() ?: return
-        for (file in files) {
-            if (!file.isDirectory && file.name !in referencedNames) {
-                client.delete(file.path)
-                SyncLog.log("Deleted orphaned attachment: ${file.name}")
+        // 优先复用本次同步已建立的索引，避免重复发目录列表请求
+        val known = remoteAttachmentIndex?.get(dir)
+        val names =
+            known?.keys?.toList()
+                ?: client.listFiles(dir).getOrNull()?.filterNot { it.isDirectory }?.map { it.name }
+                ?: return
+        for (name in names) {
+            if (name !in referencedNames) {
+                client.delete("$dir/$name")
+                known?.remove(name)
+                SyncLog.log("Deleted orphaned attachment: $name")
             }
         }
     }

@@ -54,6 +54,7 @@ import cool.hin.memox.presentation.activity.note.EditNoteActivity
 import cool.hin.memox.presentation.activity.note.NoteActionHandler
 import cool.hin.memox.presentation.activity.note.handleRejection
 import cool.hin.memox.presentation.dp
+import cool.hin.memox.presentation.showKeyboard
 import cool.hin.memox.presentation.setupProgressDialog
 import cool.hin.memox.presentation.viewmodel.BaseNoteModel
 import cool.hin.memox.presentation.viewmodel.ExportMimeType
@@ -69,6 +70,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
 
     private lateinit var navController: NavController
     private lateinit var configuration: AppBarConfiguration
+    private var restoringSearchText = false
     private lateinit var exportFileActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportNotesActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var identityVerifyActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -454,7 +456,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 showSearchBar()
             } else {
                 hideSearchBar()
+                restoringSearchText = true
                 binding.SearchEditText.setText(baseModel.keyword)
+                restoringSearchText = false
             }
             when (destination.id) {
                 R.id.DisplayLabel ->
@@ -486,8 +490,11 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         val homeSort = binding.HomeSortButton
         val avatar = binding.AvatarButton
 
+        restoringSearchText = true
         searchEditText.setText(baseModel.keyword)
+        restoringSearchText = false
         searchEditText.doAfterTextChanged { text ->
+            if (restoringSearchText) return@doAfterTextChanged
             val keyword = text?.toString().orEmpty()
             if (baseModel.keyword != keyword) {
                 baseModel.keyword = keyword
@@ -591,10 +598,23 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         }
     }
 
-    internal fun showSearchBar() {
+    internal fun showSearchBar(clearText: Boolean = false) {
         if (binding.SearchPill.visibility != View.VISIBLE) {
             binding.SearchPill.visibility = View.VISIBLE
             binding.HomeBar.visibility = View.GONE
+        }
+        if (clearText) {
+            // 手动下拉呼出搜索框时清空上次残留内容：关掉/返回后再拉出应为空白，而非旧文本
+            restoringSearchText = true
+            binding.SearchEditText.setText("")
+            baseModel.keyword = ""
+            restoringSearchText = false
+        }
+        // 进入/呼出搜索框时让输入框重新获得焦点并弹出键盘，
+        // 避免搜索结果页接管后输入框丢失输入连接（键盘还挂着却无法输入，必须再点一次）。
+        binding.SearchEditText.post {
+            binding.SearchEditText.requestFocus()
+            showKeyboard(binding.SearchEditText)
         }
     }
 

@@ -33,7 +33,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 13)
+@Database(entities = [BaseNote::class, Label::class], version = 14)
 abstract class MemoXDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -165,6 +165,7 @@ abstract class MemoXDatabase : RoomDatabase() {
                         Migration11,
                         Migration12,
                         Migration13,
+                        Migration14,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -268,7 +269,7 @@ abstract class MemoXDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
-                    "ALTER TABLE `BaseNote` ADD COLUMN `modifiedTimestamp` INTEGER NOT NULL DEFAULT 'timestamp'"
+                    "ALTER TABLE `BaseNote` ADD COLUMN `modifiedTimestamp` INTEGER NOT NULL DEFAULT 0"
                 )
             }
         }
@@ -345,6 +346,17 @@ abstract class MemoXDatabase : RoomDatabase() {
                 // The "Archive" folder feature was removed. Move any archived notes back into the
                 // regular Notes folder so they stay reachable.
                 db.execSQL("UPDATE `BaseNote` SET `folder` = 'NOTES' WHERE `folder` = 'ARCHIVED'")
+            }
+        }
+
+        object Migration14 : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The v6 migration used DEFAULT 'timestamp' which SQLite coerces to 0, so every
+                // note migrated from v1-v5 ended up with modifiedTimestamp = 0 (1970). Backfill
+                // those rows using their creation time as the best available "last modified" proxy.
+                db.execSQL(
+                    "UPDATE `BaseNote` SET `modifiedTimestamp` = `timestamp` WHERE `modifiedTimestamp` = 0"
+                )
             }
         }
     }

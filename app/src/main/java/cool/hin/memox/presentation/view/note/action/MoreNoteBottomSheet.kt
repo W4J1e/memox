@@ -39,6 +39,7 @@ class MoreNoteBottomSheet(
                 EditAction.LINK_NOTE,
                 EditAction.RESTORE,
                 EditAction.DELETE_FOREVER,
+                EditAction.LOCK_NOTE,
                 EditAction.PIN_TO_STATUS,
             )
 

@@ -333,7 +333,7 @@ interface BaseNoteDao {
     }
 
     @Query(
-        "SELECT * FROM BaseNote WHERE folder = :folder AND labels LIKE '%' || :label || '%' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
+        "SELECT * FROM BaseNote WHERE folder = :folder AND labels LIKE '%' || :label || '%' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') AND locked = 0 ORDER BY pinned DESC, timestamp DESC"
     )
     fun getBaseNotesByKeywordImpl(
         keyword: String,
@@ -342,12 +342,12 @@ interface BaseNoteDao {
     ): Flow<List<BaseNote>>
 
     @Query(
-        "SELECT * FROM BaseNote WHERE folder = :folder AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
+        "SELECT * FROM BaseNote WHERE folder = :folder AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%') AND locked = 0 ORDER BY pinned DESC, timestamp DESC"
     )
     fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 
     @Query(
-        "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC"
+        "SELECT * FROM BaseNote WHERE folder = :folder AND labels == '[]' AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%') AND locked = 0 ORDER BY pinned DESC, timestamp DESC"
     )
     fun getBaseNotesByKeywordUnlabeledImpl(keyword: String, folder: Folder): Flow<List<BaseNote>>
 

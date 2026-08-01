@@ -64,9 +64,9 @@ class ModelFolderObserver(
     }
 
     private fun initNotesFolderMenu(lock: MenuItem?) {
-        val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.addLabels(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(R.string.archive, R.drawable.archive, MenuItem.SHOW_AS_ACTION_ALWAYS) {
+        // 置顶/归档收纳至三点溢出菜单（编辑器已有常驻标签图标，故选择模式不再展示标签）
+        val pinned = menu.addPinned(MenuItem.SHOW_AS_ACTION_NEVER)
+        menu.add(R.string.archive, R.drawable.archive, MenuItem.SHOW_AS_ACTION_NEVER) {
             moveNotes(Folder.ARCHIVED)
         }
         menu.addDelete(MenuItem.SHOW_AS_ACTION_ALWAYS)

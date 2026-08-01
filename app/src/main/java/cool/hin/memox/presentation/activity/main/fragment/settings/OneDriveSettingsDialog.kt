@@ -65,6 +65,16 @@ class OneDriveSettingsDialog : DialogFragment() {
         if (_binding != null) updateAccountStatus()
     }
 
+    private val syncObserver = Observer<Boolean> {
+        // After returning from the browser sign-in, the enabled/auto-sync flags may have
+        // changed (set by OneDriveAuthHelper on success); reflect them in the switches.
+        if (_binding != null) {
+            binding.onedriveSyncEnabledSwitch.isChecked = preferences.onedriveSyncEnabled.value
+            binding.onedriveAutoSyncSwitch.isChecked = preferences.onedriveAutoSync.value
+            updateSyncOptionsVisibility()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         // Observe preference changes so the UI auto-refreshes when the async OAuth exchange
@@ -72,6 +82,8 @@ class OneDriveSettingsDialog : DialogFragment() {
         // the token exchange may still be in flight when onResume fires.
         preferences.onedriveAccount.observe(this, accountObserver)
         preferences.onedriveRefreshToken.observe(this, accountObserver)
+        preferences.onedriveSyncEnabled.observe(this, syncObserver)
+        preferences.onedriveAutoSync.observe(this, syncObserver)
     }
 
     private fun loadPreferences() {
@@ -133,6 +145,9 @@ class OneDriveSettingsDialog : DialogFragment() {
     }
 
     private fun updateAccountStatus() {
+        binding.onedriveSyncEnabledSwitch.isChecked = preferences.onedriveSyncEnabled.value
+        binding.onedriveAutoSyncSwitch.isChecked = preferences.onedriveAutoSync.value
+        updateSyncOptionsVisibility()
         val account = preferences.onedriveAccount.value
         if (OneDriveAuthHelper.isLoggedIn(requireContext()) && account.isNotEmpty()) {
             binding.onedriveAccountText.text = getString(R.string.onedrive_signed_in_as, account)

@@ -7,7 +7,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -21,7 +20,9 @@ import cool.hin.memox.presentation.viewmodel.progress.MigrationProgress
 import cool.hin.memox.utils.log
 import cool.hin.memox.utils.secondsBetween
 import cool.hin.memox.utils.splitOversizedNotes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -58,20 +59,25 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
     }
 
     private fun setupGlobalExceptionHandler() {
+        if (uehInstalled) return
+        uehInstalled = true
         val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             if (
                 throwable is SQLiteBlobTooBigException ||
                     throwable.cause is SQLiteBlobTooBigException
             ) {
-                lifecycleScope.launch {
+                uehScope.launch {
                     EXCEPTION_HANDLER_MUTEX.withLock {
                         val time = System.currentTimeMillis()
                         if (!isExceptionAlreadyBeingHandled(time)) {
                             EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP = time
+                            val activity = MemoXApplication.currentActivity
                             val migrationProgress =
                                 MutableLiveData<MigrationProgress>().apply {
-                                    setupProgressDialog(this@LockedActivity)
+                                    if (activity != null) {
+                                        setupProgressDialog(activity)
+                                    }
                                     postValue(
                                         MigrationProgress(
                                             R.string.migration_splitting_notes,
@@ -104,5 +110,9 @@ abstract class LockedActivity<T : ViewBinding> : AppCompatActivity() {
         private const val TAG = "LockedActivity"
         private val EXCEPTION_HANDLER_MUTEX = Mutex()
         private var EXCEPTION_HANDLER_MUTEX_LAST_TIMESTAMP: Long? = null
+
+        @Volatile private var uehInstalled = false
+
+        private val uehScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     }
 }

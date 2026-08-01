@@ -131,6 +131,9 @@ class MemoXPreferences private constructor(private val context: Context) {
         LongPreference("webdav_last_sync_time", preferences, 0L)
     val webdavDeletedNoteIds =
         StringSetPreference("webdav_deleted_note_ids", preferences, setOf())
+    /** 远端 note.json 指纹缓存（JSON），用于跳过未变更笔记的下载。见 SyncMetaCache。 */
+    val webdavNoteMetaCache =
+        StringPreference("webdav_note_meta_cache", preferences, "")
 
     // Active sync provider: "" (none) | "webdav" | "onedrive"
     val syncProvider =
@@ -155,6 +158,9 @@ class MemoXPreferences private constructor(private val context: Context) {
         LongPreference("onedrive_last_sync_time", preferences, 0L)
     val onedriveDeletedNoteIds =
         StringSetPreference("onedrive_deleted_note_ids", preferences, setOf())
+    /** 远端 note.json 指纹缓存（JSON），用于跳过未变更笔记的下载。见 SyncMetaCache。 */
+    val onedriveNoteMetaCache =
+        StringPreference("onedrive_note_meta_cache", preferences, "")
     // Transient PKCE/OAuth state for the in-flight sign-in (not user-configurable)
     val onedrivePkceVerifier by lazy {
         StringPreference("onedrive_pkce_verifier", encryptedPreferences, "")

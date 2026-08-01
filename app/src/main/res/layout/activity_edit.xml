@@ -235,17 +235,6 @@
                     android:paddingEnd="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-                <TextView
-                    android:id="@+id/AudioHeader"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="24dp"
-                    android:paddingTop="16dp"
-                    android:paddingEnd="24dp"
-                    android:paddingBottom="12dp"
-                    android:text="@string/audio_recordings"
-                    android:textAppearance="?attr/textAppearanceSubtitle2" />
-
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/AudioRecyclerView"
                     android:layout_width="match_parent"

@@ -118,7 +118,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         set(value) {
             if (field != value || searchResults?.value?.isEmpty() == true) {
                 field = value
-                searchResults!!.fetch(keyword, folder.value, currentLabel)
+                searchResults?.fetch(keyword, folder.value, currentLabel)
             }
         }
 
@@ -142,7 +142,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun startObserving() {
         MemoXDatabase.getDatabase(app).observeForever(::init)
         folder.observeForever { newFolder ->
-            searchResults!!.fetch(keyword, newFolder, currentLabel)
+            searchResults?.fetch(keyword, newFolder, currentLabel)
         }
     }
 
@@ -193,6 +193,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             searchResults = SearchResult(app, viewModelScope, baseNoteDao, ::transform)
         } else {
             searchResults!!.baseNoteDao = baseNoteDao
+        }
+        // 初始拉取，防止 init 之前设置的 keyword 因 searchResults 尚未就绪而丢失
+        if (keyword.isNotEmpty()) {
+            searchResults?.fetch(keyword, folder.value, currentLabel)
         }
     }
 
