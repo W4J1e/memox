@@ -3,8 +3,8 @@
     <string name="about">关于</string>
     <string name="connected">已连接</string>
     <string name="not_connected">未连接</string>
-    <string name="add_images">添加图片</string>
-    <string name="add_checkbox">添加复选框</string>
+    <string name="add_images">图片</string>
+    <string name="add_checkbox">复选框</string>
     <string name="add">添加</string>
     <string name="add_item">添加项目</string>
     <string name="add_label">添加标签</string>
@@ -23,7 +23,9 @@
     </plurals>
     <string name="search_notes">搜索笔记</string>
     <string name="ascending">升序</string>
-    <string name="attach_file">添加附件</string>
+    <string name="attach_file">附件</string>
+    <string name="lock_note">锁定笔记</string>
+    <string name="unlock_note">解锁笔记</string>
     <plurals name="attachments">
         <item quantity="one">附件</item>
         <item quantity="other">附件</item>
@@ -179,7 +181,7 @@
     <string name="disabled">禁用</string>
     <string name="disallow_screenshots">禁止截屏</string>
     <string name="discard">取消</string>
-    <string name="display_text">要展示的我呢本</string>
+    <string name="display_text">要展示的文本</string>
     <string name="documentation">文档</string>
     <string name="donate">捐赠</string>
     <string name="drag_handle">拖动处理</string>

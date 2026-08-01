@@ -6,7 +6,7 @@
     "entities": [
       {
         "tableName": "BaseNote",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, `title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, `labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, `items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, `audios` TEXT NOT NULL, `reminders` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, `title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, `labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, `items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, `audios` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -95,12 +95,6 @@
           {
             "fieldPath": "audios",
             "columnName": "audios",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "reminders",
-            "columnName": "reminders",
             "affinity": "TEXT",
             "notNull": true
           }

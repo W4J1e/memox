@@ -187,13 +187,30 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     .show(supportFragmentManager, AddBottomSheet.TAG)
             }
         }
-        // Right side: view/edit, lock, more
+        // Right side: 撤销/重做（Keep 风格，无内容时隐藏）、更多（锁定笔记已移入三点菜单）
         binding.BottomAppBarRight.apply {
             removeAllViews()
             addBottomAction(preferences.editNoteActivityBottomAction.value)
-            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
-                actionHandler.handleAction(EditAction.LOCK_NOTE)
-            }
+            undo =
+                addIconButton(
+                    R.string.undo, R.drawable.undo, colorInt, marginStart = 2,
+                    onLongClick = {
+                        try { changeHistory.undoAll() } catch (e: Exception) { android.util.Log.e("EditNoteActivity", "change history action failed", e) }
+                        true
+                    },
+                ) {
+                    try { changeHistory.undo() } catch (e: Exception) { android.util.Log.e("EditNoteActivity", "change history action failed", e) }
+                }.apply { isVisible = changeHistory.canUndo.value }
+            redo =
+                addIconButton(
+                    R.string.redo, R.drawable.redo, colorInt, marginStart = 2,
+                    onLongClick = {
+                        try { changeHistory.redoAll() } catch (e: Exception) { android.util.Log.e("EditNoteActivity", "change history action failed", e) }
+                        true
+                    },
+                ) {
+                    try { changeHistory.redo() } catch (e: Exception) { android.util.Log.e("EditNoteActivity", "change history action failed", e) }
+                }.apply { isVisible = changeHistory.canRedo.value }
             addIconButton(
                 R.string.tap_for_more_options,
                 R.drawable.more_vert,
@@ -235,9 +252,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
                     setBackgroundColor(0)
                 }
             )
-            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
-                actionHandler.handleAction(EditAction.LOCK_NOTE)
-            }
+            // 锁定笔记已移入三点菜单，此处不再展示锁图标
             addIconButton(
                 R.string.tap_for_more_options,
                 R.drawable.more_vert,

@@ -1,5 +1,6 @@
 package cool.hin.memox.data.sync.webdav
 
+import okhttp3.ConnectionPool
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -23,12 +24,12 @@ class WebDavClient(
     private val password: String,
 ) {
 
-    private val httpClient: OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .build()
+    /**
+     * 复用同一个 OkHttpClient（连接池 / TLS 会话 / 线程池共享）。
+     * 之前每次同步都 new 一个，导致每个请求都要重新握手，串行同步时开销被放大 N 倍。
+     */
+    private val httpClient: OkHttpClient
+        get() = sharedHttpClient
 
     private val authHeader: String by lazy { Credentials.basic(username, password) }
 
@@ -279,6 +280,18 @@ class WebDavClient(
             // Parse error, return empty
         }
         return files
+    }
+
+    companion object {
+        /** 进程级共享，避免每次同步重建连接池导致的重复 TCP/TLS 握手。 */
+        private val sharedHttpClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .connectionPool(ConnectionPool(8, 5, TimeUnit.MINUTES))
+                .build()
+        }
     }
 }
 

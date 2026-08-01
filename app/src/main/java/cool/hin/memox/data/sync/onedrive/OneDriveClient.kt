@@ -21,12 +21,12 @@ import java.util.concurrent.TimeUnit
  */
 class OneDriveClient(private val context: Context) {
 
-    private val httpClient: OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .writeTimeout(120, TimeUnit.SECONDS)
-            .build()
+    /**
+     * 复用同一个 OkHttpClient（连接池 / TLS 会话 / 线程池共享）。
+     * 之前每次同步都 new 一个，导致每个请求都要重新对 graph.microsoft.com 握手。
+     */
+    private val httpClient: OkHttpClient
+        get() = sharedHttpClient
 
     private val authHelper = OneDriveAuthHelper
 
@@ -251,12 +251,16 @@ class OneDriveClient(private val context: Context) {
                         val name = item.optString("name")
                         val isFolder = item.has("folder")
                         val size = item.optLong("size", 0)
+                        val eTag =
+                            item.optString("eTag").takeIf { it.isNotEmpty() }
+                                ?: item.optString("lastModifiedDateTime").takeIf { it.isNotEmpty() }
                         files.add(
                             OneDriveFile(
                                 name = name,
                                 path = "$path/$name",
                                 isDirectory = isFolder,
                                 size = size,
+                                eTag = eTag,
                             )
                         )
                     }
@@ -297,6 +301,16 @@ class OneDriveClient(private val context: Context) {
     companion object {
         private const val TAG = "OneDriveClient"
         private const val MAX_SIMPLE_UPLOAD = 4 * 1024 * 1024 // 4 MB
+
+        /** 进程级共享，避免每次同步重建连接池导致的重复 TCP/TLS 握手。 */
+        private val sharedHttpClient: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .connectionPool(okhttp3.ConnectionPool(8, 5, TimeUnit.MINUTES))
+                .build()
+        }
     }
 }
 
@@ -305,4 +319,6 @@ data class OneDriveFile(
     val path: String,
     val isDirectory: Boolean,
     val size: Long,
+    /** Graph 的 eTag，内容变化时会变；用于跳过没变过的 note.json 的 GET。 */
+    val eTag: String? = null,
 )

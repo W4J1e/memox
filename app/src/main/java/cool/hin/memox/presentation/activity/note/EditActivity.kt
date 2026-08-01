@@ -103,7 +103,6 @@ import cool.hin.memox.utils.wrapWithChooser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEditBinding>() {
@@ -219,17 +218,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
             val selectedId = intent.getLongExtra(EXTRA_SELECTED_BASE_NOTE, 0L)
             val id = persistedId ?: selectedId
             loadNote(id, persistedId, savedInstanceState, true)
-        }
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            try {
-                updateModel()
-                runBlocking(Dispatchers.IO) { saveNote() }
-            } catch (e: Exception) {
-                log(TAG, msg = "Saving note on Crash failed", throwable = e)
-            } finally {
-                // Let the system handle the crash
-                DEFAULT_EXCEPTION_HANDLER?.uncaughtException(thread, throwable)
-            }
         }
     }
 
@@ -391,8 +379,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected open fun initChangeHistory() {
         changeHistory =
             ChangeHistory().apply {
-                canUndo.observe(this@EditActivity) { canUndo -> undo?.isEnabled = canUndo }
-                canRedo.observe(this@EditActivity) { canRedo -> redo?.isEnabled = canRedo }
+                canUndo.observe(this@EditActivity) { canUndo -> undo?.isVisible = canUndo }
+                canRedo.observe(this@EditActivity) { canRedo -> redo?.isVisible = canRedo }
                 stackPointer.observe(this@EditActivity) { _ -> resetIdleTimer() }
             }
     }
@@ -560,51 +548,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 ) {
                     binding.ScrollView.apply { post { fullScroll(View.FOCUS_UP) } }
                 }
-            undo =
-                addIconButton(
-                        R.string.undo,
-                        R.drawable.undo,
-                        colorInt,
-                        marginStart = 2,
-                        onLongClick = {
-                            try {
-                                changeHistory.undoAll()
-                            } catch (e: ChangeHistory.ChangeHistoryException) {
-                                application.log(TAG, throwable = e)
-                            }
-                            true
-                        },
-                    ) {
-                        try {
-                            changeHistory.undo()
-                        } catch (e: ChangeHistory.ChangeHistoryException) {
-                            application.log(TAG, throwable = e)
-                        }
-                    }
-                    .apply { isEnabled = changeHistory.canUndo.value }
-
-            redo =
-                addIconButton(
-                        R.string.redo,
-                        R.drawable.redo,
-                        colorInt,
-                        marginStart = 2,
-                        onLongClick = {
-                            try {
-                                changeHistory.redoAll()
-                            } catch (e: ChangeHistory.ChangeHistoryException) {
-                                application.log(TAG, throwable = e)
-                            }
-                            true
-                        },
-                    ) {
-                        try {
-                            changeHistory.redo()
-                        } catch (e: ChangeHistory.ChangeHistoryException) {
-                            application.log(TAG, throwable = e)
-                        }
-                    }
-                    .apply { isEnabled = changeHistory.canRedo.value }
             jumpToBottom =
                 addIconButton(
                     R.string.jump_to_bottom,
@@ -644,10 +587,55 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         binding.BottomAppBarRight.apply {
             removeAllViews()
 
+            // 眼睛(视图切换)已在 addBottomAction 内被跳过；锁定笔记已移入三点菜单
             addBottomAction(bottomAction)
-            addIconButton(R.string.lock_note, R.drawable.lock_big, colorInt) {
-                actionHandler.handleAction(EditAction.LOCK_NOTE)
-            }
+
+            // 撤销/重做：Keep 风格，无可撤销/重做内容时隐藏，位于三点菜单左侧
+            undo =
+                addIconButton(
+                        R.string.undo,
+                        R.drawable.undo,
+                        colorInt,
+                        marginStart = 2,
+                        onLongClick = {
+                            try {
+                                changeHistory.undoAll()
+                            } catch (e: ChangeHistory.ChangeHistoryException) {
+                                application.log(TAG, throwable = e)
+                            }
+                            true
+                        },
+                    ) {
+                        try {
+                            changeHistory.undo()
+                        } catch (e: ChangeHistory.ChangeHistoryException) {
+                            application.log(TAG, throwable = e)
+                        }
+                    }
+                    .apply { isVisible = changeHistory.canUndo.value }
+            redo =
+                addIconButton(
+                        R.string.redo,
+                        R.drawable.redo,
+                        colorInt,
+                        marginStart = 2,
+                        onLongClick = {
+                            try {
+                                changeHistory.redoAll()
+                            } catch (e: ChangeHistory.ChangeHistoryException) {
+                                application.log(TAG, throwable = e)
+                            }
+                            true
+                        },
+                    ) {
+                        try {
+                            changeHistory.redo()
+                        } catch (e: ChangeHistory.ChangeHistoryException) {
+                            application.log(TAG, throwable = e)
+                        }
+                    }
+                    .apply { isVisible = changeHistory.canRedo.value }
+
             addIconButton(
                 R.string.tap_for_more_options,
                 R.drawable.more_vert,
@@ -660,6 +648,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     fun ViewGroup.addBottomAction(action: EditAction) {
+        // 眼睛(视图切换)图标已从底部栏移除，仅保留在三点菜单中
+        if (action == EditAction.TOGGLE_VIEW_MODE) return
         val (title, icon) =
             action.getTitleAndIcon(
                 notallyModel.pinned,
@@ -1006,7 +996,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
         notallyModel.audios.observe(this) { list ->
             audioAdapter.submitList(list)
-            binding.AudioHeader.isVisible = list.isNotEmpty()
             binding.AudioRecyclerView.isVisible = list.isNotEmpty()
         }
     }
@@ -1185,7 +1174,5 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         const val EXTRA_FOLDER_FROM = "memox.intent.extra.FOLDER_FROM"
         const val EXTRA_FOLDER_TO = "memox.intent.extra.FOLDER_TO"
         const val EXTRA_INITIAL_SEARCH_QUERY = "memox.intent.extra.INITIAL_SEARCH_QUERY"
-
-        val DEFAULT_EXCEPTION_HANDLER = Thread.getDefaultUncaughtExceptionHandler()
     }
 }

@@ -32,6 +32,8 @@ class BaseNoteAdapter(
 
     private var searchKeyword: String = ""
 
+    private var attachedRecyclerView: RecyclerView? = null
+
     private var list = SortedList(Item::class.java, notesSortCallback(this))
 
     override fun getItemViewType(position: Int): Int {
@@ -45,7 +47,18 @@ class BaseNoteAdapter(
         return list.size()
     }
 
+    override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
+        super.onAttachedToRecyclerView(recyclerView)
+        attachedRecyclerView = recyclerView
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        attachedRecyclerView = null
+        super.onDetachedFromRecyclerView(recyclerView)
+    }
+
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (position < 0 || position >= list.size()) return
         when (val item = list[position]) {
             is Header -> (holder as HeaderVH).bind(item)
             is BaseNote -> {
@@ -61,13 +74,24 @@ class BaseNoteAdapter(
         if (searchKeyword != keyword) {
             val oldKeyword = searchKeyword
             searchKeyword = keyword
+            val positions = mutableListOf<Int>()
             for (i in 0 until list.size()) {
                 val item = list[i]
                 if (item is BaseNote) {
                     if (matchesKeyword(item, oldKeyword) || matchesKeyword(item, keyword)) {
-                        notifyItemChanged(i)
+                        positions.add(i)
                     }
                 }
+            }
+            // setSearchKeyword may be invoked while the RecyclerView is computing a layout
+            // (e.g. from onBindViewHolder). Calling notifyItemChanged synchronously there throws
+            // "Cannot call this method while RecyclerView is computing a layout". Defer to the
+            // next frame via the attached RecyclerView's message queue.
+            val rv = attachedRecyclerView
+            if (rv != null) {
+                rv.post { positions.forEach { notifyItemChanged(it) } }
+            } else {
+                positions.forEach { notifyItemChanged(it) }
             }
         }
     }

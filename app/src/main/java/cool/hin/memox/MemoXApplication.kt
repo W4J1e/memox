@@ -114,7 +114,9 @@ class MemoXApplication : Application(), Application.ActivityLifecycleCallbacks {
 
     override fun onActivityStarted(activity: Activity) {}
 
-    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityResumed(activity: Activity) {
+        currentActivity = activity
+    }
 
     override fun onActivityPaused(activity: Activity) {}
 
@@ -122,11 +124,16 @@ class MemoXApplication : Application(), Application.ActivityLifecycleCallbacks {
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-    override fun onActivityDestroyed(activity: Activity) {}
+    override fun onActivityDestroyed(activity: Activity) {
+        if (currentActivity === activity) currentActivity = null
+    }
 
     companion object {
         const val TAG = "MemoXApplication"
         const val AUTO_REMOVE_DELETED_NOTES = "cool.hin.memox.AutoRemoveDeletedNotes"
+
+        /** Foreground activity, resolved at crash time for error dialogs. */
+        internal var currentActivity: Activity? = null
 
         fun isTestRunner(): Boolean {
             return Build.FINGERPRINT.equals("robolectric", ignoreCase = true)

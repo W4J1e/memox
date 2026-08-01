@@ -3,7 +3,6 @@ package cool.hin.memox.presentation.activity.main.fragment
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.os.Bundle
-import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -211,31 +210,49 @@ abstract class MemoXFragment : Fragment(), ItemListener {
     }
 
     /**
-     * 首页下拉呼出搜索框：当列表处于顶部时，向下拖动超过阈值即显示顶栏搜索框。
-     * 呼出后若未输入且用户开始浏览列表或按下返回键，则由对应逻辑收起（见 MainActivity）。
+     * 首页下拉呼出搜索框：列表处于顶部时，向下拖动超过阈值即呼出（无需悬停）。
+     * 用 RecyclerView.addOnItemTouchListener 在 RV 处理触摸之前截获下拉手势，比 setOnTouchListener 更可靠；
+     * 呼出后若用户向上浏览列表、清空搜索词或按返回键则收起（见 MainActivity）。
      */
     private var isListAtTop = true
-    private val pullToSearchThresholdPx by lazy(LazyThreadSafetyMode.NONE) { 80.dp }
+    private var searchBarShownAt = 0L
+    private val pullToSearchThresholdPx by lazy(LazyThreadSafetyMode.NONE) { 40.dp }
 
     private fun setupPullToSearch() {
         val recyclerView = binding?.MainListView ?: return
-        val detector =
-            GestureDetector(
-                requireContext(),
-                object : GestureDetector.SimpleOnGestureListener() {
-                    override fun onScroll(
-                        e1: MotionEvent?,
-                        e2: MotionEvent,
-                        distanceX: Float,
-                        distanceY: Float,
-                    ): Boolean {
-                        if (isListAtTop && e1 != null && (e2.y - e1.y) > pullToSearchThresholdPx) {
-                            (activity as? MainActivity)?.showSearchBar()
+        var startY = -1f
+        var pullingFromTop = false
+        var triggered = false
+
+        // 用 item touch listener 在 RV 处理触摸之前截获下拉手势，比 setOnTouchListener 更可靠。
+        recyclerView.addOnItemTouchListener(
+            object : RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    when (e.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> {
+                            startY = e.y
+                            triggered = false
+                            pullingFromTop = isRecyclerViewAtTop()
                         }
-                        return false
+                        MotionEvent.ACTION_MOVE -> {
+                            if (!triggered && pullingFromTop && startY >= 0) {
+                                val deltaY = e.y - startY
+                                if (deltaY > pullToSearchThresholdPx) {
+                                    (activity as? MainActivity)?.showSearchBar(clearText = true)
+                                    searchBarShownAt = System.currentTimeMillis()
+                                    triggered = true
+                                    startY = -1f // 本次下拉手势已触发，避免同一手势重复触发
+                                }
+                            }
+                        }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            startY = -1f
+                        }
                     }
-                },
-            )
+                    return false
+                }
+            },
+        )
 
         recyclerView.addOnScrollListener(
             object : RecyclerView.OnScrollListener() {
@@ -248,24 +265,29 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                         } else {
                             rv.computeVerticalScrollOffset() == 0
                         }
-                    // 下拉呼出搜索框后若未输入且用户开始浏览列表，则收起搜索框
+                    // 下拉呼出搜索框后若未输入且用户向上浏览列表，则收起搜索框。
+                    // 加 400ms 守卫，避免呼出时键盘弹出导致布局重排触发的一次性误收起。
                     val main = activity as? MainActivity
                     if (main != null &&
                         main.isSearchBarVisible() &&
                         findNavController().currentDestination?.id != R.id.Search &&
                         binding?.EnterSearchKeyword?.text.toString().isEmpty() &&
-                        dy != 0
+                        dy < 0 &&
+                        System.currentTimeMillis() - searchBarShownAt > 400
                     ) {
                         main.hideSearchBar()
                     }
                 }
             },
         )
+    }
 
-        recyclerView.setOnTouchListener { _, event ->
-            detector.onTouchEvent(event)
-            false
-        }
+    private fun isRecyclerViewAtTop(): Boolean {
+        val rv = binding?.MainListView ?: return false
+        val lm = rv.layoutManager as? LinearLayoutManager
+            ?: return rv.computeVerticalScrollOffset() == 0
+        return lm.findFirstVisibleItemPosition() == 0 &&
+            (lm.findViewByPosition(0)?.top ?: 0) >= 0
     }
 
     private fun handleNoteSelection(id: Long, position: Int, baseNote: BaseNote) {
