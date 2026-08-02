@@ -1,0 +1,4 @@
+- Fix Notizen abschneiden die zu lang sind
+- Fix kaputte Anhänge Verlinkungen
+- Input Verzögerung bei Textsuche
+- Fix dynamische Farben Theming

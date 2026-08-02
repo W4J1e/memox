@@ -1,0 +1,2 @@
+- Choose save location when savin plain text file
+- Fix input delay to text search

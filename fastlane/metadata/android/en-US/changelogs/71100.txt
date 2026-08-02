@@ -1,0 +1,8 @@
+- Added Quillpad import
+- Separate date and time formats
+- Add delete reminder and delete note to reminder notification
+- Add Pin Note to Status Bar
+- Ability to change Labels order
+- Show note content in reminder
+- Improve Slider Settings UI
+- Fix import from original Nottaly app

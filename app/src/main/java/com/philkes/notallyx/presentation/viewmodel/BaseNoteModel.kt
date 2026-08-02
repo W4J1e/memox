@@ -1,0 +1,986 @@
+package com.philkes.notallyx.presentation.viewmodel
+
+import android.app.Activity
+import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.print.PdfPrintListener
+import android.view.View
+import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.map
+import androidx.lifecycle.viewModelScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.philkes.notallyx.R
+import com.philkes.notallyx.data.NotallyDatabase
+import com.philkes.notallyx.data.NotallyDatabase.Companion.DATABASE_NAME
+import com.philkes.notallyx.data.dao.BaseNoteDao
+import com.philkes.notallyx.data.dao.CommonDao
+import com.philkes.notallyx.data.dao.LabelDao
+import com.philkes.notallyx.data.dao.NoteReminder
+import com.philkes.notallyx.data.dao.moveBaseNotes
+import com.philkes.notallyx.data.imports.ImportException
+import com.philkes.notallyx.data.imports.ImportProgress
+import com.philkes.notallyx.data.imports.ImportSource
+import com.philkes.notallyx.data.imports.NotesImporter
+import com.philkes.notallyx.data.model.Attachment
+import com.philkes.notallyx.data.model.Audio
+import com.philkes.notallyx.data.model.BaseNote
+import com.philkes.notallyx.data.model.Content
+import com.philkes.notallyx.data.model.Converters
+import com.philkes.notallyx.data.model.FileAttachment
+import com.philkes.notallyx.data.model.Folder
+import com.philkes.notallyx.data.model.Header
+import com.philkes.notallyx.data.model.Item
+import com.philkes.notallyx.data.model.Label
+import com.philkes.notallyx.data.model.SearchResult
+import com.philkes.notallyx.data.model.deepCopy
+import com.philkes.notallyx.presentation.activity.main.fragment.settings.SettingsFragment.Companion.EXTRA_SHOW_IMPORT_BACKUPS_FOLDER
+import com.philkes.notallyx.presentation.activity.note.refreshStatusBarPin
+import com.philkes.notallyx.presentation.exportedText
+import com.philkes.notallyx.presentation.getQuantityString
+import com.philkes.notallyx.presentation.restartApplication
+import com.philkes.notallyx.presentation.setCancelButton
+import com.philkes.notallyx.presentation.showSnackbar
+import com.philkes.notallyx.presentation.showToast
+import com.philkes.notallyx.presentation.view.misc.NotNullLiveData
+import com.philkes.notallyx.presentation.view.misc.Progress
+import com.philkes.notallyx.presentation.viewmodel.preference.BasePreference
+import com.philkes.notallyx.presentation.viewmodel.preference.BiometricLock
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.EMPTY_PATH
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_DEFAULT
+import com.philkes.notallyx.presentation.viewmodel.preference.NotallyXPreferences.Companion.START_VIEW_UNLABELED
+import com.philkes.notallyx.presentation.viewmodel.preference.Theme
+import com.philkes.notallyx.presentation.viewmodel.progress.ExportNotesProgress
+import com.philkes.notallyx.utils.ActionMode
+import com.philkes.notallyx.utils.Cache
+import com.philkes.notallyx.utils.MIME_TYPE_JSON
+import com.philkes.notallyx.utils.backup.copyDatabase
+import com.philkes.notallyx.utils.backup.exportAsZip
+import com.philkes.notallyx.utils.backup.exportPdfFile
+import com.philkes.notallyx.utils.backup.exportPdfFileFolder
+import com.philkes.notallyx.utils.backup.exportPlainTextFile
+import com.philkes.notallyx.utils.backup.exportPlainTextFileFolder
+import com.philkes.notallyx.utils.backup.importZip
+import com.philkes.notallyx.utils.backup.readAsBackup
+import com.philkes.notallyx.utils.cancelPinAndReminders
+import com.philkes.notallyx.utils.copyToLarge
+import com.philkes.notallyx.utils.deleteAttachments
+import com.philkes.notallyx.utils.getBackupDir
+import com.philkes.notallyx.utils.getCurrentImagesDirectory
+import com.philkes.notallyx.utils.getExternalMediaDirectory
+import com.philkes.notallyx.utils.log
+import com.philkes.notallyx.utils.migrateAllAttachments
+import com.philkes.notallyx.utils.security.DecryptionException
+import com.philkes.notallyx.utils.security.EncryptionException
+import com.philkes.notallyx.utils.security.decryptDatabase
+import com.philkes.notallyx.utils.security.encryptDatabase
+import com.philkes.notallyx.utils.security.isEncryptedDatabase
+import com.philkes.notallyx.utils.security.isUnencryptedDatabase
+import com.philkes.notallyx.utils.toReadablePath
+import com.philkes.notallyx.utils.viewFile
+import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import javax.crypto.Cipher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
+
+    private lateinit var database: NotallyDatabase
+    private lateinit var labelDao: LabelDao
+    private lateinit var commonDao: CommonDao
+    private lateinit var baseNoteDao: BaseNoteDao
+
+    private val labelCache = HashMap<String, Content>()
+
+    lateinit var selectedExportMimeType: ExportMimeType
+
+    var labels: LiveData<List<Label>> = NotNullLiveData(mutableListOf())
+    var reminders: LiveData<List<NoteReminder>> = NotNullLiveData(mutableListOf())
+    private var allNotes: LiveData<List<BaseNote>>? = NotNullLiveData(mutableListOf())
+    private var allNotesObserver: Observer<List<BaseNote>>? = null
+    var baseNotes: Content? = Content(MutableLiveData(), ::transform)
+    var deletedNotes: Content? = Content(MutableLiveData(), ::transform)
+    var archivedNotes: Content? = Content(MutableLiveData(), ::transform)
+    var reminderNotes: Content? = Content(MutableLiveData(), ::transform)
+
+    val folder = NotNullLiveData(Folder.NOTES)
+
+    var currentLabel: String? = CURRENT_LABEL_EMPTY
+
+    var keyword = String()
+        set(value) {
+            if (field != value || searchResults?.value?.isEmpty() == true) {
+                field = value
+                searchResults!!.fetch(keyword, folder.value, currentLabel)
+            }
+        }
+
+    var searchResults: SearchResult? = null
+
+    private val pinned = Header(app.getString(R.string.pinned))
+    private val others = Header(app.getString(R.string.others))
+    private val archived = Header(app.getString(R.string.archived))
+
+    val preferences = NotallyXPreferences.getInstance(app)
+
+    val imageRoot
+        get() = app.getCurrentImagesDirectory()
+
+    val importProgress = MutableLiveData<ImportProgress>()
+    val progress = MutableLiveData<Progress>()
+
+    val actionMode = ActionMode()
+
+    internal var showRefreshBackupsFolderAfterThemeChange = false
+    private var labelsHiddenObserver: Observer<Set<String>>? = null
+
+    fun startObserving() {
+        NotallyDatabase.getDatabase(app).observeForever(::init)
+        folder.observeForever { newFolder ->
+            searchResults!!.fetch(keyword, newFolder, currentLabel)
+        }
+    }
+
+    private fun init(database: NotallyDatabase) {
+        this.database = database
+        baseNoteDao = database.getBaseNoteDao()
+        labelDao = database.getLabelDao()
+        commonDao = database.getCommonDao()
+
+        labels = labelDao.getAll()
+        //        colors = baseNoteDao.getAllColorsAsync()
+        reminders = baseNoteDao.getAllRemindersAsync()
+
+        allNotesObserver?.let { allNotes?.removeObserver(it) }
+        allNotesObserver = Observer { list -> Cache.list = list }
+        allNotes = baseNoteDao.getAllAsync()
+        allNotes!!.observeForever(allNotesObserver!!)
+
+        labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
+        labelsHiddenObserver = Observer { labelsHidden ->
+            baseNotes = null
+            initBaseNotes(labelsHidden)
+        }
+        preferences.labelsHidden.observeForever(labelsHiddenObserver!!)
+
+        if (deletedNotes == null) {
+            deletedNotes = Content(baseNoteDao.getFrom(Folder.DELETED), ::transform)
+        } else {
+            deletedNotes!!.setObserver(baseNoteDao.getFrom(Folder.DELETED))
+        }
+
+        if (archivedNotes == null) {
+            archivedNotes = Content(baseNoteDao.getFrom(Folder.ARCHIVED), ::transform)
+        } else {
+            archivedNotes!!.setObserver(baseNoteDao.getFrom(Folder.ARCHIVED))
+        }
+
+        if (reminderNotes == null) {
+            reminderNotes = Content(baseNoteDao.getAllBaseNotesWithReminders(), ::transform)
+        } else {
+            reminderNotes!!.setObserver(baseNoteDao.getAllBaseNotesWithReminders())
+        }
+
+        if (searchResults == null) {
+            searchResults = SearchResult(app, viewModelScope, baseNoteDao, ::transform)
+        } else {
+            searchResults!!.baseNoteDao = baseNoteDao
+        }
+    }
+
+    private fun initBaseNotes(labelsHidden: Set<String>) {
+        val overviewNotes =
+            baseNoteDao.getFrom(Folder.NOTES).map { list ->
+                list.filter { baseNote -> baseNote.labels.none { labelsHidden.contains(it) } }
+            }
+        if (baseNotes == null) {
+            baseNotes = Content(overviewNotes, ::transform)
+        } else {
+            baseNotes!!.setObserver(overviewNotes)
+        }
+    }
+
+    fun getNotesByLabel(label: String): Content {
+        if (labelCache[label] == null) {
+            labelCache[label] =
+                Content(baseNoteDao.getBaseNotesByLabel(label), ::transform, viewModelScope)
+        }
+        return requireNotNull(labelCache[label], { "labelCache has no '$label' value" })
+    }
+
+    fun getNotesWithoutLabel(): Content {
+        return Content(
+            baseNoteDao.getBaseNotesWithoutLabel(Folder.NOTES),
+            ::transform,
+            viewModelScope,
+        )
+    }
+
+    private fun transform(list: List<BaseNote>) = transform(list, pinned, others, archived)
+
+    fun disableBackups() {
+        val value = preferences.backupsFolder.value
+        if (value != EMPTY_PATH) {
+            clearPersistedUriPermissions(value)
+        }
+        savePreference(preferences.backupsFolder, EMPTY_PATH)
+        savePreference(
+            preferences.periodicBackups,
+            preferences.periodicBackups.value.copy(periodInDays = 0),
+        )
+    }
+
+    fun setupBackupsFolder(uri: Uri) {
+        val oldBackupsFolder = preferences.backupsFolder.value
+        val newBackupsFolder = uri.toString()
+        if (newBackupsFolder != oldBackupsFolder) {
+            val flags =
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            app.contentResolver.takePersistableUriPermission(uri, flags)
+            if (oldBackupsFolder != EMPTY_PATH) {
+                clearPersistedUriPermissions(oldBackupsFolder)
+            }
+            savePreference(preferences.backupsFolder, newBackupsFolder)
+        }
+        showRefreshBackupsFolderAfterThemeChange = false
+    }
+
+    fun enableDataInPublic(callback: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
+                database.checkpoint()
+                val targetDirectory = NotallyDatabase.getExternalDatabaseFile(app).parentFile
+                val internalDatabaseFiles = NotallyDatabase.getInternalDatabaseFiles(app)
+                internalDatabaseFiles.forEach {
+                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
+                }
+                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, true)
+                val ping =
+                    try {
+                        notallyDatabase.ping()
+                    } catch (e: Exception) {
+                        throw RuntimeException(
+                            "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed",
+                            e,
+                        )
+                    }
+                if (!ping) {
+                    throw RuntimeException(
+                        "Moving internal '${internalDatabaseFiles.map { it.name }}' to public '$targetDirectory' folder failed"
+                    )
+                }
+                app.migrateAllAttachments(toPrivate = false)
+            }
+            savePreference(preferences.dataInPublicFolder, true)
+            callback?.invoke()
+        }
+    }
+
+    fun disableDataInPublic(callback: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
+                database.checkpoint()
+                val targetDirectory = NotallyDatabase.getInternalDatabaseFile(app).parentFile
+                val externalDatabaseFiles = NotallyDatabase.getExternalDatabaseFiles(app)
+                externalDatabaseFiles.forEach {
+                    it.copyToLarge(File(targetDirectory, it.name), overwrite = true)
+                }
+                val notallyDatabase = NotallyDatabase.getFreshDatabase(app, false)
+                val ping =
+                    try {
+                        notallyDatabase.ping()
+                    } catch (e: Exception) {
+                        throw RuntimeException(
+                            "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed",
+                            e,
+                        )
+                    }
+                if (!ping) {
+                    throw RuntimeException(
+                        "Moving public '${externalDatabaseFiles.map { it.name }}' to internal '$targetDirectory' folder failed"
+                    )
+                }
+                app.migrateAllAttachments(toPrivate = true)
+            }
+            savePreference(preferences.dataInPublicFolder, false)
+            callback?.invoke()
+        }
+    }
+
+    suspend fun enableBiometricLock(cipher: Cipher) {
+        savePreference(preferences.iv, cipher.iv)
+        val passphrase = preferences.databaseEncryptionKey.init(cipher)
+        withContext(Dispatchers.IO) {
+            database.close()
+            val (_, dbFileCopy) = app.copyDatabase(suffix = "-encrypt")
+            val (_, dbFileBackup) = app.copyDatabase(suffix = "-encrypt-backup")
+            encryptDatabase(app, dbFileCopy, passphrase)
+            val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
+            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
+            if (originalDbFile.isUnencryptedDatabase) {
+                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+                val externalBackupFile =
+                    File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-encrypt")
+                dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
+                throw EncryptionException(
+                    "Encrypt succeeded but overwritten database is not encrypted"
+                )
+            }
+            savePreference(preferences.fallbackDatabaseEncryptionKey, passphrase)
+            savePreference(preferences.biometricLock, BiometricLock.ENABLED)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    suspend fun disableBiometricLock(cipher: Cipher? = null, callback: (() -> Unit)? = null) {
+        val encryptedPassphrase = preferences.databaseEncryptionKey.value
+        val passphrase =
+            cipher?.doFinal(encryptedPassphrase)
+                ?: preferences.fallbackDatabaseEncryptionKey.value!!
+        withContext(Dispatchers.IO) {
+            database.close()
+            val (_, dbFileCopy) = app.copyDatabase(decrypt = false, suffix = "-decrypt")
+            val (_, dbFileBackup) = app.copyDatabase(decrypt = false, suffix = "-decrypt-backup")
+            decryptDatabase(app, dbFileCopy, passphrase)
+            val originalDbFile = NotallyDatabase.getCurrentDatabaseFile(app)
+            dbFileCopy.copyToLarge(originalDbFile, overwrite = true)
+            if (originalDbFile.isEncryptedDatabase) {
+                dbFileBackup.copyToLarge(originalDbFile, overwrite = true)
+                val externalBackupFile =
+                    File(app.getExternalMediaDirectory(), "${DATABASE_NAME}_Backup-decrypt")
+                dbFileBackup.copyToLarge(externalBackupFile, overwrite = true)
+                throw DecryptionException(
+                    "Decrypt succeeded but overwritten database is still encrypted"
+                )
+            }
+            savePreference(preferences.biometricLock, BiometricLock.DISABLED)
+            callback?.invoke()
+        }
+    }
+
+    fun <T> savePreference(preference: BasePreference<T>, value: T) {
+        viewModelScope.launch(Dispatchers.IO) { preference.save(value) }
+    }
+
+    /**
+     * Release previously persisted permissions, if any There is a hard limit of 128 before Android
+     * 11, 512 after Check ->
+     * https://commonsware.com/blog/2020/06/13/count-your-saf-uri-permission-grants.html
+     */
+    private fun clearPersistedUriPermissions(folderPath: String) {
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        app.contentResolver.persistedUriPermissions.forEach { permission ->
+            val uriPath = permission.uri.path
+            if (uriPath?.contains(folderPath) == true) {
+                app.contentResolver.releasePersistableUriPermission(permission.uri, flags)
+            }
+        }
+    }
+
+    fun exportBackup(uri: Uri, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            val exportedNotesAndAttachments =
+                withContext(Dispatchers.IO) {
+                    app.log(TAG, msg = "Exporting backup to '$uri'...")
+                    return@withContext app.exportAsZip(
+                            uri,
+                            password = preferences.backupPassword.value,
+                            backupProgress = progress,
+                        )
+                        .also { app.log(TAG, msg = "Finished exporting backup to '$uri'") }
+                }
+
+            app.showToast(app.exportedText(exportedNotesAndAttachments))
+            onComplete?.invoke()
+        }
+    }
+
+    fun importZipBackup(uri: Uri, password: String) {
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
+        }
+
+        val backupDir = app.getBackupDir()
+        viewModelScope.launch(exceptionHandler) {
+            app.importZip(uri, backupDir, password, importProgress)
+        }
+    }
+
+    fun importXmlBackup(uri: Uri) {
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
+        }
+
+        viewModelScope.launch(exceptionHandler) {
+            val result =
+                withContext(Dispatchers.IO) {
+                    val stream =
+                        requireNotNull(
+                            app.contentResolver.openInputStream(uri),
+                            { "InputStream for '$uri' is null" },
+                        )
+                    val (baseNotes, labels) = stream.readAsBackup()
+                    commonDao.importBackup(baseNotes, labels)
+                }
+            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
+            val message =
+                if (result.duplicates > 0)
+                    "$baseMsg (${app.getQuantityString(R.plurals.duplicates, result.duplicates)})"
+                else baseMsg
+            app.showToast(message)
+        }
+    }
+
+    fun importFromOtherApp(uri: Uri, importSource: ImportSource) {
+        val database = NotallyDatabase.getDatabase(app, observePreferences = false).value
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            if (throwable is ImportException) {
+                app.showToast(throwable.textResId)
+            } else {
+                app.showToast("${app.getString(R.string.invalid_backup)}: ${throwable.message}")
+            }
+        }
+
+        viewModelScope.launch(exceptionHandler) {
+            val result =
+                withContext(Dispatchers.IO) {
+                    NotesImporter(app, database).import(uri, importSource, importProgress)
+                }
+            val baseMsg = app.getQuantityString(R.plurals.imported_notes, result.inserted)
+            val message =
+                if (result.duplicates > 0) "$baseMsg (${result.duplicates} duplicates skipped)"
+                else baseMsg
+            app.showToast(message)
+        }
+    }
+
+    fun exportNoteToFile(fileUri: Uri, note: BaseNote, snackbarView: View) {
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            actionMode.close(true)
+            app.showToast(R.string.something_went_wrong)
+        }
+        viewModelScope.launch(exceptionHandler) {
+            when (selectedExportMimeType) {
+                ExportMimeType.PDF -> {
+                    exportPdfFile(
+                        app,
+                        note,
+                        DocumentFile.fromSingleUri(app, fileUri)!!,
+                        pdfPrintListener =
+                            object : PdfPrintListener {
+                                override fun onSuccess(file: DocumentFile) {
+                                    actionMode.close(true)
+                                    val message = app.getQuantityString(R.plurals.exported_notes, 1)
+                                    snackbarView.showFileSnackbar(
+                                        "$message to '${app.toReadablePath(fileUri)}'",
+                                        fileUri,
+                                        ExportMimeType.PDF,
+                                    )
+                                }
+
+                                override fun onFailure(message: CharSequence?) {
+                                    app.log(TAG, stackTrace = message as String?)
+                                    actionMode.close(true)
+                                }
+                            },
+                    )
+                }
+                else -> {
+                    exportPlainTextFile(
+                        app,
+                        note,
+                        DocumentFile.fromSingleUri(app, fileUri)!!,
+                        selectedExportMimeType,
+                    )
+                    actionMode.close(true)
+                    val message = app.getQuantityString(R.plurals.exported_notes, 1)
+                    snackbarView.showFileSnackbar(
+                        "$message to '${app.toReadablePath(fileUri)}'",
+                        fileUri,
+                        selectedExportMimeType,
+                    )
+                }
+            }
+        }
+    }
+
+    fun exportNotesToFolder(folderUri: Uri, notes: Collection<BaseNote>, snackbarView: View) {
+        val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            app.log(TAG, throwable = throwable)
+            actionMode.close(true)
+            progress.postValue(ExportNotesProgress(inProgress = false))
+            app.showToast(R.string.something_went_wrong)
+        }
+        viewModelScope.launch(exceptionHandler) {
+            val counter = AtomicInteger(0)
+            progress.postValue(ExportNotesProgress(total = notes.size))
+            when (selectedExportMimeType) {
+                ExportMimeType.PDF -> {
+                    for (note in notes) {
+                        exportPdfFileFolder(
+                            app,
+                            note,
+                            DocumentFile.fromTreeUri(app, folderUri)!!,
+                            progress = progress,
+                            counter = counter,
+                            total = notes.size,
+                            pdfPrintListener =
+                                object : PdfPrintListener {
+                                    override fun onSuccess(file: DocumentFile) {
+                                        actionMode.close(true)
+                                        progress.postValue(ExportNotesProgress(inProgress = false))
+                                        val message =
+                                            app.getQuantityString(
+                                                R.plurals.exported_notes,
+                                                counter.get(),
+                                            )
+                                        snackbarView.showSnackbar(
+                                            "$message to '${app.toReadablePath(folderUri)}'"
+                                        )
+                                    }
+
+                                    override fun onFailure(message: CharSequence?) {
+                                        app.log(TAG, stackTrace = message as String?)
+                                        actionMode.close(true)
+                                        progress.postValue(ExportNotesProgress(inProgress = false))
+                                    }
+                                },
+                        )
+                    }
+                }
+                else -> {
+                    for (note in notes) {
+                        exportPlainTextFileFolder(
+                            app,
+                            note,
+                            selectedExportMimeType,
+                            DocumentFile.fromTreeUri(app, folderUri)!!,
+                            progress = progress,
+                            counter = counter,
+                            total = notes.size,
+                        )
+                    }
+                    actionMode.close(true)
+                    progress.postValue(ExportNotesProgress(inProgress = false))
+                    val message = app.getQuantityString(R.plurals.exported_notes, counter.get())
+                    snackbarView.showSnackbar("$message to '${app.toReadablePath(folderUri)}'")
+                }
+            }
+        }
+    }
+
+    fun exportSelectedNotesToFolder(folderUri: Uri, snackbarView: View) {
+        exportNotesToFolder(folderUri, actionMode.selectedNotes.values, snackbarView)
+    }
+
+    fun exportSelectedNoteToFile(fileUri: Uri, snackbarView: View) {
+        exportNoteToFile(fileUri, actionMode.selectedNotes.values.first(), snackbarView)
+    }
+
+    private fun View.showFileSnackbar(msg: String, fileUri: Uri, mimeType: ExportMimeType) {
+        showSnackbar(msg, R.string.open_link) { app.viewFile(fileUri, mimeType.mimeType) }
+    }
+
+    fun pinBaseNotes(pinned: Boolean) {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(ids, pinned) }
+    }
+
+    fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusBar: Boolean) {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(true)
+        viewModelScope.launch {
+            val updatedNotes =
+                withContext(Dispatchers.IO) {
+                    baseNoteDao.updatePinnedToStatus(ids, pinnedToStatusBar)
+                    baseNoteDao.getByIds(ids)
+                }
+            updatedNotes.forEach { activity.refreshStatusBarPin(it) }
+        }
+    }
+
+    fun colorBaseNote(color: String) {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateColor(ids, color) }
+    }
+
+    fun changeColor(oldColor: String, newColor: String) {
+        val defaultColor = preferences.defaultNoteColor.value
+        if (oldColor == defaultColor) {
+            preferences.defaultNoteColor.save(newColor)
+        }
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateColor(oldColor, newColor) }
+    }
+
+    fun moveBaseNotes(folder: Folder, callable: (() -> Unit)? = null): LongArray {
+        val ids = actionMode.selectedIds.toLongArray()
+        actionMode.close(false)
+        moveBaseNotes(ids, folder, callable)
+        return ids
+    }
+
+    fun moveBaseNotes(ids: LongArray, folder: Folder, callable: (() -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                app.moveBaseNotes(baseNoteDao, ids, folder)
+            } finally {
+                callable?.invoke()
+            }
+        }
+    }
+
+    fun updateBaseNoteLabels(labels: List<String>, id: Long) {
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLabels(id, labels) }
+    }
+
+    suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
+        return deleteBaseNotes(actionMode.selectedIds.toLongArray())
+    }
+
+    fun deleteAll() {
+        viewModelScope.launch {
+            val (ids, noteReminders) =
+                withContext(Dispatchers.IO) {
+                    Pair(baseNoteDao.getAllIds().toLongArray(), baseNoteDao.getAllReminders())
+                }
+            noteReminders.forEach { app.cancelPinAndReminders(it.id, it.reminders) }
+            val deletedNotes = deleteBaseNotes(ids)
+            app.deleteAttachments(deletedNotes)
+            withContext(Dispatchers.IO) { labelDao.deleteAll() }
+            savePreference(preferences.startView, START_VIEW_DEFAULT)
+            app.showToast(R.string.cleared_data)
+        }
+    }
+
+    private suspend fun deleteBaseNotes(ids: LongArray): Collection<BaseNote> {
+        val notes = withContext(Dispatchers.IO) { baseNoteDao.getByIds(ids) }
+        actionMode.close(false)
+        app.cancelPinAndReminders(notes)
+        return withContext(Dispatchers.IO) {
+            baseNoteDao.delete(ids)
+            return@withContext notes
+        }
+    }
+
+    fun deleteAllTrashedBaseNotes() {
+        viewModelScope.launch {
+            val ids: LongArray
+            val images = ArrayList<FileAttachment>()
+            val files = ArrayList<FileAttachment>()
+            val audios = ArrayList<Audio>()
+            withContext(Dispatchers.IO) {
+                ids = baseNoteDao.getDeletedNoteIds()
+                val imageStrings = baseNoteDao.getDeletedNoteImages()
+                val fileStrings = baseNoteDao.getDeletedNoteFiles()
+                val audioStrings = baseNoteDao.getDeletedNoteAudios()
+                imageStrings.flatMapTo(images) { json -> Converters.jsonToFiles(json) }
+                fileStrings.flatMapTo(files) { json -> Converters.jsonToFiles(json) }
+                audioStrings.flatMapTo(audios) { json -> Converters.jsonToAudios(json) }
+                baseNoteDao.deleteFrom(Folder.DELETED)
+            }
+            val attachments = ArrayList<Attachment>(images.size + files.size + audios.size)
+            attachments.addAll(images)
+            attachments.addAll(files)
+            attachments.addAll(audios)
+            withContext(Dispatchers.IO) { app.deleteAttachments(attachments, ids) }
+        }
+    }
+
+    suspend fun duplicateNote(note: BaseNote) = duplicateNotes(listOf(note)).first()
+
+    suspend fun duplicateNotes(notes: Collection<BaseNote>): List<Long> {
+        val now = System.currentTimeMillis()
+        val copies: List<BaseNote> =
+            notes.map { original ->
+                original
+                    .deepCopy()
+                    .copy(
+                        id = 0L,
+                        title =
+                            if (original.title.isNotEmpty())
+                                "${original.title} (${app.getString(R.string.copy)})"
+                            else app.getString(R.string.copy),
+                        timestamp = now,
+                        modifiedTimestamp = now,
+                    )
+            }
+        return withContext(Dispatchers.IO) { baseNoteDao.insert(copies) }
+    }
+
+    fun duplicateSelectedBaseNotes() {
+        if (actionMode.isEmpty()) return
+        val selected = actionMode.selectedNotes.values.toList()
+        viewModelScope.launch {
+            duplicateNotes(selected)
+            actionMode.close(true)
+            app.showToast(app.getQuantityString(R.plurals.duplicates, selected.size))
+        }
+    }
+
+    suspend fun getAllLabels() = withContext(Dispatchers.IO) { labelDao.getArrayOfAll() }
+
+    fun deleteLabel(value: String) {
+        viewModelScope.launch(Dispatchers.IO) { commonDao.deleteLabel(value) }
+        val labelsHiddenPreference = preferences.labelsHidden
+        val labelsHidden = labelsHiddenPreference.value.toMutableSet()
+        if (labelsHidden.contains(value)) {
+            labelsHidden.remove(value)
+            savePreference(labelsHiddenPreference, labelsHidden)
+        }
+        if (preferences.startView.value == value) {
+            savePreference(preferences.startView, START_VIEW_DEFAULT)
+        }
+    }
+
+    fun insertLabel(label: String, onComplete: (success: Boolean) -> Unit) =
+        executeAsyncWithCallback(
+            { labelDao.insert(Label(label, (labelDao.getMaxOrder() ?: -1) + 1)) },
+            onComplete,
+        )
+
+    fun updateLabels(labels: List<Label>) {
+        viewModelScope.launch(Dispatchers.IO) { labelDao.update(labels) }
+    }
+
+    fun updateLabel(oldValue: String, newValue: String, onComplete: (success: Boolean) -> Unit) {
+        executeAsyncWithCallback({ commonDao.updateLabel(oldValue, newValue) }, onComplete)
+        val labelsHiddenPreference = preferences.labelsHidden
+        val labelsHidden = labelsHiddenPreference.value.toMutableSet()
+        if (labelsHidden.contains(oldValue)) {
+            labelsHidden.remove(oldValue)
+            labelsHidden.add(newValue)
+            savePreference(labelsHiddenPreference, labelsHidden)
+        }
+    }
+
+    suspend fun resetPreferences(callback: (restartRequired: Boolean) -> Unit) {
+        val backupsFolder = preferences.backupsFolder.value
+        val publicFolder = preferences.dataInPublicFolder.value
+        val isThemeDefault = preferences.theme.value == Theme.FOLLOW_SYSTEM
+        val finishCallback = { callback(!isThemeDefault) }
+        if (preferences.isLockEnabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                disableBiometricLock {
+                    finishResetPreferencesAfterBiometric(
+                        publicFolder,
+                        backupsFolder,
+                        finishCallback,
+                    )
+                }
+            } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
+        } else finishResetPreferencesAfterBiometric(publicFolder, backupsFolder, finishCallback)
+    }
+
+    private fun finishResetPreferencesAfterBiometric(
+        publicFolder: Boolean,
+        backupsFolder: String,
+        callback: (() -> Unit),
+    ) {
+        if (publicFolder) {
+            refreshDataInPublicFolder(false) { finishResetPreferences(backupsFolder, callback) }
+        } else finishResetPreferences(backupsFolder, callback)
+    }
+
+    private fun finishResetPreferences(backupsFolder: String, callback: () -> Unit) {
+        preferences.reset()
+        if (backupsFolder != EMPTY_PATH) {
+            clearPersistedUriPermissions(backupsFolder)
+        }
+        callback()
+        app.restartApplication(R.id.Settings)
+    }
+
+    fun importPreferences(
+        context: Context,
+        uri: Uri,
+        askForUriPermissions: (uri: Uri) -> Unit,
+        onSuccess: () -> Unit,
+        onFailure: () -> Unit,
+    ) {
+        val oldBackupsFolder = preferences.backupsFolder.value
+        val dataInPublicFolderBefore = preferences.dataInPublicFolder.value
+        val themeBefore = preferences.theme.value
+        val useDynamicColorsBefore = preferences.useDynamicColors.value
+        val oldStartView = preferences.startView.value
+
+        val success = preferences.import(context, uri)
+
+        val dataInPublicFolder = preferences.dataInPublicFolder.getFreshValue()
+        if (dataInPublicFolderBefore != dataInPublicFolder) {
+            refreshDataInPublicFolder(dataInPublicFolder) {
+                preferences.dataInPublicFolder.refresh()
+                finishImportPreferences(
+                    oldBackupsFolder,
+                    themeBefore,
+                    useDynamicColorsBefore,
+                    oldStartView,
+                    context,
+                    askForUriPermissions,
+                ) {
+                    if (success) {
+                        onSuccess()
+                    } else onFailure()
+                }
+            }
+        } else
+            finishImportPreferences(
+                oldBackupsFolder,
+                themeBefore,
+                useDynamicColorsBefore,
+                oldStartView,
+                context,
+                askForUriPermissions,
+            ) {
+                if (success) {
+                    onSuccess()
+                } else onFailure()
+            }
+    }
+
+    private fun finishImportPreferences(
+        oldBackupsFolder: String,
+        themeBefore: Theme,
+        useDynamicColorsBefore: Boolean,
+        oldStartView: String,
+        context: Context,
+        askForUriPermissions: (uri: Uri) -> Unit,
+        callback: () -> Unit,
+    ) {
+        val backupFolder = preferences.backupsFolder.getFreshValue()
+        val hasUseDynamicColorsChange =
+            useDynamicColorsBefore != preferences.useDynamicColors.getFreshValue()
+        if (oldBackupsFolder != backupFolder) {
+            showRefreshBackupsFolderAfterThemeChange = true
+            if (themeBefore == preferences.theme.getFreshValue() && !hasUseDynamicColorsChange) {
+                refreshBackupsFolder(context, backupFolder, askForUriPermissions)
+            }
+        } else {
+            showRefreshBackupsFolderAfterThemeChange = false
+        }
+        val startView = preferences.startView.getFreshValue()
+        if (oldStartView != startView) {
+            refreshStartView(startView, oldStartView)
+        }
+        preferences.theme.refresh()
+        callback()
+        if (showRefreshBackupsFolderAfterThemeChange) {
+            app.restartApplication(R.id.Settings, EXTRA_SHOW_IMPORT_BACKUPS_FOLDER to true)
+        }
+    }
+
+    fun refreshBackupsFolder(
+        context: Context,
+        backupFolder: String = preferences.backupsFolder.value,
+        askForUriPermissions: (uri: Uri) -> Unit,
+    ) {
+        try {
+            val backupFolderUri = backupFolder.toUri()
+            MaterialAlertDialogBuilder(context)
+                .setMessage(R.string.auto_backups_folder_rechoose)
+                .setCancelButton { _, _ -> showRefreshBackupsFolderAfterThemeChange = false }
+                .setOnDismissListener { showRefreshBackupsFolderAfterThemeChange = false }
+                .setPositiveButton(R.string.choose_folder) { _, _ ->
+                    askForUriPermissions(backupFolderUri)
+                }
+                .show()
+        } catch (_: Exception) {
+            showRefreshBackupsFolderAfterThemeChange = false
+            disableBackups()
+        }
+    }
+
+    private fun refreshDataInPublicFolder(dataInPublicFolder: Boolean, callback: () -> Unit) {
+        if (dataInPublicFolder) {
+            enableDataInPublic(callback)
+        } else {
+            disableDataInPublic(callback)
+        }
+    }
+
+    private fun refreshStartView(startView: String, oldStartView: String) {
+        if (startView in setOf(START_VIEW_DEFAULT, START_VIEW_UNLABELED)) {
+            savePreference(preferences.startView, startView)
+        } else {
+            viewModelScope.launch {
+                val startViewLabelExists =
+                    withContext(Dispatchers.IO) { labelDao.exists(startView) }
+                savePreference(
+                    preferences.startView,
+                    if (startViewLabelExists) startView else oldStartView,
+                )
+            }
+        }
+    }
+
+    fun saveNotes(notes: List<BaseNote>) {
+        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.insert(notes) }
+    }
+
+    companion object {
+        private const val TAG = "BaseNoteModel"
+
+        const val CURRENT_LABEL_EMPTY = ""
+        val CURRENT_LABEL_NONE: String? = null
+
+        fun transform(
+            list: List<BaseNote>,
+            pinned: Header,
+            others: Header,
+            archived: Header,
+        ): List<Item> {
+            if (list.isEmpty()) {
+                return list
+            } else {
+                val firstPinnedNote = list.indexOfFirst { baseNote -> baseNote.pinned }
+                val firstUnpinnedNote =
+                    list.indexOfFirst { baseNote ->
+                        !baseNote.pinned && baseNote.folder != Folder.ARCHIVED
+                    }
+                val mutableList: MutableList<Item> = list.toMutableList()
+                if (firstPinnedNote != -1) {
+                    mutableList.add(firstPinnedNote, pinned)
+                    if (firstUnpinnedNote != -1) {
+                        mutableList.add(firstUnpinnedNote + 1, others)
+                    }
+                }
+                val firstArchivedNote =
+                    mutableList.indexOfFirst { item ->
+                        item is BaseNote && item.folder == Folder.ARCHIVED
+                    }
+                if (firstArchivedNote != -1) {
+                    mutableList.add(firstArchivedNote, archived)
+                }
+                return mutableList
+            }
+        }
+    }
+}
+
+enum class ExportMimeType(val mimeType: String, val fileExtension: String) {
+    TXT("text/plain", "txt"),
+    MD("text/markdown", "md"),
+    PDF("application/pdf", "pdf"),
+    JSON(MIME_TYPE_JSON, "json"),
+    HTML("text/html", "html"),
+}

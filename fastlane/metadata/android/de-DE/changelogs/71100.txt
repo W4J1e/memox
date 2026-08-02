@@ -1,0 +1,8 @@
+- Quillpad-Import hinzugefügt
+- Separate Datums- und Zeitformate
+- Optionen „Erinnerung löschen“ und „Notiz zur Erinnerung hinzufügen“ zur Benachrichtigung hinzugefügt
+- Option „Notiz an die Statusleiste anheften“ hinzugefügt
+- Möglichkeit, die Reihenfolge der Labels zu ändern
+- Notizinhalt in der Erinnerung anzeigen
+- Benutzeroberfläche der Schieberegler-Einstellungen verbessert
+- Import aus der ursprünglichen Nottaly-App behoben

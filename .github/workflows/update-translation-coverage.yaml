@@ -1,0 +1,36 @@
+name: Update Translation Coverage in README
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - app/src/main/res/values*/strings.xml
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Calculate translation coverage and update TRANSLATIONS.md
+        run: python .github/scripts/update_translation_coverage.py
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: Updated translation coverage

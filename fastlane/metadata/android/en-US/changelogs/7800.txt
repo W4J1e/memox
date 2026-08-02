@@ -1,0 +1,4 @@
+- Fix truncating notes that exceed maximum length
+- Fix broken attachment links
+- Add input delay to text search
+- Fix broken dynamic colors theming

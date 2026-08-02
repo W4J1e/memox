@@ -1,0 +1,14 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*/.attach_pid*
+fastlane/report.xml
+Gemfile*
+*.sh
+!generate-changelogs.sh
