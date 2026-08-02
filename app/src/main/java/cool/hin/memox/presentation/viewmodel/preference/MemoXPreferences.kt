@@ -31,6 +31,9 @@ class MemoXPreferences private constructor(private val context: Context) {
 
     val theme = createEnumPreference(preferences, "theme", Theme.FOLLOW_SYSTEM, R.string.theme)
     val useDynamicColors = BooleanPreference("useDynamicColors", preferences, false)
+    /** 链接是否以卡片形式展示（关闭则仅保留可点击的纯文本链接）。 */
+    val linkCardEnabled =
+        BooleanPreference("linkCardEnabled", preferences, true, R.string.link_card_title)
     val textSizeNoteEditor =
         FloatPreference(
             "textSizeNoteEditor",

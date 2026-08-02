@@ -64,6 +64,7 @@ import cool.hin.memox.utils.LATEST_DATA_SCHEMA
 import cool.hin.memox.utils.backup.exportNotes
 import cool.hin.memox.utils.runMigrations
 import cool.hin.memox.utils.security.showBiometricOrPinPrompt
+import cool.hin.memox.utils.UpdateChecker
 import kotlinx.coroutines.launch
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
@@ -78,6 +79,16 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     private var pendingIdentityVerifiedAction: (() -> Unit)? = null
 
     private var isStartViewFragment = false
+
+    private val topLevelDestinations = setOf(
+        R.id.Notes,
+        R.id.Reminders,
+        R.id.Archive,
+        R.id.Deleted,
+        R.id.Labels,
+        R.id.Settings,
+        R.id.SettingsAbout,
+    )
 
     private val syncHideHandler = Handler(Looper.getMainLooper())
     private val syncHideRunnable = Runnable { hideSyncIsland() }
@@ -127,6 +138,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         setupFAB()
         setupActionMode()
         setupNavigation()
+        setupUpdateCheck()
         setupToolbar()
         setupSyncIsland()
 
@@ -399,16 +411,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.NavHostFragment) as NavHostFragment
         navController = navHostFragment.navController
-        val topLevelDestinations =
-            setOf(
-                R.id.Notes,
-                R.id.Reminders,
-                R.id.Archive,
-                R.id.Deleted,
-                R.id.Labels,
-                R.id.Settings,
-                R.id.SettingsAbout,
-            )
         configuration = AppBarConfiguration(topLevelDestinations, binding.DrawerLayout)
         binding.NavView.setupWithNavController(navController)
 
@@ -479,6 +481,31 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 }
             }
             isStartViewFragment = isStartViewFragment(destination.id, bundle)
+        }
+
+        setupUpdateBadges()
+    }
+
+    /**
+     * 启动静默检查更新。有新版本时抽屉「关于」菜单项显示红点；点击「关于」进入关于页面，
+     * 关于页版本号后的红点点击才弹更新弹窗。
+     */
+    private fun setupUpdateCheck() {
+        UpdateChecker.checkForUpdates(this)
+    }
+
+    /**
+     * 有新版本时，在抽屉「关于」菜单项（actionLayout 红点）显示红点。红点持续显示直到没有新版本。
+     */
+    private fun setupUpdateBadges() {
+        binding.NavView.post {
+            val aboutDot =
+                binding.NavView.menu.findItem(R.id.SettingsAbout).actionView
+                    ?.findViewById<View>(R.id.badge_dot)
+            UpdateChecker.state.observe(this) { info ->
+                val available = info != null && UpdateChecker.shouldShow(this, info)
+                aboutDot?.visibility = if (available) View.VISIBLE else View.GONE
+            }
         }
     }
 
@@ -749,6 +776,10 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     companion object {

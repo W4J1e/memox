@@ -28,6 +28,8 @@ import cool.hin.memox.presentation.view.misc.highlightableview.HighlightableEdit
 import cool.hin.memox.utils.changehistory.ChangeHistory
 import cool.hin.memox.utils.changehistory.EditTextState
 import cool.hin.memox.utils.changehistory.EditTextWithHistoryChange
+import cool.hin.memox.presentation.view.note.LinkCardSpan
+import cool.hin.memox.presentation.view.note.applyLinkCards
 import cool.hin.memox.utils.findWebUrls
 import cool.hin.memox.utils.getLatestText
 import cool.hin.memox.utils.isWebUrl
@@ -57,16 +59,32 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
                 changeHistory,
                 { text, start, count ->
                     clearHighlights()
-                    if (count > 1) {
-                        val changedText = text.substring(start, start + count)
-                        changedText.findWebUrls().forEach { (urlStart, urlEnd) ->
-                            super.getText()
-                                ?.setSpan(
-                                    URLSpan(changedText.substring(urlStart, urlEnd)),
-                                    start + urlStart,
-                                    start + urlEnd,
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                                )
+                    val changedText = text.substring(start, start + count)
+                    // 仅当：粘贴（count>1）或刚输入一个空白字符（空格/换行）时识别 URL。
+                    // 输入换行/空格通常表示"一个链接写完"，向后扫描刚输入的链接并卡片化。
+                    val singleWhitespace = count == 1 && changedText.first().isWhitespace()
+                    if (count > 1 || singleWhitespace) {
+                        val (scanText, scanOffset) = if (singleWhitespace) {
+                            val from = (start - 2000).coerceAtLeast(0)
+                            text.substring(from, start + count) to from
+                        } else {
+                            changedText to start
+                        }
+                        val editable = super.getText()
+                        if (editable != null) {
+                            scanText.findWebUrls().forEach { (urlStart, urlEnd) ->
+                                val s = scanOffset + urlStart
+                                val e = scanOffset + urlEnd
+                                if (editable.getSpans(s, e, URLSpan::class.java).isEmpty()) {
+                                    editable.setSpan(
+                                        URLSpan(scanText.substring(urlStart, urlEnd)),
+                                        s,
+                                        e,
+                                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                                    )
+                                }
+                            }
+                            editable.applyLinkCards(this@StylableEditTextWithHistory)
                         }
                     }
                 },
@@ -106,7 +124,7 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
     ): Collection<CharacterStyle> {
         val spans = getSpans(start, end)
         return when (type) {
-            TextStyleType.LINK -> spans.filterIsInstance<URLSpan>()
+            TextStyleType.LINK -> spans.filter { it is URLSpan || it is LinkCardSpan }
             TextStyleType.BOLD -> spans.filter { it is StyleSpan && it.style == Typeface.BOLD }
             TextStyleType.ITALIC -> spans.filter { it is StyleSpan && it.style == Typeface.ITALIC }
             TextStyleType.MONOSPACE ->
@@ -151,6 +169,7 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
         val (start, end) = getSpanRange(span)
         val callback: (text: Editable) -> Unit = { text ->
             text.removeSelectionFromSpans(start, end)
+            text.getSpans(start, end, LinkCardSpan::class.java).forEach { text.removeSpan(it) }
             if (removeText) {
                 text.delete(start, end)
             }
@@ -312,19 +331,20 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
             isNewUnnamedLink,
             onClose = onClose,
         ) { urlAfter, displayTextAfter ->
-            if (urlAfter == null) {
-                return@showLinkDialog
-            }
-            this.changeTextWithHistory { text ->
-                val start = this.selectionStart
-                text.replace(start, this.selectionEnd, displayTextAfter)
-                text.setSpan(
-                    URLSpan(urlAfter),
-                    start,
-                    start + displayTextAfter.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                )
-            }
+        if (urlAfter == null) {
+            return@showLinkDialog
+        }
+        this.changeTextWithHistory { text ->
+            val start = this.selectionStart
+            text.replace(start, this.selectionEnd, displayTextAfter)
+            text.setSpan(
+                URLSpan(urlAfter),
+                start,
+                start + displayTextAfter.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            text.applyLinkCards(this@StylableEditTextWithHistory)
+        }
             mode?.finish()
         }
     }

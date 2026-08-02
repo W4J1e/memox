@@ -23,6 +23,7 @@ import cool.hin.memox.presentation.setOnNextAction
 import cool.hin.memox.presentation.showKeyboard
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.viewmodel.preference.EditAction
+import cool.hin.memox.presentation.view.note.applyLinkCards
 import cool.hin.memox.utils.changehistory.ChangeHistory
 import cool.hin.memox.utils.findAllOccurrences
 import cool.hin.memox.utils.getFileName
@@ -161,6 +162,7 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
 
     private fun updateEditText() {
         binding.EnterBody.text = notallyModel.body
+        (binding.EnterBody.text as? android.text.Spannable)?.applyLinkCards(binding.EnterBody)
     }
 
     override fun initBottomMenu() {

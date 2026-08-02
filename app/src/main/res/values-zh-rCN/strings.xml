@@ -387,7 +387,7 @@
     <string name="something_went_wrong">出错了。请重试。</string>
     <string name="something_went_wrong_audio">出错了。录音文件可能已被移走或删除。错误：(%1$d, %2$d)</string>
     <string name="sort_direction">排列方向</string>
-    <string name="source_code">源码</string>
+    <string name="source_code">查看源码</string>
     <string name="start">启动视图</string>
     <string name="start_view">启动视图</string>
     <string name="start_view_hint">选择应用启动时应显示的个视图/标签。默认为笔记主视图</string>
@@ -399,7 +399,7 @@
     <string name="tap_for_more_options">轻按查看更多选项</string>
     <string name="tap_to_set_up">轻按进行设置</string>
     <string name="text_default">默认</string>
-    <string name="sync_status_syncing">正在同步……</string>
+    <string name="sync_status_syncing">正在同步…</string>
     <string name="sync_status_completed">同步完成！</string>
     <string name="font_size">字体大小</string>
     <string name="font_size_note_editor">编辑器</string>
@@ -434,7 +434,7 @@
     <string name="updated_link">更新了链接</string>
     <string name="view">视图</string>
     <string name="view_file">查看文件</string>
-    <string name="view_logs">查看日志文件</string>
+    <string name="view_logs">查看日志</string>
     <string name="view_note">查看笔记</string>
     <string name="weekly">一周</string>
     <string name="weeks">周</string>
