@@ -452,4 +452,18 @@
     <string name="yearly">Yearly</string>
     <string name="years">Years</string>
     <string name="your_notes_associated">Your notes attached to this label will not be deleted</string>
+
+    <!-- 检查更新 -->
+    <string name="new_version_available">发现新版本 %s</string>
+    <string name="update_changelog_title">更新说明</string>
+    <string name="update_download">下载更新</string>
+    <string name="update_later">稍后</string>
+    <string name="update_open_release">在浏览器中打开</string>
+    <string name="update_downloading">正在下载更新…</string>
+    <string name="update_download_failed">下载失败，请在浏览器中打开发布页</string>
+    <string name="update_install_failed">无法自动安装，请在浏览器中打开发布页</string>
+
+    <!-- 检查更新源（CNB git raw 地址，已验证可用：/-/git/raw/main/<path>） -->
+    <string name="update_check_url" translatable="false">https://cnb.cool/hin/memoX/-/git/raw/main/update.json</string>
+    <string name="update_release_url" translatable="false">https://cnb.cool/hin/memoX/-/releases</string>
 </resources>

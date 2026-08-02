@@ -1,6 +1,7 @@
 {
   "version": "1.1.2",
   "versionCode": 1102,
-  "changelog": "更新说明：\n- 新增：正文链接卡片预览\n- 新增：启动检查更新\n- 修复：可能导致同步丢失附件的严重问题",
+  "changelog": "示例更新说明（发布时由 CI 写入）：\n- 新增：链接卡片预览（编辑器内链接自动渲染为卡片）\n- 新增：启动检查更新（抽屉“关于”后出现 new 指示）\n- 优化：列表视图图标改为 Keep 风格",
+  "apkUrl": "",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }

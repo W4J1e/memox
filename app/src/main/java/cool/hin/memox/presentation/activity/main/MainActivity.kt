@@ -64,6 +64,8 @@ import cool.hin.memox.utils.LATEST_DATA_SCHEMA
 import cool.hin.memox.utils.backup.exportNotes
 import cool.hin.memox.utils.runMigrations
 import cool.hin.memox.utils.security.showBiometricOrPinPrompt
+import cool.hin.memox.utils.UpdateChecker
+import cool.hin.memox.utils.UpdateDownloader
 import kotlinx.coroutines.launch
 
 class MainActivity : LockedActivity<ActivityMainBinding>() {
@@ -127,6 +129,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         setupFAB()
         setupActionMode()
         setupNavigation()
+        setupUpdateCheck()
         setupToolbar()
         setupSyncIsland()
 
@@ -482,6 +485,42 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         }
     }
 
+    /**
+     * Startup update check (silent — no intrusive banner). Shows a subtle "new" dot after the
+     * drawer's "About" item when a newer version exists, and intercepts the About click to open a
+     * changelog dialog when an update is available.
+     */
+    private fun setupUpdateCheck() {
+        UpdateChecker.checkForUpdates(this)
+
+        val aboutItem = binding.NavView.menu.findItem(R.id.SettingsAbout)
+        val badge = layoutInflater.inflate(R.layout.menu_new_badge, null)
+        aboutItem.actionView = badge
+        badge.visibility = View.GONE
+
+        UpdateChecker.state.observe(this) { info ->
+            val show = info != null && UpdateChecker.shouldShow(this, info)
+            aboutItem.actionView?.visibility = if (show) View.VISIBLE else View.GONE
+        }
+
+        binding.NavView.setNavigationItemSelectedListener { item ->
+            val isAbout = item.itemId == R.id.SettingsAbout
+            if (isAbout) {
+                val info = UpdateChecker.state.value
+                if (info != null && UpdateChecker.isNewer(info)) {
+                    UpdateChecker.showUpdateDialog(this, info)
+                    binding.DrawerLayout.closeDrawers()
+                    return@setNavigationItemSelectedListener true
+                }
+            }
+            val handled = NavigationUI.onNavDestinationSelected(item, navController)
+            binding.DrawerLayout.closeDrawers()
+            handled
+        }
+
+        UpdateDownloader.registerReceiver(this)
+    }
+
     private fun setupToolbar() {
         val searchEditText = binding.SearchEditText
         val viewToggle = binding.ViewToggleButton
@@ -749,6 +788,11 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onDestroy() {
+        UpdateDownloader.unregisterReceiver(this)
+        super.onDestroy()
     }
 
     companion object {

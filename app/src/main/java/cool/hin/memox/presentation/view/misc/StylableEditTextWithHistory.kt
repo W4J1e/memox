@@ -28,6 +28,8 @@ import cool.hin.memox.presentation.view.misc.highlightableview.HighlightableEdit
 import cool.hin.memox.utils.changehistory.ChangeHistory
 import cool.hin.memox.utils.changehistory.EditTextState
 import cool.hin.memox.utils.changehistory.EditTextWithHistoryChange
+import cool.hin.memox.presentation.view.note.LinkCardSpan
+import cool.hin.memox.presentation.view.note.applyLinkCards
 import cool.hin.memox.utils.findWebUrls
 import cool.hin.memox.utils.getLatestText
 import cool.hin.memox.utils.isWebUrl
@@ -68,6 +70,9 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
                                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                                 )
                         }
+                        super.getText()?.let { tg ->
+                            (tg as? android.text.Spannable)?.applyLinkCards(this@StylableEditTextWithHistory)
+                        }
                     }
                 },
             ) { text: Editable ->
@@ -106,7 +111,7 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
     ): Collection<CharacterStyle> {
         val spans = getSpans(start, end)
         return when (type) {
-            TextStyleType.LINK -> spans.filterIsInstance<URLSpan>()
+            TextStyleType.LINK -> spans.filter { it is URLSpan || it is LinkCardSpan }
             TextStyleType.BOLD -> spans.filter { it is StyleSpan && it.style == Typeface.BOLD }
             TextStyleType.ITALIC -> spans.filter { it is StyleSpan && it.style == Typeface.ITALIC }
             TextStyleType.MONOSPACE ->
@@ -151,6 +156,7 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
         val (start, end) = getSpanRange(span)
         val callback: (text: Editable) -> Unit = { text ->
             text.removeSelectionFromSpans(start, end)
+            text.getSpans(start, end, LinkCardSpan::class.java).forEach { text.removeSpan(it) }
             if (removeText) {
                 text.delete(start, end)
             }
@@ -312,19 +318,20 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
             isNewUnnamedLink,
             onClose = onClose,
         ) { urlAfter, displayTextAfter ->
-            if (urlAfter == null) {
-                return@showLinkDialog
-            }
-            this.changeTextWithHistory { text ->
-                val start = this.selectionStart
-                text.replace(start, this.selectionEnd, displayTextAfter)
-                text.setSpan(
-                    URLSpan(urlAfter),
-                    start,
-                    start + displayTextAfter.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                )
-            }
+        if (urlAfter == null) {
+            return@showLinkDialog
+        }
+        this.changeTextWithHistory { text ->
+            val start = this.selectionStart
+            text.replace(start, this.selectionEnd, displayTextAfter)
+            text.setSpan(
+                URLSpan(urlAfter),
+                start,
+                start + displayTextAfter.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            text.applyLinkCards(this@StylableEditTextWithHistory)
+        }
             mode?.finish()
         }
     }

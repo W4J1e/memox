@@ -54,6 +54,7 @@ import cool.hin.memox.utils.log
 import cool.hin.memox.utils.security.DecryptionException
 import cool.hin.memox.utils.security.EncryptionException
 import cool.hin.memox.utils.security.showBiometricOrPinPrompt
+import cool.hin.memox.utils.UpdateChecker
 import cool.hin.memox.utils.showErrorDialog
 import cool.hin.memox.utils.viewLogs
 import cool.hin.memox.utils.wrapWithChooser
@@ -675,6 +676,20 @@ class SettingsFragment : Fragment() {
                 val version = pInfo.versionName
                 VersionText.text = "v$version"
             } catch (_: PackageManager.NameNotFoundException) {}
+
+            val openUpdate = {
+                val info = UpdateChecker.state.value
+                if (info != null && UpdateChecker.isNewer(info)) {
+                    UpdateChecker.showUpdateDialog(requireActivity(), info)
+                }
+            }
+            VersionText.setOnClickListener { openUpdate() }
+            NewBadge.setOnClickListener { openUpdate() }
+
+            UpdateChecker.state.observe(viewLifecycleOwner) { info ->
+                val show = info != null && UpdateChecker.shouldShow(requireContext(), info)
+                NewBadge.visibility = if (show) android.view.View.VISIBLE else android.view.View.GONE
+            }
         }
     }
 
