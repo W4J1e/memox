@@ -361,6 +361,18 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        model.preferences.linkCardEnabled.observe(viewLifecycleOwner) { value ->
+            binding.LinkCard.setup(
+                model.preferences.linkCardEnabled,
+                value,
+                requireContext(),
+                layoutInflater,
+                R.string.link_card_message,
+            ) { enabled ->
+                model.savePreference(model.preferences.linkCardEnabled, enabled)
+            }
+        }
+
         startView.merge(model.labels).observe(viewLifecycleOwner) { (startViewValue, labelsValue) ->
             binding.StartView.setupStartView(
                 startView,

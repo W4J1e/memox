@@ -144,6 +144,12 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             SyncLog.log("Found ${allNotes.size} notes to upload")
 
+            // 安全守卫：本地为空时，拒绝"用空库覆盖服务器"，避免清空远程所有笔记与附件。
+            if (allNotes.isEmpty()) {
+                SyncLog.log("upload: 本地笔记为空，跳过上传以免清空服务器")
+                return@withContext SyncResult.Success("本地无数据，已跳过上传（未改动服务器）")
+            }
+
             // Get list of existing remote note files (map: noteId -> list of filenames, to handle duplicates)
             val remoteFiles = client.listFiles(REMOTE_NOTES_DIR).getOrNull() ?: emptyList()
             val remoteNoteIdToFileNames = mutableMapOf<Long, MutableList<String>>()
@@ -425,7 +431,9 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 }
             }
 
-            cleanupOrphanedAttachments(client, updatedLocalNotes)
+            // 重新读取本地笔记（此时远程笔记已下载/合并进本地库），
+            // 用最新状态判断孤儿附件，避免用过时的"空/子集"列表误删服务器附件。
+            cleanupOrphanedAttachments(client, dao.getAllNotesIncludingDeleted())
             syncLabels(client)
 
             // Clean up tombstones: remove IDs that no longer exist on either side
@@ -434,7 +442,7 @@ class WebDavSyncService(private val context: ContextWrapper) {
 
             // Save merged tombstones locally and upload sync_meta
             preferences.webdavDeletedNoteIds.save(mergedTombstones.map { it.toString() }.toSet())
-            uploadSyncMeta(client, updatedLocalNotes.map { it.id }.toSet(), mergedTombstones.toSet())
+            uploadSyncMeta(client, currentNoteIds, mergedTombstones.toSet())
 
             preferences.webdavLastSyncTime.save(System.currentTimeMillis())
             SyncLog.log("Sync complete: $uploaded uploaded, $downloaded downloaded, $deletedLocal deleted locally, $deletedRemote deleted remotely, ${mergedTombstones.size} tombstones")
@@ -662,8 +670,18 @@ class WebDavSyncService(private val context: ContextWrapper) {
         return File(dir, localName)
     }
 
-    /** Remove remote attachments that are no longer referenced by any note */
+    /**
+     * Remove remote attachments that are no longer referenced by any note.
+     *
+     * 安全守卫：本地笔记为空时【绝不】删除服务器附件。
+     * 空本地库（例如全新安装、或与正式版共用同一 WebDAV 的 debug 构建）绝不能
+     * 被解读为"服务器上的附件都没用了"。否则一次空库的同步/上传会把整个服务器清空。
+     */
     private fun cleanupOrphanedAttachments(client: WebDavClient, allNotes: List<BaseNote>) {
+        if (allNotes.isEmpty()) {
+            SyncLog.log("cleanupOrphanedAttachments: 本地笔记为空，跳过以免误删服务器附件")
+            return
+        }
         try {
             val referencedImages = allNotes.flatMap { it.images.map { img -> img.localName } }.toSet()
             val referencedFiles = allNotes.flatMap { it.files.map { f -> f.localName } }.toSet()

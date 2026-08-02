@@ -59,19 +59,32 @@ class StylableEditTextWithHistory(context: Context, attrs: AttributeSet) :
                 changeHistory,
                 { text, start, count ->
                     clearHighlights()
-                    if (count > 1) {
-                        val changedText = text.substring(start, start + count)
-                        changedText.findWebUrls().forEach { (urlStart, urlEnd) ->
-                            super.getText()
-                                ?.setSpan(
-                                    URLSpan(changedText.substring(urlStart, urlEnd)),
-                                    start + urlStart,
-                                    start + urlEnd,
-                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-                                )
+                    val changedText = text.substring(start, start + count)
+                    // 仅当：粘贴（count>1）或刚输入一个空白字符（空格/换行）时识别 URL。
+                    // 输入换行/空格通常表示"一个链接写完"，向后扫描刚输入的链接并卡片化。
+                    val singleWhitespace = count == 1 && changedText.first().isWhitespace()
+                    if (count > 1 || singleWhitespace) {
+                        val (scanText, scanOffset) = if (singleWhitespace) {
+                            val from = (start - 2000).coerceAtLeast(0)
+                            text.substring(from, start + count) to from
+                        } else {
+                            changedText to start
                         }
-                        super.getText()?.let { tg ->
-                            (tg as? android.text.Spannable)?.applyLinkCards(this@StylableEditTextWithHistory)
+                        val editable = super.getText()
+                        if (editable != null) {
+                            scanText.findWebUrls().forEach { (urlStart, urlEnd) ->
+                                val s = scanOffset + urlStart
+                                val e = scanOffset + urlEnd
+                                if (editable.getSpans(s, e, URLSpan::class.java).isEmpty()) {
+                                    editable.setSpan(
+                                        URLSpan(scanText.substring(urlStart, urlEnd)),
+                                        s,
+                                        e,
+                                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                                    )
+                                }
+                            }
+                            editable.applyLinkCards(this@StylableEditTextWithHistory)
                         }
                     }
                 },
