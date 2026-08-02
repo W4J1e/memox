@@ -702,6 +702,17 @@ class SettingsFragment : Fragment() {
                 val show = info != null && UpdateChecker.shouldShow(requireContext(), info)
                 NewBadge.visibility = if (show) android.view.View.VISIBLE else android.view.View.GONE
             }
+
+            CheckUpdate.setOnClickListener {
+                requireContext().showToast(getString(R.string.update_checking))
+                UpdateChecker.checkNow(requireContext()) { info ->
+                    if (info != null && UpdateChecker.isNewer(info)) {
+                        UpdateChecker.showUpdateDialog(requireActivity(), info)
+                    } else {
+                        requireContext().showToast(getString(R.string.update_already_latest))
+                    }
+                }
+            }
         }
     }
 
