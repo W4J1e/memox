@@ -1,6 +1,8 @@
 package cool.hin.memox.utils
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.MutableLiveData
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -28,7 +30,6 @@ object UpdateChecker {
         val version: String,
         val versionCode: Int,
         val changelog: String,
-        val apkUrl: String?,
         val releaseUrl: String?,
     )
 
@@ -82,7 +83,6 @@ object UpdateChecker {
             version = version,
             versionCode = versionCode,
             changelog = j.optString("changelog", ""),
-            apkUrl = j.optString("apkUrl").takeIf { it.isNotBlank() },
             releaseUrl = j.optString("releaseUrl").takeIf { it.isNotBlank() }
                 ?: context.getString(R.string.update_release_url),
         )
@@ -93,21 +93,14 @@ object UpdateChecker {
         // Re-emit so observers (drawer badge / About badge) recompute visibility now that it's seen.
         state.value = state.value?.copy()
 
-        val builder = MaterialAlertDialogBuilder(activity)
+        MaterialAlertDialogBuilder(activity)
             .setTitle(activity.getString(R.string.new_version_available, info.version))
             .setMessage(info.changelog.ifBlank { activity.getString(R.string.update_changelog_title) })
-            .setNegativeButton(R.string.update_open_release) { _, _ ->
-                UpdateDownloader.openRelease(activity, info.releaseUrl)
+            .setPositiveButton(R.string.update_open_release) { _, _ ->
+                openRelease(activity, info.releaseUrl)
             }
-            .setNeutralButton(R.string.update_later, null)
-        // 仅当存在可直接下载的 APK 地址时才提供「下载更新」按钮；否则只给浏览器入口，
-        // 避免无 apkUrl 时「下载」也跳浏览器造成困惑。
-        if (!info.apkUrl.isNullOrBlank()) {
-            builder.setPositiveButton(R.string.update_download) { _, _ ->
-                UpdateDownloader.download(activity, info.apkUrl, info.releaseUrl)
-            }
-        }
-        builder.show()
+            .setNegativeButton(R.string.update_later, null)
+            .show()
     }
 
     /** 手动检查（如「检查更新」按钮）。始终重新拉取，结果通过回调返回。 */
@@ -119,6 +112,18 @@ object UpdateChecker {
                 state.value = info
                 onResult(info)
             }
+        }
+    }
+
+    /** Open the release page in the browser. Falls back to [R.string.update_release_url]. */
+    fun openRelease(context: Context, releaseUrl: String?) {
+        val url = releaseUrl ?: context.getString(R.string.update_release_url)
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
         }
     }
 }
