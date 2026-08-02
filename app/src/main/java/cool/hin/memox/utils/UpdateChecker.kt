@@ -37,22 +37,11 @@ object UpdateChecker {
     val state = MutableLiveData<UpdateInfo?>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private const val PREFS = "memox_update"
-    private const val KEY_SEEN = "seen_version_code"
 
     fun isNewer(info: UpdateInfo): Boolean = BuildConfig.VERSION_CODE < info.versionCode
 
-    /** Show the indicator only when there is a newer version the user hasn't acknowledged yet. */
-    fun shouldShow(context: Context, info: UpdateInfo): Boolean =
-        isNewer(info) && seenCode(context) < info.versionCode
-
-    private fun seenCode(context: Context): Int =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_SEEN, 0)
-
-    fun markSeen(context: Context, info: UpdateInfo) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_SEEN, info.versionCode).apply()
-    }
+    /** 只要有新版本就显示红点（无论「稍后」还是已查看），直到没有新版本为止。 */
+    fun shouldShow(context: Context, info: UpdateInfo): Boolean = isNewer(info)
 
     fun checkForUpdates(context: Context) {
         if (state.value != null) return // already checked in this process
@@ -89,10 +78,6 @@ object UpdateChecker {
     }
 
     fun showUpdateDialog(activity: FragmentActivity, info: UpdateInfo) {
-        markSeen(activity, info)
-        // Re-emit so observers (drawer badge / About badge) recompute visibility now that it's seen.
-        state.value = state.value?.copy()
-
         MaterialAlertDialogBuilder(activity)
             .setTitle(activity.getString(R.string.new_version_available, info.version))
             .setMessage(info.changelog.ifBlank { activity.getString(R.string.update_changelog_title) })

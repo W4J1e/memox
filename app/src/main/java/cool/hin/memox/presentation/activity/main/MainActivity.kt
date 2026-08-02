@@ -33,8 +33,6 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.core.view.GravityCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.signature.ObjectKey
-import com.google.android.material.badge.BadgeDrawable
-import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.transition.platform.MaterialFade
 import cool.hin.memox.presentation.activity.main.fragment.SearchFragment
@@ -91,8 +89,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         R.id.Settings,
         R.id.SettingsAbout,
     )
-
-    private lateinit var hamburgerBadge: BadgeDrawable
 
     private val syncHideHandler = Handler(Looper.getMainLooper())
     private val syncHideRunnable = Runnable { hideSyncIsland() }
@@ -450,14 +446,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
                 )
             }
 
-            // 有新版本且处于顶层页时，在汉堡键上显示红点；进入二级页（返回箭头）时隐藏。
-            if (::hamburgerBadge.isInitialized) {
-                hamburgerBadge.isVisible = isTopLevel && run {
-                    val info = UpdateChecker.state.value
-                    info != null && UpdateChecker.shouldShow(this@MainActivity, info)
-                }
-            }
-
             toggle.setToolbarNavigationClickListener {
                 if (destination.id in topLevelDestinations) {
                     binding.DrawerLayout.openDrawer(GravityCompat.START)
@@ -499,32 +487,17 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     /**
-     * Startup update check (silent — no intrusive banner). Fetches update.json so the drawer
-     * "About" item and the hamburger both show a "new" dot when a newer version exists. Clicking
-     * "About" still navigates to the About page; only tapping the dot/version on the About page
-     * opens the changelog dialog.
+     * 启动静默检查更新。有新版本时抽屉「关于」菜单项显示红点；点击「关于」进入关于页面，
+     * 关于页版本号后的红点点击才弹更新弹窗。
      */
     private fun setupUpdateCheck() {
-        // 启动静默检查更新：有新版本时，抽屉「关于」菜单项与汉堡键均显示红点。
-        // 点击「关于」仍进入关于页面（不拦截）；关于页版本号后的红点点击才弹更新弹窗。
         UpdateChecker.checkForUpdates(this)
     }
 
     /**
-     * 有新版本时，在抽屉「关于」菜单项（actionLayout 红点）与汉堡键（BadgeDrawable）显示红点。
-     * 红点仅在用户尚未查看该版本时显示（见 [UpdateChecker.shouldShow]）。
+     * 有新版本时，在抽屉「关于」菜单项（actionLayout 红点）显示红点。红点持续显示直到没有新版本。
      */
     private fun setupUpdateBadges() {
-        hamburgerBadge = BadgeDrawable.create(this).apply {
-            isVisible = false
-            backgroundColor = MaterialColors.getColor(
-                binding.Toolbar,
-                com.google.android.material.R.attr.colorError,
-                0,
-            )
-        }
-        BadgeUtils.attachBadgeDrawable(hamburgerBadge, binding.Toolbar, android.R.id.home)
-
         binding.NavView.post {
             val aboutDot =
                 binding.NavView.menu.findItem(R.id.SettingsAbout).actionView
@@ -532,8 +505,6 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             UpdateChecker.state.observe(this) { info ->
                 val available = info != null && UpdateChecker.shouldShow(this, info)
                 aboutDot?.visibility = if (available) View.VISIBLE else View.GONE
-                hamburgerBadge.isVisible =
-                    available && (navController.currentDestination?.id in topLevelDestinations)
             }
         }
     }

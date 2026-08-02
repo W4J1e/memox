@@ -387,7 +387,7 @@
     <string name="something_went_wrong">出错了。请重试。</string>
     <string name="something_went_wrong_audio">出错了。录音文件可能已被移走或删除。错误：(%1$d, %2$d)</string>
     <string name="sort_direction">排列方向</string>
-    <string name="source_code">源码</string>
+    <string name="source_code">查看源码</string>
     <string name="start">启动视图</string>
     <string name="start_view">启动视图</string>
     <string name="start_view_hint">选择应用启动时应显示的个视图/标签。默认为笔记主视图</string>
