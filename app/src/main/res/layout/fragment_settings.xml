@@ -353,7 +353,8 @@
                     style="@style/Preference"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/view_logs" />
+                    android:text="@string/view_logs"
+                    android:textColor="?attr/colorPrimary" />
 
                 <TextView
                     android:id="@+id/CheckUpdate"
