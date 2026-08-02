@@ -15,4 +15,5 @@ Gemfile*
 *.jks
 *.keystore
 .gradle-home/
+.gradle_debug/
 .workbuddy/
