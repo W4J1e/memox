@@ -3,16 +3,12 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <rect
-        android:x="4dp"
-        android:y="6dp"
-        android:width="16dp"
-        android:height="4dp"
-        android:fillColor="#000000" />
-    <rect
-        android:x="4dp"
-        android:y="14dp"
-        android:width="16dp"
-        android:height="4dp"
-        android:fillColor="#000000" />
+    <!-- 上矩形 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M5.5,6 h13 a1.5,1.5 0 0 1 1.5,1.5 v1 a1.5,1.5 0 0 1 -1.5,1.5 h-13 a1.5,1.5 0 0 1 -1.5,-1.5 v-1 a1.5,1.5 0 0 1 1.5,-1.5 Z" />
+    <!-- 下矩形 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M5.5,14 h13 a1.5,1.5 0 0 1 1.5,1.5 v1 a1.5,1.5 0 0 1 -1.5,1.5 h-13 a1.5,1.5 0 0 1 -1.5,-1.5 v-1 a1.5,1.5 0 0 1 1.5,-1.5 Z" />
 </vector>

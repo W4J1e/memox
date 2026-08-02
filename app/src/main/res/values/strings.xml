@@ -466,4 +466,8 @@
     <!-- 检查更新源（CNB git raw 地址，已验证可用：/-/git/raw/main/<path>） -->
     <string name="update_check_url" translatable="false">https://cnb.cool/hin/memoX/-/git/raw/main/update.json</string>
     <string name="update_release_url" translatable="false">https://cnb.cool/hin/memoX/-/releases</string>
+
+    <!-- 链接卡片展示开关 -->
+    <string name="link_card_title">链接卡片展示</string>
+    <string name="link_card_message">开启后，编辑器与笔记中的网页链接会以卡片（图标+标题+网址）形式展示；关闭则仅显示为可点击的纯文本链接。</string>
 </resources>

@@ -127,6 +127,10 @@
                 <include
                     android:id="@+id/LabelsHiddenInOverview"
                     layout="@layout/preference" />
+
+                <include
+                    android:id="@+id/LinkCard"
+                    layout="@layout/preference" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

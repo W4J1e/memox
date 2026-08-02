@@ -12,6 +12,7 @@ import android.text.Spannable
 import android.text.style.ReplacementSpan
 import android.widget.TextView
 import com.google.android.material.color.MaterialColors
+import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.utils.LinkPreview
 import cool.hin.memox.utils.LinkPreviewCache
 import cool.hin.memox.utils.isWebUrl
@@ -138,6 +139,12 @@ class LinkCardSpan(private val url: String) : ReplacementSpan() {
  * Call this after the text has been assigned to a TextView/EditText.
  */
 fun Spannable.applyLinkCards(tv: TextView) {
+    val enabled = MemoXPreferences.getInstance(tv.context).linkCardEnabled.value
+    if (!enabled) {
+        // 关闭卡片展示：移除已有卡片，回退为可点击的纯文本链接。
+        getSpans(0, length, LinkCardSpan::class.java).forEach { removeSpan(it) }
+        return
+    }
     getSpans(0, length, android.text.style.URLSpan::class.java).forEach { us ->
         val s = getSpanStart(us)
         val e = getSpanEnd(us)
