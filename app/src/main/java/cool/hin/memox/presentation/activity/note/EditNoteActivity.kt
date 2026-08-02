@@ -34,6 +34,7 @@ import cool.hin.memox.presentation.view.note.TextFormattingAdapter
 import cool.hin.memox.presentation.view.note.action.AddBottomSheet
 import cool.hin.memox.presentation.viewmodel.preference.EditAction
 import cool.hin.memox.presentation.view.note.CheckboxSpan
+import cool.hin.memox.presentation.view.note.applyLinkCards
 import cool.hin.memox.utils.LinkMovementMethod
 import cool.hin.memox.utils.copyToClipBoard
 import cool.hin.memox.utils.findAllOccurrences
@@ -129,6 +130,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
 
     private fun updateEditText() {
         binding.EnterBody.text = notallyModel.body
+        (binding.EnterBody.text as? android.text.Spannable)?.applyLinkCards(binding.EnterBody)
     }
 
     private fun setupEditor() {
