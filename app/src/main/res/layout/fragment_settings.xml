@@ -337,14 +337,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="@string/about_author" />
+                    android:text="@string/about_author"
+                    android:textColor="?attr/colorPrimary" />
 
                 <TextView
                     android:id="@+id/SourceCode"
                     style="@style/Preference"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/source_code" />
+                    android:text="@string/source_code"
+                    android:textColor="?attr/colorPrimary" />
 
                 <TextView
                     android:id="@+id/ViewLogs"
@@ -352,6 +354,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/view_logs" />
+
+                <TextView
+                    android:id="@+id/CheckUpdate"
+                    style="@style/Preference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/check_for_updates"
+                    android:textColor="?attr/colorPrimary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

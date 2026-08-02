@@ -3,7 +3,7 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="about">About</string>
-    <string name="about_author">Author: W4J1e</string>
+    <string name="about_author">作者：W4J1e</string>
     <string name="connected">Connected</string>
     <string name="not_connected">Not connected</string>
     <string name="add">Add</string>
@@ -397,7 +397,7 @@
     <string name="something_went_wrong">Something went wrong. Please try again.</string>
     <string name="something_went_wrong_audio">Something went wrong. The audio recording may have been moved or deleted.\n\nError : (%1$d, %2$d)</string>
     <string name="sort_direction">Sort Direction</string>
-    <string name="source_code">Source Code</string>
+    <string name="source_code">查看源码</string>
     <string name="start">Start</string>
     <string name="start_view">Start View</string>
     <string name="start_view_hint">Select which View/Label should be shown when the app is started.\nDefaults to the main Notes View</string>
@@ -462,6 +462,9 @@
     <string name="update_downloading">正在下载更新…</string>
     <string name="update_download_failed">下载失败，请在浏览器中打开发布页</string>
     <string name="update_install_failed">无法自动安装，请在浏览器中打开发布页</string>
+    <string name="check_for_updates">检查更新</string>
+    <string name="update_checking">正在检查更新…</string>
+    <string name="update_already_latest">已是最新版本</string>
 
     <!-- 检查更新源（CNB git raw 地址，已验证可用：/-/git/raw/main/<path>） -->
     <string name="update_check_url" translatable="false">https://cnb.cool/hin/memoX/-/git/raw/main/update.json</string>

@@ -93,16 +93,32 @@ object UpdateChecker {
         // Re-emit so observers (drawer badge / About badge) recompute visibility now that it's seen.
         state.value = state.value?.copy()
 
-        MaterialAlertDialogBuilder(activity)
+        val builder = MaterialAlertDialogBuilder(activity)
             .setTitle(activity.getString(R.string.new_version_available, info.version))
             .setMessage(info.changelog.ifBlank { activity.getString(R.string.update_changelog_title) })
-            .setPositiveButton(R.string.update_download) { _, _ ->
-                UpdateDownloader.download(activity, info.apkUrl, info.releaseUrl)
-            }
             .setNegativeButton(R.string.update_open_release) { _, _ ->
                 UpdateDownloader.openRelease(activity, info.releaseUrl)
             }
             .setNeutralButton(R.string.update_later, null)
-            .show()
+        // 仅当存在可直接下载的 APK 地址时才提供「下载更新」按钮；否则只给浏览器入口，
+        // 避免无 apkUrl 时「下载」也跳浏览器造成困惑。
+        if (!info.apkUrl.isNullOrBlank()) {
+            builder.setPositiveButton(R.string.update_download) { _, _ ->
+                UpdateDownloader.download(activity, info.apkUrl, info.releaseUrl)
+            }
+        }
+        builder.show()
+    }
+
+    /** 手动检查（如「检查更新」按钮）。始终重新拉取，结果通过回调返回。 */
+    fun checkNow(context: Context, onResult: (UpdateInfo?) -> Unit) {
+        val url = context.getString(R.string.update_check_url)
+        scope.launch {
+            val info = runCatching { fetch(context.applicationContext, url) }.getOrNull()
+            withContext(Dispatchers.Main) {
+                state.value = info
+                onResult(info)
+            }
+        }
     }
 }

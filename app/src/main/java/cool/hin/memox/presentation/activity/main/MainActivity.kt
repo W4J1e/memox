@@ -491,33 +491,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
      * changelog dialog when an update is available.
      */
     private fun setupUpdateCheck() {
+        // 启动静默检查更新：红点仅在「关于」页版本号后显示（由 SettingsFragment 观察 state 控制）。
+        // 抽屉「关于」保持原样点击进入关于页面，不在抽屉显示红点、也不拦截点击弹窗。
         UpdateChecker.checkForUpdates(this)
-
-        val aboutItem = binding.NavView.menu.findItem(R.id.SettingsAbout)
-        val badge = layoutInflater.inflate(R.layout.menu_new_badge, null)
-        aboutItem.actionView = badge
-        badge.visibility = View.GONE
-
-        UpdateChecker.state.observe(this) { info ->
-            val show = info != null && UpdateChecker.shouldShow(this, info)
-            aboutItem.actionView?.visibility = if (show) View.VISIBLE else View.GONE
-        }
-
-        binding.NavView.setNavigationItemSelectedListener { item ->
-            val isAbout = item.itemId == R.id.SettingsAbout
-            if (isAbout) {
-                val info = UpdateChecker.state.value
-                if (info != null && UpdateChecker.isNewer(info)) {
-                    UpdateChecker.showUpdateDialog(this, info)
-                    binding.DrawerLayout.closeDrawers()
-                    return@setNavigationItemSelectedListener true
-                }
-            }
-            val handled = NavigationUI.onNavDestinationSelected(item, navController)
-            binding.DrawerLayout.closeDrawers()
-            handled
-        }
-
         UpdateDownloader.registerReceiver(this)
     }
 
