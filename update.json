@@ -1,6 +1,6 @@
 {
-  "version": "1.1.2",
-  "versionCode": 1102,
-  "changelog": "更新说明：\n- 新增：正文链接卡片预览\n- 新增：启动检查更新\n- 修复：可能导致同步丢失附件的严重问题",
+  "version": "1.1.21",
+  "versionCode": 1121,
+  "changelog": "更新说明：\n- 修复：带序号的小标题（如“1.xxx”）不再被误识别为链接，仅 http(s):// 开头的链接才会生成链接卡片\n- 包含 1.1.2 全部更新：正文链接卡片预览、启动静默检查更新、视图图标改为 Keep 风格、修复 WebDAV 同步清空附件的严重问题",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }
