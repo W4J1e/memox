@@ -4,6 +4,7 @@ import android.util.Patterns
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.text.RegexOption
 
 fun CharSequence.truncate(limit: Int): CharSequence {
     return if (length > limit) {
@@ -30,16 +31,29 @@ fun CharSequence.fromCamelCaseToEnumName(): String {
         .toString()
 }
 
+// 仅识别带 http(s):// 协议的链接，避免把 "1.xxx" / "2.xxx" 这类带序号的小标题误判为链接。
+private val SCHEME_URL_REGEX = Regex("https?://\\S+", RegexOption.IGNORE_CASE)
+
+// 链接结尾可能被紧跟着的标点/括号带进去，识别时把这些尾字符剔除。
+private val URL_TRAILING_PUNCTUATION: Set<Char> =
+    ".,;:!?')\uFF09\u3002\uFF0C\uFF1B\uFF1A\uFF01\uFF1F\u300D\u300F\u201D".toSet()
+
 fun CharSequence?.isWebUrl(): Boolean {
-    return this?.let { Patterns.WEB_URL.matcher(this).matches() } ?: false
+    val text = this?.trim() ?: return false
+    return SCHEME_URL_REGEX.matches(text)
 }
 
 fun CharSequence?.findWebUrls(): Collection<Pair<Int, Int>> {
-    return this?.let {
-        val matcher = Patterns.WEB_URL.matcher(this)
+    return this?.let { text ->
         val matches = mutableListOf<Pair<Int, Int>>()
-        while (matcher.find()) {
-            matches.add(Pair(matcher.start(), matcher.end()))
+        SCHEME_URL_REGEX.findAll(text).forEach { m ->
+            var end = m.range.last + 1
+            while (end > m.range.first && text[end - 1] in URL_TRAILING_PUNCTUATION) {
+                end--
+            }
+            if (end > m.range.first) {
+                matches.add(Pair(m.range.first, end))
+            }
         }
         matches
     } ?: listOf()
