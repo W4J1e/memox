@@ -116,7 +116,6 @@ class MarkdownExportTest {
                 files = emptyList(),
                 audios = emptyList(),
                 reminders = emptyList(),
-                viewMode = NoteViewMode.EDIT,
                 isPinnedToStatus = false,
             )
         val md = note.toMarkdown().trimEnd()

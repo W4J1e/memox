@@ -62,8 +62,7 @@ class ModelExtensionsTest {
                   "repetition": "{\"value\":1,\"unit\":\"DAYS\"}",
                   "isNotificationVisible": false
                 }
-              ],
-              "viewMode": "READ_ONLY"
+              ]
             }
         """
         val colorMock = mockStatic(android.graphics.Color::class.java)
@@ -137,7 +136,6 @@ class ModelExtensionsTest {
               "modifiedTimestamp": 945869546,
               "type": "NOTE",
               "title": "Title",
-              "viewMode": "READ_ONLY",
               "items": [
                 {
                   "checked": true,

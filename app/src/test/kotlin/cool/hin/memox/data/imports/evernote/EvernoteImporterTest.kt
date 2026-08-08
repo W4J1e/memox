@@ -136,7 +136,7 @@ class EvernoteImporterTest {
                 Type.NOTE,
                 "List Note",
                 "☐ Task1\n☑ Task2\n",
-                emptyList(),
+                emptyList<ListItem>(),
             )
     }
 
