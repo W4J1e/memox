@@ -26,15 +26,21 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        // 腾讯云 Maven 镜像：优先走镜像，避免 Maven Central 限流(429)
+        // jitpack 最前：SwipeDrawer(cn.Leaqi) 等仅发布在 jitpack；
+        // 必须优先于腾讯云/阿里云镜像，否则这些 Nexus 会"认领"未知模块、阻断回退而找不到
+        maven {
+            url = uri("https://jitpack.io")
+        }
+        // 阿里云公共镜像：Maven Central 替代，国内稳定、避免限流(429)
+        maven {
+            url = uri("https://maven.aliyun.com/repository/public")
+        }
+        // 腾讯云 Maven 镜像：兜底保留（Maven Central 构件）
         maven {
             url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/")
         }
         google()
         mavenCentral()
-        maven {
-            url = uri("https://jitpack.io")
-        }
     }
 }
 
