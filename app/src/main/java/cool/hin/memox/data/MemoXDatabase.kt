@@ -32,7 +32,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 15)
+@Database(entities = [BaseNote::class, Label::class], version = 16)
 abstract class MemoXDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -166,6 +166,7 @@ abstract class MemoXDatabase : RoomDatabase() {
                         Migration13,
                         Migration14,
                         Migration15,
+                        Migration16,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -386,6 +387,24 @@ abstract class MemoXDatabase : RoomDatabase() {
                 )
                 db.execSQL("DROP TABLE `BaseNote`")
                 db.execSQL("ALTER TABLE `BaseNote_new` RENAME TO `BaseNote`")
+                // The original table carried an index; recreating the table dropped it. Without
+                // this, Room's post-migration schema validation fails and the app crashes on
+                // upgrade.
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_BaseNote_id_folder_pinned_timestamp_labels` " +
+                        "ON `BaseNote` (`id`, `folder`, `pinned`, `timestamp`, `labels`)"
+                )
+            }
+        }
+
+        object Migration16 : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Repair databases left at v15 by the broken v15 migration (missing index).
+                // Idempotent: no-op if the index already exists.
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_BaseNote_id_folder_pinned_timestamp_labels` " +
+                        "ON `BaseNote` (`id`, `folder`, `pinned`, `timestamp`, `labels`)"
+                )
             }
         }
     }
