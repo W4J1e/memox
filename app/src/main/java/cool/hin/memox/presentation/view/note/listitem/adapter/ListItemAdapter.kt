@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.presentation.view.note.listitem.HighlightText
 import cool.hin.memox.presentation.view.note.listitem.ListManager
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
@@ -38,12 +37,6 @@ class ListItemAdapter(
             override fun getItem(position: Int): ListItem = this@ListItemAdapter.getItem(position)
         }
 
-    var viewMode: NoteViewMode = NoteViewMode.EDIT
-        set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
-
     lateinit var items: MutableList<ListItem>
         private set
 
@@ -62,7 +55,7 @@ class ListItemAdapter(
     }
 
     override fun onBindViewHolder(holder: ListItemVH, position: Int) {
-        itemAdapterBase.onBindViewHolder(holder, position, viewMode)
+        itemAdapterBase.onBindViewHolder(holder, position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =

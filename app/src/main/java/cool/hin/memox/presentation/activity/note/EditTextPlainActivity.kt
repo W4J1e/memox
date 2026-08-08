@@ -15,7 +15,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.presentation.addIconButton
 import cool.hin.memox.presentation.setCancelButton
@@ -94,8 +93,6 @@ class EditTextPlainActivity : EditActivity(Type.NOTE) {
             }
         }
     }
-
-    override fun toggleCanEdit(mode: NoteViewMode) {}
 
     @SuppressLint("MissingSuperCall")
     override fun onSaveInstanceState(outState: Bundle) {

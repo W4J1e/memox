@@ -11,7 +11,6 @@ import cool.hin.memox.data.model.ColorString
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Reminder
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
@@ -67,7 +66,6 @@ class NoteSplitUtilsDbTest {
             files = emptyList<FileAttachment>(),
             audios = emptyList(),
             reminders = emptyList<Reminder>(),
-            viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
 

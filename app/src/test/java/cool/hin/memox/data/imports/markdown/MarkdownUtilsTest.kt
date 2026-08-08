@@ -27,7 +27,6 @@ class MarkdownUtilsTest {
             files = emptyList(),
             audios = emptyList(),
             reminders = emptyList(),
-            viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
     }

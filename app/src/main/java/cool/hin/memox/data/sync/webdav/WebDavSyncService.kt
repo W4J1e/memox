@@ -529,7 +529,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
         json.put("files", Converters.filesToJson(note.files))
         json.put("audios", Converters.audiosToJson(note.audios))
         json.put("reminders", Converters.remindersToJson(note.reminders))
-        json.put("viewMode", note.viewMode.name)
         json.put("isPinnedToStatus", note.isPinnedToStatus)
         json.put("locked", note.locked)
         return json.toString(2)
@@ -553,11 +552,6 @@ class WebDavSyncService(private val context: ContextWrapper) {
             files = Converters.jsonToFiles(JSONArray(json.optString("files", "[]"))),
             audios = Converters.jsonToAudios(JSONArray(json.optString("audios", "[]"))),
             reminders = Converters.jsonToReminders(JSONArray(json.optString("reminders", "[]"))),
-            viewMode = try {
-                cool.hin.memox.data.model.NoteViewMode.valueOf(json.getString("viewMode"))
-            } catch (_: Exception) {
-                cool.hin.memox.data.model.NoteViewMode.EDIT
-            },
             isPinnedToStatus = json.optBoolean("isPinnedToStatus", false),
             locked = json.optBoolean("locked", false),
         )

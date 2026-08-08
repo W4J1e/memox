@@ -6,7 +6,6 @@ import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.presentation.view.note.listitem.HighlightText
 import cool.hin.memox.presentation.view.note.listitem.ListManager
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
@@ -39,12 +38,6 @@ class CheckedListItemAdapter(
             override fun getItem(position: Int): ListItem = list[position]
         }
 
-    var viewMode: NoteViewMode = NoteViewMode.EDIT
-        set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
-
     internal fun setList(list: SortedList<ListItem>) {
         this.list = list
     }
@@ -58,7 +51,7 @@ class CheckedListItemAdapter(
     }
 
     override fun onBindViewHolder(holder: ListItemVH, position: Int) {
-        itemAdapterBase.onBindViewHolder(holder, position, viewMode)
+        itemAdapterBase.onBindViewHolder(holder, position)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =

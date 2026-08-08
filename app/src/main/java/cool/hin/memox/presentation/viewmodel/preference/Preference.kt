@@ -10,7 +10,6 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import cool.hin.memox.R
 import cool.hin.memox.data.model.Folder
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.presentation.format
 import cool.hin.memox.presentation.merge
@@ -490,7 +489,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
     EXPORT(R.string.export, R.drawable.export),
     SHARE(R.string.share, R.drawable.share),
     DELETE(R.string.delete, R.drawable.delete),
-    TOGGLE_VIEW_MODE(R.string.edit, R.drawable.visibility),
     DELETE_FOREVER(R.string.delete_forever, R.drawable.delete),
     CHANGE_COLOR(R.string.change_color, R.drawable.change_color),
     RESTORE(R.string.restore, R.drawable.restore),
@@ -501,7 +499,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
 
     fun getTitleAndIcon(
         pinned: Boolean,
-        viewMode: NoteViewMode?,
         folder: Folder? = null,
         type: Type? = null,
         isPinnedToStatus: Boolean = false,
@@ -513,9 +510,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                 PIN_TO_STATUS ->
                     if (isPinnedToStatus) R.drawable.pinboard_filled else R.drawable.pinboard
                 RESTORE -> R.drawable.restore
-                TOGGLE_VIEW_MODE ->
-                    if (viewMode == NoteViewMode.READ_ONLY) R.drawable.edit
-                    else R.drawable.visibility
                 LOCK_NOTE -> if (isNoteLocked) R.drawable.lock_big else R.drawable.lock_open
                 else -> drawableResId
             }
@@ -526,8 +520,6 @@ enum class EditAction(override val textResId: Int, val drawableResId: Int) : Sta
                     if (isPinnedToStatus) R.string.unpin_from_status_bar
                     else R.string.pin_to_status_bar
                 RESTORE -> R.string.restore
-                TOGGLE_VIEW_MODE ->
-                    if (viewMode == NoteViewMode.READ_ONLY) R.string.edit else R.string.read_only
                 LOCK_NOTE -> if (isNoteLocked) R.string.unlock_note else R.string.lock_note
                 else -> textResId
             }

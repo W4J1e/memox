@@ -34,7 +34,6 @@ class MoreNoteBottomSheet(
                 EditAction.EXPORT,
                 EditAction.DUPLICATE,
                 EditAction.SHARE,
-                EditAction.TOGGLE_VIEW_MODE,
                 EditAction.CHANGE_COLOR,
                 EditAction.LINK_NOTE,
                 EditAction.RESTORE,
@@ -60,7 +59,6 @@ class MoreNoteBottomSheet(
                 val (title, icon) =
                     editAction.getTitleAndIcon(
                         model.pinned,
-                        model.viewMode.value,
                         model.folder,
                         model.type,
                         model.isPinnedToStatus,

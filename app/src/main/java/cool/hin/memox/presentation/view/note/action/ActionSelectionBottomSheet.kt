@@ -29,7 +29,7 @@ class ActionSelectionBottomSheet(
     ActionBottomSheet(
         actions.map { action ->
             val (title, icon) =
-                action.getTitleAndIcon(model.pinned, model.viewMode.value, model.folder, model.type)
+                action.getTitleAndIcon(model.pinned, model.folder, model.type)
             Action(labelResId = title, drawableResId = icon, isSelected = action == oldAction) {
                 onActionSelected(action)
                 true

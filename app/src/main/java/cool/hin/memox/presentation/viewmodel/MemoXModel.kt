@@ -29,7 +29,6 @@ import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Reminder
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
@@ -105,7 +104,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
     val audios = NotNullLiveData<List<Audio>>(emptyList())
 
     val reminders = NotNullLiveData<List<Reminder>>(emptyList())
-    val viewMode = NotNullLiveData(NoteViewMode.EDIT)
 
     val addingFiles = MutableLiveData<Progress>()
     val eventBus = MutableLiveData<Event<List<FileError>>>()
@@ -420,7 +418,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                 files.value = baseNote.files
                 audios.value = baseNote.audios
                 reminders.value = baseNote.reminders
-                viewMode.value = baseNote.viewMode
                 isPinnedToStatus = baseNote.isPinnedToStatus
                 locked = baseNote.locked
                 try {
@@ -526,7 +523,6 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             files.value,
             audios.value,
             reminders.value,
-            viewMode.value,
             isPinnedToStatus,
             locked,
         )

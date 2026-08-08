@@ -15,7 +15,6 @@ import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.getNoteIdFromUrl
 import cool.hin.memox.data.model.getNoteTypeFromUrl
@@ -58,15 +57,8 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         if (notallyModel.isNewNote) {
             binding.EnterBody.requestFocus()
         }
-    }
 
-    override fun toggleCanEdit(mode: NoteViewMode) {
-        super.toggleCanEdit(mode)
-        when {
-            mode == NoteViewMode.EDIT -> showKeyboard(binding.EnterBody)
-            binding.EnterBody.isFocused -> hideKeyboard(binding.EnterBody)
-        }
-        binding.EnterBody.setCanEdit(mode == NoteViewMode.EDIT)
+        // Editor is always editable; initialise formatting/selection callbacks once.
         setupEditor()
     }
 

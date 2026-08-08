@@ -11,7 +11,6 @@ import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.toCheckboxBodyAndSpans
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.presentation.viewmodel.ExportMimeType
 import cool.hin.memox.utils.MIME_TYPE_JSON
@@ -89,7 +88,6 @@ class PlainTextImporter : ExternalImporter {
                             files = listOf(),
                             audios = listOf(),
                             reminders = listOf(),
-                            NoteViewMode.EDIT,
                             false,
                         )
                     )

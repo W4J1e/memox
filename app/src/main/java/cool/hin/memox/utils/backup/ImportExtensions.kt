@@ -25,7 +25,6 @@ import cool.hin.memox.data.model.Converters
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.Label
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.parseToColorString
 import cool.hin.memox.presentation.getQuantityString
@@ -379,11 +378,6 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
             } else emptyList()
         }
 
-    val viewModeIndex = getColumnIndex("viewMode")
-    val viewMode =
-        if (viewModeIndex != -1) {
-            NoteViewMode.valueOfOrDefault(getString(viewModeIndex))
-        } else NoteViewMode.EDIT
     return BaseNote(
         0,
         type,
@@ -401,7 +395,6 @@ private fun Cursor.toBaseNote(sourceDb: SQLiteDatabase): BaseNote {
         files,
         audios,
         reminders,
-        viewMode,
         pinnedToStatusBar,
     )
 }

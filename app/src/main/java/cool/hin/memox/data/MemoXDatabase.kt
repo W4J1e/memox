@@ -20,7 +20,6 @@ import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Color
 import cool.hin.memox.data.model.Converters
 import cool.hin.memox.data.model.Label
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.toColorString
 import cool.hin.memox.presentation.view.misc.NotNullLiveData
 import cool.hin.memox.presentation.viewmodel.preference.BiometricLock
@@ -33,7 +32,7 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 14)
+@Database(entities = [BaseNote::class, Label::class], version = 15)
 abstract class MemoXDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -166,6 +165,7 @@ abstract class MemoXDatabase : RoomDatabase() {
                         Migration12,
                         Migration13,
                         Migration14,
+                        Migration15,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -301,7 +301,7 @@ abstract class MemoXDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
-                    "ALTER TABLE `BaseNote` ADD COLUMN `viewMode` TEXT NOT NULL DEFAULT '${NoteViewMode.EDIT.name}'"
+                    "ALTER TABLE `BaseNote` ADD COLUMN `viewMode` TEXT NOT NULL DEFAULT 'EDIT'"
                 )
             }
         }
@@ -357,6 +357,35 @@ abstract class MemoXDatabase : RoomDatabase() {
                 db.execSQL(
                     "UPDATE `BaseNote` SET `modifiedTimestamp` = `timestamp` WHERE `modifiedTimestamp` = 0"
                 )
+            }
+        }
+
+        object Migration15 : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // The editor's edit/read-only view mode was removed; drop the now-unused column.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `BaseNote_new` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`type` TEXT NOT NULL, `folder` TEXT NOT NULL, `color` TEXT NOT NULL, " +
+                        "`title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, " +
+                        "`timestamp` INTEGER NOT NULL, `modifiedTimestamp` INTEGER NOT NULL, " +
+                        "`labels` TEXT NOT NULL, `body` TEXT NOT NULL, `spans` TEXT NOT NULL, " +
+                        "`items` TEXT NOT NULL, `images` TEXT NOT NULL, `files` TEXT NOT NULL, " +
+                        "`audios` TEXT NOT NULL, `reminders` TEXT NOT NULL, " +
+                        "`isPinnedToStatus` INTEGER NOT NULL, `locked` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "INSERT INTO `BaseNote_new` (" +
+                        "`id`, `type`, `folder`, `color`, `title`, `pinned`, `timestamp`, " +
+                        "`modifiedTimestamp`, `labels`, `body`, `spans`, `items`, `images`, " +
+                        "`files`, `audios`, `reminders`, `isPinnedToStatus`, `locked`) " +
+                        "SELECT `id`, `type`, `folder`, `color`, `title`, `pinned`, `timestamp`, " +
+                        "`modifiedTimestamp`, `labels`, `body`, `spans`, `items`, `images`, " +
+                        "`files`, `audios`, `reminders`, `isPinnedToStatus`, `locked` " +
+                        "FROM `BaseNote`"
+                )
+                db.execSQL("DROP TABLE `BaseNote`")
+                db.execSQL("ALTER TABLE `BaseNote_new` RENAME TO `BaseNote`")
             }
         }
     }

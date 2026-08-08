@@ -23,7 +23,6 @@ import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.ColorString
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.createNoteUrl
 import cool.hin.memox.presentation.activity.note.NoteActionHandler.Companion.REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS
@@ -247,7 +246,6 @@ class NoteActionHandler(
             }
             EditAction.SHARE -> share()
             EditAction.DELETE -> delete()
-            EditAction.TOGGLE_VIEW_MODE -> toggleViewMode()
             EditAction.DELETE_FOREVER -> deleteForever()
             EditAction.RESTORE -> restore()
             EditAction.LOCK_NOTE -> toggleNoteLock()
@@ -408,14 +406,6 @@ class NoteActionHandler(
             }
             .setCancelButton()
             .show()
-    }
-
-    private fun toggleViewMode() {
-        notallyModel.viewMode.value =
-            when (notallyModel.viewMode.value) {
-                NoteViewMode.EDIT -> NoteViewMode.READ_ONLY
-                NoteViewMode.READ_ONLY -> NoteViewMode.EDIT
-            }
     }
 
     @RequiresApi(24)

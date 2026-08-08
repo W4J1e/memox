@@ -5,7 +5,6 @@ import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Reminder
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
@@ -312,7 +311,6 @@ class QuillpadImporterTest {
                 files,
                 audios,
                 reminders,
-                NoteViewMode.EDIT,
                 isPinnedToStatus = false,
             )
         }

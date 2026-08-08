@@ -88,7 +88,6 @@ class ModelExtensionsTest {
         assertEquals(1, baseNote.reminders.size)
         assertEquals(1742822848689, baseNote.timestamp)
         assertEquals(1742823434623, baseNote.modifiedTimestamp)
-        assertEquals(NoteViewMode.READ_ONLY, baseNote.viewMode)
         assertEquals(listOf("TestLabel"), baseNote.labels)
         assertEquals(Repetition(1, RepetitionTimeUnit.DAYS), baseNote.reminders[0].repetition)
     }
@@ -116,7 +115,6 @@ class ModelExtensionsTest {
                 listOf(FileAttachment("localFile", "originalFile", "text/plain")),
                 listOf(Audio("audio", 10L, 12312334L)),
                 listOf(Reminder(1, Date(1743253506957), Repetition(10, RepetitionTimeUnit.WEEKS))),
-                NoteViewMode.READ_ONLY,
                 isPinnedToStatus = false,
             )
 

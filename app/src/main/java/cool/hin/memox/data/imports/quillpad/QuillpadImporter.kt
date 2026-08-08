@@ -15,7 +15,6 @@ import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.toCheckboxBodyAndSpans
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Reminder
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.utils.getMimeType
@@ -178,7 +177,6 @@ class QuillpadImporter : ExternalImporter {
             files = files,
             audios = audios,
             reminders = reminders,
-            viewMode = NoteViewMode.EDIT,
             isPinnedToStatus = false,
         )
     }

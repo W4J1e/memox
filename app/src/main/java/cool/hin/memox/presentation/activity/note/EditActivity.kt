@@ -42,7 +42,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialFadeThrough
 import cool.hin.memox.R
 import cool.hin.memox.data.model.FileAttachment
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.generateBaseNote
 import cool.hin.memox.data.sync.SyncRouter
@@ -125,7 +124,7 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     private lateinit var noteLockActivityResultLauncher: ActivityResultLauncher<Intent>
 
     protected val canEdit
-        get() = notallyModel.viewMode.value == NoteViewMode.EDIT
+        get() = true
 
     private val autoSaveHandler = Handler(Looper.getMainLooper())
     private val autoSaveRunnable = Runnable {
@@ -320,18 +319,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 )
             }
             insets
-        }
-    }
-
-    open fun toggleCanEdit(mode: NoteViewMode) {
-        binding.EnterTitle.apply {
-            if (isFocused) {
-                when {
-                    mode == NoteViewMode.EDIT -> showKeyboard(this)
-                    else -> hideKeyboard(this)
-                }
-            }
-            setCanEdit(mode == NoteViewMode.EDIT)
         }
     }
 
@@ -648,12 +635,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     fun ViewGroup.addBottomAction(action: EditAction) {
-        // 眼睛(视图切换)图标已从底部栏移除，仅保留在三点菜单中
-        if (action == EditAction.TOGGLE_VIEW_MODE) return
         val (title, icon) =
             action.getTitleAndIcon(
                 notallyModel.pinned,
-                notallyModel.viewMode.value,
                 notallyModel.folder,
                 notallyModel.type,
                 notallyModel.isPinnedToStatus,
@@ -668,11 +652,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 true
             }
         }
-    }
-
-    fun updateToggleViewMode() {
-        updateTopActions(preferences.editNoteActivityTopActions.value)
-        updateBottomActions(preferences.editNoteActivityBottomAction.value)
     }
 
     abstract fun configureUI()
@@ -704,10 +683,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     }
 
     protected open fun setupAdditionalListeners() {
-        notallyModel.viewMode.observe(this) { value ->
-            updateToggleViewMode()
-            value?.let { toggleCanEdit(it) }
-        }
         preferences.editNoteActivityTopActions.observe(this) { topActions ->
             updateTopActions(topActions)
         }
@@ -1070,7 +1045,6 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 val (title, icon) =
                     action.getTitleAndIcon(
                         notallyModel.pinned,
-                        notallyModel.viewMode.value,
                         notallyModel.folder,
                         notallyModel.type,
                         notallyModel.isPinnedToStatus,

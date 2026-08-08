@@ -25,7 +25,6 @@ data class BaseNote(
     val files: List<FileAttachment>,
     val audios: List<Audio>,
     val reminders: List<Reminder>,
-    val viewMode: NoteViewMode,
     val isPinnedToStatus: Boolean,
     val locked: Boolean = false,
 ) : Item {
@@ -56,7 +55,6 @@ data class BaseNote(
         if (files != other.files) return false
         if (audios != other.audios) return false
         if (reminders != other.reminders) return false
-        if (viewMode != other.viewMode) return false
         if (isPinnedToStatus != other.isPinnedToStatus) return false
         if (locked != other.locked) return false
 
@@ -88,7 +86,6 @@ data class BaseNote(
         result = 31 * result + files.hashCode()
         result = 31 * result + audios.hashCode()
         result = 31 * result + reminders.hashCode()
-        result = 31 * result + viewMode.hashCode()
         result = 31 * result + isPinnedToStatus.hashCode()
         result = 31 * result + locked.hashCode()
         return result

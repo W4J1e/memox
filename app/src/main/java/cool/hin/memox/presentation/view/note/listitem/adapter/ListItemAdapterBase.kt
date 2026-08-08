@@ -7,7 +7,6 @@ import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.NestedScrollViewItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.databinding.RecyclerListItemBinding
 import cool.hin.memox.presentation.view.note.listitem.ListItemDragCallback
 import cool.hin.memox.presentation.view.note.listitem.ListManager
@@ -41,7 +40,7 @@ abstract class ListItemAdapterBase(
         touchHelper.attachToRecyclerView(recyclerView)
     }
 
-    fun onBindViewHolder(holder: ListItemVH, position: Int, viewMode: NoteViewMode) {
+    fun onBindViewHolder(holder: ListItemVH, position: Int) {
         val item = getItem(position)
         holder.bind(
             backgroundColor,
@@ -49,7 +48,6 @@ abstract class ListItemAdapterBase(
             position,
             highlights[position],
             preferences.listItemSorting.value,
-            viewMode,
         )
     }
 

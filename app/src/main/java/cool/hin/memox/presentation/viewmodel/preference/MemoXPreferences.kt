@@ -351,7 +351,7 @@ class MemoXPreferences private constructor(private val context: Context) {
 
         val DEFAULT_EDIT_NOTE_TOP_ACTIONS =
             listOf(EditAction.SEARCH, EditAction.LABELS, EditAction.SHARE)
-        val DEFAULT_EDIT_NOTE_BOTTOM_ACTION = EditAction.TOGGLE_VIEW_MODE
+        val DEFAULT_EDIT_NOTE_BOTTOM_ACTION = EditAction.EXPORT
 
         @Volatile private var instance: MemoXPreferences? = null
 

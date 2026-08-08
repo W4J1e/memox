@@ -5,7 +5,6 @@ import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.Label
 import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.toCheckboxBodyAndSpans
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.parseToColorString
@@ -117,7 +116,6 @@ private fun XmlPullParser.parseBaseNote(rootTag: String, folder: Folder): BaseNo
         emptyList(),
         emptyList(),
         emptyList(),
-        NoteViewMode.EDIT,
         false,
     )
 }

@@ -20,7 +20,6 @@ import cn.leaqi.drawer.SwipeDrawer.STATE_OPEN
 import cool.hin.memox.data.imports.txt.extractListItems
 import cool.hin.memox.data.imports.txt.findListSyntaxRegex
 import cool.hin.memox.data.model.ListItem
-import cool.hin.memox.data.model.NoteViewMode
 import cool.hin.memox.databinding.RecyclerListItemBinding
 import cool.hin.memox.presentation.clone
 import cool.hin.memox.presentation.createListTextWatcherWithHistory
@@ -93,19 +92,17 @@ class ListItemVH(
         position: Int,
         highlights: List<ListItemHighlight>?,
         autoSort: ListItemSort,
-        viewMode: NoteViewMode,
     ) {
-        updateEditText(item, position, viewMode)
+        updateEditText(item, position)
 
         updateCheckBox(item, position)
 
-        updateDeleteButton(item, position, viewMode)
+        updateDeleteButton(item, position)
 
-        updateSwipe(item.isChild, viewMode == NoteViewMode.EDIT && position != 0 && !item.checked)
+        updateSwipe(item.isChild, position != 0 && !item.checked)
         binding.DragHandle.apply {
             visibility =
                 when {
-                    viewMode != NoteViewMode.EDIT -> GONE
                     item.checked && autoSort.isAutoSortChecked -> INVISIBLE
                     else -> VISIBLE
                 }
@@ -129,11 +126,10 @@ class ListItemVH(
         binding.EditText.focusAndSelect(selectionStart, selectionEnd, inputMethodManager)
     }
 
-    private fun updateDeleteButton(item: ListItem, position: Int, viewMode: NoteViewMode) {
+    private fun updateDeleteButton(item: ListItem, position: Int) {
         binding.Delete.apply {
             visibility =
                 when {
-                    viewMode != NoteViewMode.EDIT -> GONE
                     item.checked -> VISIBLE
                     else -> INVISIBLE
                 }
@@ -144,7 +140,7 @@ class ListItemVH(
         }
     }
 
-    private fun updateEditText(item: ListItem, position: Int, viewMode: NoteViewMode) {
+    private fun updateEditText(item: ListItem, position: Int) {
         binding.EditText.apply {
             setText(item.body)
             paintFlags =
@@ -155,38 +151,14 @@ class ListItemVH(
                 }
             alpha = if (item.checked) 0.5f else 1.0f
             contentDescription = "EditText$position"
-            if (viewMode == NoteViewMode.EDIT) {
-                setOnFocusChangeListener { _, hasFocus ->
-                    binding.Delete.visibility = if (hasFocus) VISIBLE else INVISIBLE
-                }
-                binding.Content.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
-            } else {
-                onFocusChangeListener = null
-                binding.Content.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+            setOnFocusChangeListener { _, hasFocus ->
+                binding.Delete.visibility = if (hasFocus) VISIBLE else INVISIBLE
             }
-            setCanEdit(viewMode == NoteViewMode.EDIT)
+            binding.Content.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
+            setCanEdit(true)
             isFocusable = !item.checked
-            when (viewMode) {
-                NoteViewMode.EDIT -> {
-                    setOnClickListener(null)
-                    setOnLongClickListener(null)
-                }
-                NoteViewMode.READ_ONLY -> {
-                    setOnClickListener {
-                        if (absoluteAdapterPosition != NO_POSITION) {
-                            listManager.changeChecked(
-                                absoluteAdapterPosition,
-                                !item.checked,
-                                inCheckedList,
-                            )
-                        }
-                    }
-                    setOnLongClickListener {
-                        context?.copyToClipBoard(item.body)
-                        true
-                    }
-                }
-            }
+            setOnClickListener(null)
+            setOnLongClickListener(null)
             setOnNextAction { listManager.add(bindingAdapterPosition + 1) }
             setOnKeyListener { _, keyCode, event ->
                 if (
