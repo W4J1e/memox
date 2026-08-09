@@ -3,11 +3,16 @@ package cool.hin.memox.presentation.view.main
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import androidx.core.view.isVisible
 import com.google.android.material.color.MaterialColors
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import cool.hin.memox.R
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.SpanRepresentation
@@ -205,20 +210,47 @@ class BaseNoteVH(
             ImageViewMore.visibility = GONE
             NoteThumbnail.visibility = GONE
             Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
+            ImageView.visibility = GONE
+            Glide.with(ImageView.context).clear(ImageView)
+            ImageLayout.visibility = GONE
 
             val showBanner = baseNote.type == Type.NOTE && !baseNote.locked
             val firstImage = baseNote.images.firstOrNull()
             if (showBanner && firstImage != null && mediaRoot != null) {
-                // Top banner: full-width centerCrop image, clipped to the card's rounded corners.
+                // Keep-style header: scale the image to fit the card width and show it fully,
+                // with height driven by the image's aspect ratio (no fixed height / no crop).
                 val file = File(mediaRoot, firstImage.localName)
-                ImageLayout.visibility = VISIBLE
-                ImageView.visibility = VISIBLE
-                ImageView.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                Glide.with(ImageView.context).load(file).centerCrop().into(ImageView)
+                ImageView.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                ImageView.adjustViewBounds = true
+                Glide.with(ImageView.context)
+                    .load(file)
+                    .fitCenter()
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>,
+                            isFirstResource: Boolean,
+                        ): Boolean {
+                            ImageLayout.visibility = GONE
+                            ImageView.visibility = GONE
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: Drawable?,
+                            model: Any?,
+                            target: Target<Drawable>,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean,
+                        ): Boolean {
+                            ImageLayout.visibility = VISIBLE
+                            ImageView.visibility = VISIBLE
+                            return false
+                        }
+                    })
+                    .into(ImageView)
             } else {
-                ImageLayout.visibility = GONE
-                ImageView.visibility = GONE
-                Glide.with(ImageView.context).clear(ImageView)
                 if (baseNote.locked) {
                     // Locked notes hide their body/list; show a lock icon in the thumbnail slot.
                     NoteThumbnail.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER

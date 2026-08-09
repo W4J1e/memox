@@ -1,6 +1,6 @@
 {
-  "version": "1.1.23",
-  "versionCode": 1123,
-  "changelog": "更新说明：\n- 紧急修复：1.1.22 升级时因数据库迁移遗漏索引导致 App 闪退（Migration didn't properly handle: BaseNote）。已将数据库升到 v16，已升级到 1.1.22 的用户升级到 1.1.23 会自动修复损坏的数据库\n- 清理：移除笔记的「编辑模式 / 浏览模式」切换功能，底层 viewMode 状态已彻底移除，所有笔记统一为可编辑；历史笔记中残留的 viewMode 字段会在下次保存时自动清除",
+  "version": "1.1.24",
+  "versionCode": 1124,
+  "changelog": "更新说明：\n- 优化列表和宫格卡片的显示，笔记头图预览可以完整显示而非裁切了。",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }
