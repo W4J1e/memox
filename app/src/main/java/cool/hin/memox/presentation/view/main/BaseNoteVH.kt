@@ -4,10 +4,14 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.core.view.isVisible
 import com.google.android.material.color.MaterialColors
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import android.os.Handler
+import android.os.Looper
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
@@ -51,6 +55,16 @@ class BaseNoteVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var searchKeyword: String = ""
+
+    /** True when the list is shown as a staggered grid (half-width cards). Drives header sizing. */
+    private var isGrid: Boolean = false
+
+    companion object {
+        // Coalesces multiple post-load rebalances into one so the staggered grid settles once
+        // instead of shuffling on every image.
+        private val rebalanceHandler = Handler(Looper.getMainLooper())
+        private var rebalanceRunnable: Runnable? = null
+    }
 
     fun setSearchKeyword(keyword: String) {
         this.searchKeyword = keyword
@@ -108,7 +122,15 @@ class BaseNoteVH(
         binding.root.isChecked = checked
     }
 
-    fun bind(baseNote: BaseNote, imageRoot: File?, checked: Boolean, sortBy: NotesSortBy) {
+    fun bind(baseNote: BaseNote, imageRoot: File?, checked: Boolean, sortBy: NotesSortBy, isGrid: Boolean) {
+        this.isGrid = isGrid
+        // Tighter horizontal margins in grid so the two columns sit closer together; list keeps
+        // the 8dp from the layout XML.
+        val hMargin = if (isGrid) 4.dp else 8.dp
+        (binding.root.layoutParams as android.view.ViewGroup.MarginLayoutParams).apply {
+            marginStart = hMargin
+            marginEnd = hMargin
+        }
         updateCheck(checked, baseNote.color)
 
         bindNote(baseNote, searchKeyword)
@@ -210,46 +232,126 @@ class BaseNoteVH(
             ImageViewMore.visibility = GONE
             NoteThumbnail.visibility = GONE
             Glide.with(NoteThumbnail.context).clear(NoteThumbnail)
-            ImageView.visibility = GONE
             Glide.with(ImageView.context).clear(ImageView)
+            ImageView.visibility = GONE
             ImageLayout.visibility = GONE
+
+            // Reset header to a clean, mode-neutral baseline on EVERY bind. Without this, a card
+            // recycled between modes keeps leftover scaleType / dimensionRatio / height and renders
+            // wrong: grid -> list showed a cropped banner with a big empty gap; list -> grid cropped
+            // every image into the 150dp container.
+            val ivLp = ImageView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+            ivLp.dimensionRatio = null
+            ivLp.height = 0
+            ivLp.width = 0
+            ImageView.layoutParams = ivLp
+            ImageView.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+            ImageView.adjustViewBounds = false
+            ImageView.maxHeight = Int.MAX_VALUE
 
             val showBanner = baseNote.type == Type.NOTE && !baseNote.locked
             val firstImage = baseNote.images.firstOrNull()
             if (showBanner && firstImage != null && mediaRoot != null) {
-                // Keep-style header: scale the image to fit the card width and show it fully,
-                // with height driven by the image's aspect ratio (no fixed height / no crop).
                 val file = File(mediaRoot, firstImage.localName)
-                ImageView.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
-                ImageView.adjustViewBounds = true
-                Glide.with(ImageView.context)
-                    .load(file)
-                    .fitCenter()
-                    .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(
-                            e: GlideException?,
-                            model: Any?,
-                            target: Target<Drawable>,
-                            isFirstResource: Boolean,
-                        ): Boolean {
-                            ImageLayout.visibility = GONE
-                            ImageView.visibility = GONE
-                            return false
-                        }
+                Log.d("MemoXImg", "setImages isGrid=$isGrid file=${firstImage.localName}")
+                if (isGrid) {
+                    // GRID (half width): show the FULL image, never crop. The container
+                    // (ImageLayout) wraps the image height (WRAP_CONTENT) and the ImageView uses
+                    // adjustViewBounds so it sizes itself to the image's own aspect ratio — NO async
+                    // layout-param mutation, so a card recycled grid -> list can never keep a stale
+                    // grid height that bleeds into list mode (that was the "list still shows grid's
+                    // cropped tall header" bug). Very tall portraits are capped to 85% of the screen
+                    // via maxHeight; fitCenter then letterboxes the full image (no crop).
+                    //
+                    // ImageLayout starts GONE; reveal it (VISIBLE) before Glide loads so the
+                    // ViewTarget can measure a non-zero width and decode (no deadlock).
+                    val ilLp = ImageLayout.layoutParams
+                    ilLp.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    ImageLayout.layoutParams = ilLp
+                    ImageLayout.visibility = VISIBLE
+                    ImageView.scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+                    ImageView.adjustViewBounds = true
+                    val ivLp = ImageView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                    ivLp.width = 0
+                    ivLp.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                    ivLp.dimensionRatio = null
+                    ImageView.layoutParams = ivLp
+                    ImageView.maxHeight = (binding.root.resources.displayMetrics.heightPixels * 0.85f).toInt()
+                    ImageView.visibility = VISIBLE
+                    val maxW = binding.root.resources.displayMetrics.widthPixels
+                    val maxH = (binding.root.resources.displayMetrics.heightPixels * 0.85f).toInt()
+                    Glide.with(ImageView.context)
+                        .load(file)
+                        .override(maxW, maxH)
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>,
+                                isFirstResource: Boolean,
+                            ): Boolean {
+                                ImageLayout.visibility = GONE
+                                ImageView.visibility = GONE
+                                return false
+                            }
 
-                        override fun onResourceReady(
-                            resource: Drawable?,
-                            model: Any?,
-                            target: Target<Drawable>,
-                            dataSource: DataSource,
-                            isFirstResource: Boolean,
-                        ): Boolean {
-                            ImageLayout.visibility = VISIBLE
-                            ImageView.visibility = VISIBLE
-                            return false
-                        }
-                    })
-                    .into(ImageView)
+                            override fun onResourceReady(
+                                resource: Drawable?,
+                                model: Any?,
+                                target: Target<Drawable>,
+                                dataSource: DataSource,
+                                isFirstResource: Boolean,
+                            ): Boolean {
+                                // Sizing is handled by adjustViewBounds; nothing to mutate here.
+                                // Guard against a stale callback that fired after this card was
+                                // already recycled to list mode.
+                                if (isGrid) {
+                                    rebalanceGrid()
+                                }
+                                return false
+                            }
+                        })
+                        .into(ImageView)
+                    Log.d("MemoXImg", "  GRID wrap maxHeight=${(binding.root.resources.displayMetrics.heightPixels * 0.85f).toInt()}")
+                } else {
+                    // LIST (full width): fixed 150dp banner + centerCrop (e171ad26 / 63877692 style).
+                    // Pin the banner height DIRECTLY on the ImageView (concrete px, not 0dp match-
+                    // constraint) AND force Glide's decode size via .override(). This makes the
+                    // banner immune to recycled grid state on ImageLayout and to Glide decoding to
+                    // a stale (tall) measured size — the two remaining causes of "grid -> list
+                    // still shows a taller, more-cropped header".
+                    val density = binding.root.resources.displayMetrics.density
+                    val bannerPx = (150f * density).toInt()
+                    val cardW = binding.root.width.takeIf { it > 0 }
+                        ?: binding.root.resources.displayMetrics.widthPixels
+
+                    // ImageLayout back to 150dp (grid leaves it WRAP_CONTENT).
+                    val ilLp = ImageLayout.layoutParams
+                    ilLp.height = bannerPx
+                    ImageLayout.layoutParams = ilLp
+
+                    // ImageView pinned to 150dp explicitly; clear adjustViewBounds / maxHeight /
+                    // dimensionRatio left by grid so a recycled card can't keep grid's tall sizing.
+                    val ivLp2 =
+                        ImageView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+                    ivLp2.width = 0
+                    ivLp2.height = bannerPx
+                    ivLp2.dimensionRatio = null
+                    ImageView.layoutParams = ivLp2
+                    ImageView.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                    ImageView.adjustViewBounds = false
+                    ImageView.maxHeight = Int.MAX_VALUE
+
+                    ImageLayout.visibility = VISIBLE
+                    ImageView.visibility = VISIBLE
+
+                    Glide.with(ImageView.context)
+                        .load(file)
+                        .override(cardW, bannerPx)
+                        .centerCrop()
+                        .into(ImageView)
+                    Log.d("MemoXImg", "  LIST bannerPx=$bannerPx cardW=$cardW")
+                }
             } else {
                 if (baseNote.locked) {
                     // Locked notes hide their body/list; show a lock icon in the thumbnail slot.
@@ -260,6 +362,18 @@ class BaseNoteVH(
                 }
             }
         }
+    }
+
+    private fun rebalanceGrid() {
+        val rv = binding.root.parent as? RecyclerView ?: return
+        if (rebalanceRunnable == null) {
+            rebalanceRunnable = Runnable {
+                rebalanceRunnable = null
+                (rv.layoutManager as? StaggeredGridLayoutManager)?.invalidateSpanAssignments()
+            }
+        }
+        rebalanceHandler.removeCallbacks(rebalanceRunnable!!)
+        rebalanceHandler.postDelayed(rebalanceRunnable!!, 100)
     }
 
     private fun setFiles() {

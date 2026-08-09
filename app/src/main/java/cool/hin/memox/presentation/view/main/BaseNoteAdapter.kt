@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SortedList
 import androidx.recyclerview.widget.SortedListAdapterCallback
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Header
 import cool.hin.memox.data.model.Item
@@ -62,9 +63,10 @@ class BaseNoteAdapter(
         when (val item = list[position]) {
             is Header -> (holder as HeaderVH).bind(item)
             is BaseNote -> {
+                val isGrid = attachedRecyclerView?.layoutManager is StaggeredGridLayoutManager
                 (holder as BaseNoteVH).apply {
                     setSearchKeyword(searchKeyword)
-                    bind(item, imageRoot, selectedIds.contains(item.id), preferences.sortedBy)
+                    bind(item, imageRoot, selectedIds.contains(item.id), preferences.sortedBy, isGrid)
                 }
             }
         }

@@ -39,7 +39,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.transition.platform.MaterialFadeThrough
 import cool.hin.memox.R
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Type
@@ -137,10 +136,13 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun finish() {
         lifecycleScope.launch(Dispatchers.Main) {
             checkSave()
             super.finish()
+            // Keep-style close: editor zoom-fades out, the underlying list stays put (no anim).
+            overridePendingTransition(0, R.anim.note_zoom_out)
         }
     }
 
@@ -187,21 +189,17 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.requestFeature(android.view.Window.FEATURE_ACTIVITY_TRANSITIONS)
         actionHandler.setupActivityResultLaunchers()
         inputMethodManager =
             ContextCompat.getSystemService(baseContext, InputMethodManager::class.java)
         notallyModel.type = type
         initialiseBinding()
         setContentView(binding.root)
-        // Material "fade through" enter/return transition.
-        // NOTE: We deliberately avoid the shared-element MaterialContainerTransform here.
-        // As an *activity-to-activity* transition the framework passes the DecorView as the
-        // sceneRoot, so MaterialContainerTransform.findAncestorById(sceneRoot,
-        // android.R.id.content) throws "android:id/content is not a valid ancestor" and the
-        // note screen crashes on open. A fade-through is a safe Material motion alternative.
-        window.enterTransition = MaterialFadeThrough().apply { duration = 250 }
-        window.returnTransition = MaterialFadeThrough().apply { duration = 200 }
+        // Open/close is a Keep-style zoom+fade window animation (R.anim.note_zoom_in/out) applied
+        // via overridePendingTransition in MemoXFragment (open) and finish() (close). We avoid
+        // activity shared-element/content transitions here on purpose: they scale the whole
+        // editor including the top and bottom bars, which looked stiff. A window animation scales
+        // everything uniformly — elegant, no per-bar distortion.
         configureEdgeToEdgeInsets()
 
         noteLockActivityResultLauncher =
@@ -564,9 +562,9 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
     protected open fun openMoreOptionsBottomSheet() {
         val prefs = MemoXPreferences.getInstance(this@EditActivity)
         val topActions = prefs.getSafeEditNoteActivityTopActions()
-        val bottomAction = prefs.editNoteActivityBottomAction.value
 
-        MoreNoteBottomSheet(notallyModel, colorInt, actionHandler, topActions, bottomAction)
+        // bottomAction 传 null：不在三点菜单里排除任何动作，导出/置顶等一律收在三点菜单内。
+        MoreNoteBottomSheet(notallyModel, colorInt, actionHandler, topActions, bottomAction = null)
             .show(supportFragmentManager, MoreNoteBottomSheet.TAG)
     }
 
@@ -574,8 +572,8 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         binding.BottomAppBarRight.apply {
             removeAllViews()
 
-            // 眼睛(视图切换)已在 addBottomAction 内被跳过；锁定笔记已移入三点菜单
-            addBottomAction(bottomAction)
+            // 底部栏只保留 撤销/重做 + 三点菜单；导出/置顶等所有其它动作一律收在三点菜单内，
+            // 不再在底部栏渲染任何可配置快捷动作按钮（bottomAction 仅保留供旧偏好读取，不再渲染）。
 
             // 撤销/重做：Keep 风格，无可撤销/重做内容时隐藏，位于三点菜单左侧
             undo =

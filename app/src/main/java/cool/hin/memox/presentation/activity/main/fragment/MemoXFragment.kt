@@ -146,7 +146,7 @@ abstract class MemoXFragment : Fragment(), ItemListener {
                 if (model.actionMode.isEnabled()) {
                     handleNoteSelection(item.id, position, item)
                 } else {
-                    goToActivity(EditNoteActivity::class.java, item, position)
+                    goToActivity(EditNoteActivity::class.java, item)
                 }
             }
             }
@@ -357,6 +357,12 @@ abstract class MemoXFragment : Fragment(), ItemListener {
         model.preferences.notesView.observe(viewLifecycleOwner) {
             // Rebuild the layout manager when the view (grid/list) is toggled from the top bar.
             setupRecyclerView()
+            // Swapping LayoutManager moves the existing cards into the scrap cache and re-attaches
+            // them WITHOUT calling onBindViewHolder again. A card bound in grid mode would then keep
+            // its grid header state (WRAP_CONTENT / adjustViewBounds) when shown in list mode, and
+            // vice-versa — that was the "list header still cropped like grid" bug after switching.
+            // Force a full rebind so setImages re-applies the correct sizing for the active mode.
+            notesAdapter?.notifyDataSetChanged()
         }
 
         model.actionMode.closeListener.observe(viewLifecycleOwner) { event ->
@@ -383,7 +389,8 @@ abstract class MemoXFragment : Fragment(), ItemListener {
         }
     }
 
-    private fun goToActivity(activity: Class<*>, baseNote: BaseNote, position: Int) {
+    @Suppress("DEPRECATION")
+    private fun goToActivity(activity: Class<*>, baseNote: BaseNote) {
         val intent = Intent(requireContext(), activity)
         intent.putExtra(EXTRA_SELECTED_BASE_NOTE, baseNote.id)
         // If launched from Search fragment with a non-empty keyword, pass it to the editor to
@@ -392,11 +399,12 @@ abstract class MemoXFragment : Fragment(), ItemListener {
         if (isInSearch && model.keyword.isNotBlank()) {
             intent.putExtra(EditActivity.EXTRA_INITIAL_SEARCH_QUERY, model.keyword)
         }
-        // Open the editor with a plain launch. The note screen uses a Material "fade through"
-        // window transition; we intentionally do NOT use a shared-element MaterialContainerTransform
-        // here because as an activity-to-activity transition its sceneRoot is the DecorView, which
-        // makes MaterialContainerTransform crash with "android:id/content is not a valid ancestor".
+        // Keep-style open: editor zoom-fades in (R.anim.note_zoom_in); the underlying list stays
+        // put (0 = no exit animation) so only the editor animates — the top/bottom bars scale
+        // uniformly with the content, avoiding the stiff per-bar scaling of a shared-element
+        // morph. Close animation is applied in EditActivity.finish().
         openNoteActivityResultLauncher.launch(intent)
+        requireActivity().overridePendingTransition(R.anim.note_zoom_in, 0)
     }
 
     abstract fun getBackground(): Int

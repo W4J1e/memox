@@ -184,7 +184,7 @@ class EditNoteActivity : EditActivity(Type.NOTE) {
         // Right side: 撤销/重做（Keep 风格，无内容时隐藏）、更多（锁定笔记已移入三点菜单）
         binding.BottomAppBarRight.apply {
             removeAllViews()
-            addBottomAction(preferences.editNoteActivityBottomAction.value)
+            // 底部栏只保留 撤销/重做 + 三点菜单；导出/置顶等一律收在三点菜单内，不渲染快捷动作按钮。
             undo =
                 addIconButton(
                     R.string.undo, R.drawable.undo, colorInt, marginStart = 2,

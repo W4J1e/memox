@@ -351,6 +351,8 @@ class MemoXPreferences private constructor(private val context: Context) {
 
         val DEFAULT_EDIT_NOTE_TOP_ACTIONS =
             listOf(EditAction.SEARCH, EditAction.LABELS, EditAction.SHARE)
+        // 底部栏不再渲染任何可配置快捷动作（仅 撤销/重做 + 三点菜单）；此默认值仅作历史偏好
+        // 读取用途、不再影响底部栏显示。导出等所有动作一律收在三点菜单内（sheet 传 null）。
         val DEFAULT_EDIT_NOTE_BOTTOM_ACTION = EditAction.EXPORT
 
         @Volatile private var instance: MemoXPreferences? = null
