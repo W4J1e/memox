@@ -9,6 +9,8 @@ import android.net.Uri
 import android.provider.Settings
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
+import androidx.core.widget.doAfterTextChanged
+import android.view.LayoutInflater
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -18,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
+import cool.hin.memox.databinding.DialogInputBinding
 import cool.hin.memox.data.model.Audio
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.ColorString
@@ -32,10 +35,10 @@ import cool.hin.memox.presentation.activity.note.PickNoteActivity.Companion.EXTR
 import cool.hin.memox.presentation.activity.note.PickNoteActivity.Companion.EXTRA_PICKED_NOTE_TYPE
 import cool.hin.memox.presentation.activity.note.SelectLabelsActivity.Companion.EXTRA_SELECTED_LABELS
 import cool.hin.memox.presentation.activity.note.reminders.RemindersActivity
-import cool.hin.memox.presentation.bindLabels
 import cool.hin.memox.presentation.checkNotificationPermission
 import cool.hin.memox.presentation.isLightColor
 import cool.hin.memox.presentation.setCancelButton
+import cool.hin.memox.presentation.showAndFocus
 import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.note.action.ExportBottomSheet
 import cool.hin.memox.presentation.viewmodel.ExportMimeType
@@ -122,12 +125,7 @@ class NoteActionHandler(
                     val list = result.data?.getStringArrayListExtra(EXTRA_SELECTED_LABELS)
                     if (list != null && list != notallyModel.labels) {
                         notallyModel.setLabels(list)
-                        activity.binding.LabelGroup.bindLabels(
-                            notallyModel.labels,
-                            notallyModel.textSize,
-                            paddingTop = true,
-                            activity.colorInt,
-                        )
+                        activity.bindLabels()
                         activity.resetIdleTimer()
                     }
                 }
@@ -238,6 +236,7 @@ class NoteActionHandler(
             EditAction.PIN_TO_STATUS -> pinToStatus()
             EditAction.REMINDERS -> changeReminders()
             EditAction.LABELS -> changeLabels()
+            EditAction.FOLDER -> changeFolder()
             EditAction.CHANGE_COLOR -> changeColor()
             EditAction.DUPLICATE -> duplicate()
             EditAction.EXPORT -> {
@@ -317,6 +316,85 @@ class NoteActionHandler(
         val intent = Intent(activity, SelectLabelsActivity::class.java)
         intent.putStringArrayListExtra(EditActivity.EXTRA_SELECTED_LABELS, notallyModel.labels)
         selectLabelsActivityResultLauncher.launch(intent)
+    }
+
+    internal fun changeFolder() {
+        activity.lifecycleScope.launch {
+            showChangeFolderDialog(activity.baseModel.getAllFolders().toMutableList())
+        }
+    }
+
+    private fun showChangeFolderDialog(folders: MutableList<String>) {
+        val currentFolderId = notallyModel.folderId
+        // #5: 用户希望"新建文件夹"和"取消"放在底部按钮栏，而不是夹在 radio 选项里。
+        // 用 setSingleChoiceItems 列出文件夹（点击仅更新 pendingIndex），再用底部三个按钮：
+        // - 中性按钮（Neutral）= "新建文件夹"：弹出输入框
+        // - 负向按钮（Negative）= "取消"：关闭弹窗
+        // - 正向按钮（Positive）= "移动"：按 pendingIndex 应用
+        val items: List<String?> = listOf<String?>(null) + folders
+        val checkedItem =
+            when {
+                currentFolderId.isEmpty() -> 0
+                else -> (items.indexOf(currentFolderId)).coerceAtLeast(0)
+            }
+        val titles =
+            items
+                .map { name ->
+                    when {
+                        name == null -> activity.getString(R.string.no_folder)
+                        else -> name ?: ""
+                    }
+                }
+                .toTypedArray()
+        var pendingIndex = checkedItem
+        val dialog =
+            MaterialAlertDialogBuilder(activity)
+                .setTitle(R.string.folder)
+                .setCancelButton()
+                .setSingleChoiceItems(titles, checkedItem) { _, which -> pendingIndex = which }
+                .setNeutralButton(R.string.add_folder) { d, _ ->
+                    d.dismiss()
+                    showAddFolderDialog { newName ->
+                        notallyModel.folderId = newName
+                        activity.bindFolder()
+                    }
+                }
+                .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
+                .setPositiveButton(R.string.move) { _, _ ->
+                    val selected = items.getOrNull(pendingIndex)
+                    notallyModel.folderId = selected ?: ""
+                    activity.bindFolder()
+                }
+                .create()
+        dialog.show()
+    }
+
+    private fun showAddFolderDialog(onCreated: (name: String) -> Unit) {
+        val inflater = LayoutInflater.from(activity)
+        val dialogBinding = DialogInputBinding.inflate(inflater)
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.add_folder)
+            .setView(dialogBinding.root)
+            .setCancelButton()
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                val value = dialogBinding.EditText.text.toString().trim()
+                if (value.isNotEmpty()) {
+                    activity.baseModel.insertFolder(value) { success ->
+                        if (success) {
+                            dialog.dismiss()
+                            onCreated(value)
+                        } else {
+                            activity.showToast(R.string.folder_exists)
+                        }
+                    }
+                }
+            }
+            .showAndFocus(dialogBinding.EditText, allowFullSize = true) { positiveButton ->
+                dialogBinding.EditText.doAfterTextChanged { text ->
+                    positiveButton.isEnabled = !text.isNullOrEmpty()
+                }
+                positiveButton.isEnabled = false
+            }
     }
 
     private fun changeColor() {
@@ -515,6 +593,7 @@ class NoteActionHandler(
 
     companion object {
         const val REQUEST_NOTIFICATION_PERMISSION_PIN_TO_STATUS = 37
+        // #5: "新建文件夹" 已迁移到弹窗底部 Neutral 按钮，不再需要 radio 列表里的特殊标记。
     }
 }
 

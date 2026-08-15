@@ -11,7 +11,7 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center_vertical"
     android:padding="8dp"
-    android:src="@drawable/drag_handle"
+    android:src="@drawable/label"
     app:tint="?attr/colorControlNormal"
     android:contentDescription="@string/drag_handle"
     android:clickable="false"
@@ -28,26 +28,15 @@
     android:padding="16dp"
     android:layout_marginStart="8dp"
     android:textAppearance="?attr/textAppearanceBodyLarge"
-      android:clickable="false"
-      android:longClickable="false"
-      android:focusable="false" />
-
-  <ImageButton
-    android:id="@+id/VisibilityButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center_vertical"
-    android:padding="8dp"
-    android:background="?attr/selectableItemBackground"
-    android:contentDescription="@string/labels_hidden_in_overview_title"
-    android:tooltipText="@string/labels_hidden_in_overview_title"
-    app:srcCompat="@drawable/visibility"
-    app:tint="?attr/colorControlNormal" />
+    android:clickable="false"
+    android:longClickable="false"
+    android:focusable="false" />
 
   <ImageButton
     android:id="@+id/EditButton"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:minHeight="48dp"
     android:layout_gravity="center_vertical"
     android:padding="8dp"
     android:background="?attr/selectableItemBackground"
@@ -59,6 +48,7 @@
     android:id="@+id/DeleteButton"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:minHeight="48dp"
     android:layout_gravity="center_vertical"
     android:padding="8dp"
     android:background="?attr/selectableItemBackground"

@@ -15,11 +15,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import cool.hin.memox.MemoXApplication.Companion.isTestRunner
 import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.dao.CommonDao
+import cool.hin.memox.data.dao.FolderDao
 import cool.hin.memox.data.dao.LabelDao
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Color
 import cool.hin.memox.data.model.Converters
 import cool.hin.memox.data.model.Label
+import cool.hin.memox.data.model.NoteFolder
 import cool.hin.memox.data.model.toColorString
 import cool.hin.memox.presentation.view.misc.NotNullLiveData
 import cool.hin.memox.presentation.viewmodel.preference.BiometricLock
@@ -32,10 +34,12 @@ import java.io.File
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 16)
+@Database(entities = [BaseNote::class, Label::class, NoteFolder::class], version = 17)
 abstract class MemoXDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
+
+    abstract fun getFolderDao(): FolderDao
 
     abstract fun getCommonDao(): CommonDao
 
@@ -167,6 +171,7 @@ abstract class MemoXDatabase : RoomDatabase() {
                         Migration14,
                         Migration15,
                         Migration16,
+                        Migration17,
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 System.loadLibrary("sqlcipher")
@@ -405,6 +410,23 @@ abstract class MemoXDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_BaseNote_id_folder_pinned_timestamp_labels` " +
                         "ON `BaseNote` (`id`, `folder`, `pinned`, `timestamp`, `labels`)"
                 )
+            }
+        }
+
+        object Migration17 : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add the user-folder association to every note (logical only, never a physical
+                // directory on disk or in the WebDAV/OneDrive layout). Defaults to "" = no folder.
+                db.execSQL(
+                    "ALTER TABLE `BaseNote` ADD COLUMN `folderId` TEXT NOT NULL DEFAULT ''"
+                )
+                // Create the user-defined folder catalog table.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `NoteFolder` (" +
+                        "`name` TEXT NOT NULL, `order` INTEGER NOT NULL, PRIMARY KEY(`name`))"
+                )
+                // `order` is a SQLite reserved word; it must be quoted, mirroring how the Label
+                // table (which also has an `order` column) is created.
             }
         }
     }

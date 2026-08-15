@@ -281,15 +281,63 @@
 
         </LinearLayout>
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/LabelGroup"
+        <LinearLayout
+            android:id="@+id/FolderLabelsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:stateListAnimator="@null"
+            android:orientation="horizontal"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            app:chipSpacingVertical="4dp"
-            app:layout_constraintTop_toBottomOf="@id/LinearLayout" />
+            android:paddingTop="8dp"
+            android:paddingBottom="6dp"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/LinearLayout">
+
+            <!-- 文件夹：图标 + 名称，不要再椭圆包裹 -->
+            <LinearLayout
+                android:id="@+id/FolderChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="false"
+                android:focusable="false"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="4dp"
+                    android:tint="?attr/colorOnSurfaceVariant"
+                    app:srcCompat="@drawable/folder"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/FolderName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:alpha="0.5"
+                    android:textSize="12sp"
+                    android:includeFontPadding="false"
+                    tools:text="文件夹" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/LabelsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:alpha="@fraction/alpha_secondary"
+                android:textSize="12sp"
+                android:includeFontPadding="false"
+                tools:text="#标签"
+                tools:visibility="visible" />
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

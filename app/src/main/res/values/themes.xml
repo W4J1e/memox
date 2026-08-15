@@ -85,6 +85,22 @@
         <item name="android:drawablePadding">8dp</item>
     </style>
 
+    <!-- 用于卡片/编辑器里的 FolderChip：紧凑一圈，与正文有一定区分度。
+         相比 FileChip 去掉 paddingBottom=16dp 大空隙，并缩小 chipMinHeight。 -->
+    <style name="SmallFileChip" parent="FileChip">
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:minHeight">24dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="chipMinHeight">24dp</item>
+        <item name="chipMinTouchTargetSize">24dp</item>
+        <item name="chipStartPadding">6dp</item>
+        <item name="textStartPadding">2dp</item>
+        <item name="chipEndPadding">6dp</item>
+        <item name="textEndPadding">2dp</item>
+        <item name="chipIconSize">14dp</item>
+    </style>
+
     <style name="TextView.Clickable" parent="Widget.AppCompat.TextView">
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>

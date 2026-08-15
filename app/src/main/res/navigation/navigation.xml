@@ -33,6 +33,21 @@
     </fragment>
 
     <fragment
+        android:id="@+id/Folders"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.FoldersFragment"
+        android:label="@string/folders">
+
+        <action
+            android:id="@+id/FoldersToDisplayFolder"
+            app:destination="@id/DisplayFolder"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+
+    </fragment>
+
+    <fragment
         android:id="@+id/Deleted"
         android:name="cool.hin.memox.presentation.activity.main.fragment.DeletedFragment"
       android:label="@string/deleted" >
@@ -128,6 +143,11 @@
         android:id="@+id/DisplayLabel"
         android:name="cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment"
         android:label="{memox.intent.extra.DISPLAYED_LABEL}" />
+
+    <fragment
+        android:id="@+id/DisplayFolder"
+        android:name="cool.hin.memox.presentation.activity.main.fragment.DisplayFolderFragment"
+        android:label="{memox.intent.extra.DISPLAYED_FOLDER}" />
 
     <fragment
         android:id="@+id/Unlabeled"

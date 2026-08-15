@@ -52,10 +52,10 @@ import cool.hin.memox.presentation.activity.main.MainActivity
 import cool.hin.memox.presentation.activity.main.MainActivity.Companion.EXTRA_FRAGMENT_TO_OPEN
 import cool.hin.memox.presentation.activity.main.MainActivity.Companion.EXTRA_SKIP_START_VIEW_ON_BACK
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
+import cool.hin.memox.presentation.activity.main.fragment.DisplayFolderFragment.Companion.EXTRA_DISPLAYED_FOLDER
 import cool.hin.memox.presentation.activity.note.reminders.RemindersActivity
 import cool.hin.memox.presentation.add
 import cool.hin.memox.presentation.addIconButton
-import cool.hin.memox.presentation.bindLabels
 import cool.hin.memox.presentation.displayEditLabelDialog
 import cool.hin.memox.presentation.displayFormattedTimestamp
 import cool.hin.memox.presentation.extractColor
@@ -234,10 +234,14 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
                 Intent.ACTION_SEND_MULTIPLE,
                 Intent.ACTION_VIEW -> handleSharedNote()
 
-                else ->
+                else -> {
                     intent.getStringExtra(EXTRA_DISPLAYED_LABEL)?.let {
                         notallyModel.setLabels(listOf(it))
                     }
+                    intent.getStringExtra(EXTRA_DISPLAYED_FOLDER)?.let {
+                        notallyModel.folderId = it
+                    }
+                }
             }
         }
 
@@ -708,36 +712,45 @@ abstract class EditActivity(private val type: Type) : LockedActivity<ActivityEdi
         }
         binding.EnterTitle.setText(notallyModel.title)
         bindLabels()
+        bindFolder()
         setColor()
     }
 
-    private fun bindLabels() {
-        binding.LabelGroup.bindLabels(
-            notallyModel.labels,
-            notallyModel.textSize,
-            paddingTop = true,
-            colorInt,
-            onClick = { label ->
-                val bundle = Bundle()
-                bundle.putString(EXTRA_DISPLAYED_LABEL, label)
+    internal fun bindLabels() {
+        if (notallyModel.labels.isEmpty()) {
+            binding.LabelsText.visibility = GONE
+            binding.LabelsText.text = ""
+        } else {
+            binding.LabelsText.text = notallyModel.labels.joinToString(" ") { "#$it" }
+            binding.LabelsText.visibility = VISIBLE
+            binding.LabelsText.setOnClickListener {
+                val first = notallyModel.labels.first()
                 startActivity(
                     Intent(this, MainActivity::class.java).apply {
                         putExtra(EXTRA_FRAGMENT_TO_OPEN, R.id.DisplayLabel)
-                        putExtra(EXTRA_DISPLAYED_LABEL, label)
+                        putExtra(EXTRA_DISPLAYED_LABEL, first)
                         putExtra(EXTRA_SKIP_START_VIEW_ON_BACK, true)
                     }
                 )
-            },
-            onLongClick = { label ->
-                displayEditLabelDialog(label, baseModel) { oldLabel, newLabel ->
+            }
+            binding.LabelsText.setOnLongClickListener {
+                displayEditLabelDialog(notallyModel.labels.first(), baseModel) { oldLabel, newLabel ->
                     notallyModel.labels.apply {
                         remove(oldLabel)
                         add(newLabel)
                     }
                     bindLabels()
                 }
-            },
-        )
+                true
+            }
+        }
+    }
+
+    internal fun bindFolder() {
+        val folderId = notallyModel.folderId
+        binding.FolderChip.visibility = if (folderId.isEmpty()) GONE else VISIBLE
+        binding.FolderName.text = folderId
+        binding.FolderChip.setOnClickListener { actionHandler.changeFolder() }
     }
 
     private fun handleSharedNote() {

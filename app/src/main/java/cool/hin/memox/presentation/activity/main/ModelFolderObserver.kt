@@ -1,7 +1,9 @@
 package cool.hin.memox.presentation.activity.main
 
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -11,12 +13,15 @@ import cool.hin.memox.R
 import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.Folder
+import cool.hin.memox.databinding.DialogInputBinding
 import cool.hin.memox.presentation.activity.note.NoteActionHandler
 import cool.hin.memox.presentation.add
 import cool.hin.memox.presentation.checkNotificationPermission
 import cool.hin.memox.presentation.getQuantityString
 import cool.hin.memox.presentation.movedToResId
 import cool.hin.memox.presentation.setCancelButton
+import cool.hin.memox.presentation.showAndFocus
+import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.view.misc.NotNullLiveData
 import cool.hin.memox.presentation.view.misc.tristatecheckbox.TriStateCheckBox
 import cool.hin.memox.presentation.view.misc.tristatecheckbox.setMultiChoiceTriStateItems
@@ -34,6 +39,10 @@ class ModelFolderObserver(
     private val menu: Menu,
     private val model: BaseNoteModel,
 ) : Observer<Folder> {
+
+    private companion object {
+        // #5: "新建文件夹" 已迁移到弹窗底部 Neutral 按钮，不再需要 radio 列表里的特殊标记。
+    }
 
     private val baseModel
         get() = activity.baseModel
@@ -77,6 +86,9 @@ class ModelFolderObserver(
         val pinnedToStatus = menu.addPinnedToStatus()
         val share = menu.addShare()
         menu.addExportMenu()
+        menu.add(R.string.move_to_folder, R.drawable.folder, MenuItem.SHOW_AS_ACTION_NEVER) {
+            moveToFolder()
+        }
         model.actionMode.count.observeCountAndPinned(activity, share, pinned, pinnedToStatus, lock)
     }
 
@@ -325,6 +337,87 @@ class ModelFolderObserver(
                 activity.navigateWithAnimation(R.id.Labels)
             }
         }
+    }
+
+    internal fun moveToFolder() {
+        activity.lifecycleScope.launch {
+            showMoveToFolderDialog(baseModel.getAllFolders().toMutableList())
+        }
+    }
+
+    private fun showMoveToFolderDialog(folders: MutableList<String>) {
+        // #5: 用户希望"新建文件夹"和"取消"放在底部按钮栏，而不是夹在 radio 选项里。
+        // 用 setSingleChoiceItems 列出文件夹（点击仅更新 pendingIndex），再用底部三个按钮：
+        // - 中性按钮（Neutral）= "新建文件夹"：弹出输入框，新建后立即应用并关闭
+        // - 负向按钮（Negative）= "取消"：关闭弹窗
+        // - 正向按钮（Positive）= "移动"：按 pendingIndex 应用
+        val items: List<String?> = listOf<String?>(null) + folders
+        // 默认选中已设置的文件夹（如果有）
+        val firstSelectedNoteFolder =
+            baseModel.actionMode.selectedNotes.values.firstOrNull()?.folderId
+        val checkedItem =
+            when {
+                firstSelectedNoteFolder.isNullOrEmpty() -> 0
+                else -> (items.indexOf(firstSelectedNoteFolder)).coerceAtLeast(0)
+            }
+        val titles =
+            items
+                .map { name ->
+                    when {
+                        name == null -> activity.getString(R.string.no_folder)
+                        else -> name ?: ""
+                    }
+                }
+                .toTypedArray()
+        var pendingIndex = checkedItem
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.folder)
+            .setCancelButton()
+            .setSingleChoiceItems(titles, checkedItem) { _, which -> pendingIndex = which }
+            .setNeutralButton(R.string.add_folder) { d, _ ->
+                d.dismiss()
+                showAddFolderDialog { newName ->
+                    val ids = baseModel.actionMode.selectedIds.toLongArray()
+                    baseModel.updateBaseNoteFolder(newName, ids)
+                    baseModel.actionMode.close(true)
+                }
+            }
+            .setNegativeButton(R.string.cancel) { d, _ -> d.dismiss() }
+            .setPositiveButton(R.string.move) { _, _ ->
+                val selected = items.getOrNull(pendingIndex)
+                val ids = baseModel.actionMode.selectedIds.toLongArray()
+                baseModel.updateBaseNoteFolder(selected ?: "", ids)
+                baseModel.actionMode.close(true)
+            }
+            .show()
+    }
+
+    private fun showAddFolderDialog(onCreated: (name: String) -> Unit) {
+        val inflater = LayoutInflater.from(activity)
+        val dialogBinding = DialogInputBinding.inflate(inflater)
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.add_folder)
+            .setView(dialogBinding.root)
+            .setCancelButton()
+            .setPositiveButton(R.string.save) { dialog, _ ->
+                val value = dialogBinding.EditText.text.toString().trim()
+                if (value.isNotEmpty()) {
+                    baseModel.insertFolder(value) { success ->
+                        if (success) {
+                            dialog.dismiss()
+                            onCreated(value)
+                        } else {
+                            activity.showToast(R.string.folder_exists)
+                        }
+                    }
+                }
+            }
+            .showAndFocus(dialogBinding.EditText, allowFullSize = true) { positiveButton ->
+                dialogBinding.EditText.doAfterTextChanged { text ->
+                    positiveButton.isEnabled = !text.isNullOrEmpty()
+                }
+                positiveButton.isEnabled = false
+            }
     }
 
     private fun displaySelectLabelsDialog(labels: Array<String>, baseNotes: Collection<BaseNote>) {

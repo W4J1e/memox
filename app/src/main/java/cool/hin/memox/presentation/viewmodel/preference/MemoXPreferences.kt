@@ -77,6 +77,9 @@ class MemoXPreferences private constructor(private val context: Context) {
     // un-hiding a label on one device can propagate to others (a plain union merge would keep a
     // label hidden forever once any device had hidden it).
     val labelsHiddenLastSynced = StringSetPreference("labelsHiddenLastSynced", preferences, setOf())
+    // Folders are local-only (the folder catalog is never synced across devices; only each note's
+    // folderId travels inside the note JSON). So the hidden set needs no last-synced merge base.
+    val foldersHidden = StringSetPreference("foldersHiddenInNavigation", preferences, setOf())
     val labelTagsHiddenInOverview =
         BooleanPreference(
             "labelsHiddenInOverview",
@@ -327,6 +330,7 @@ class MemoXPreferences private constructor(private val context: Context) {
                 listItemSorting,
                 secureFlag,
                 labelsHidden,
+                foldersHidden,
                 labelTagsHiddenInOverview,
                 maxLabels,
                 backupPassword,

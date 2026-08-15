@@ -630,6 +630,53 @@ fun Context.displayEditLabelDialog(
         }
 }
 
+fun Fragment.displayEditFolderDialog(
+    oldValue: String,
+    model: BaseNoteModel,
+    onUpdateFolder: ((oldFolder: String, newFolder: String) -> Unit)? = null,
+) {
+    requireContext().displayEditFolderDialog(oldValue, model, layoutInflater, onUpdateFolder)
+}
+
+fun Activity.displayEditFolderDialog(
+    oldValue: String,
+    model: BaseNoteModel,
+    onUpdateFolder: ((oldFolder: String, newFolder: String) -> Unit)? = null,
+) {
+    displayEditFolderDialog(oldValue, model, layoutInflater, onUpdateFolder)
+}
+
+fun Context.displayEditFolderDialog(
+    oldValue: String,
+    model: BaseNoteModel,
+    layoutInflater: LayoutInflater,
+    onUpdateFolder: ((oldFolder: String, newFolder: String) -> Unit)? = null,
+) {
+    val dialogBinding = DialogInputBinding.inflate(layoutInflater)
+    dialogBinding.EditText.setText(oldValue)
+    MaterialAlertDialogBuilder(this)
+        .setView(dialogBinding.root)
+        .setTitle(R.string.edit_folder)
+        .setCancelButton()
+        .setPositiveButton(R.string.save) { dialog, _ ->
+            val value = dialogBinding.EditText.text.toString().trim()
+            if (value.isNotEmpty()) {
+                model.updateFolder(oldValue, value) { success ->
+                    if (success) {
+                        onUpdateFolder?.invoke(oldValue, value)
+                        dialog.dismiss()
+                    } else showToast(R.string.folder_exists)
+                }
+            }
+        }
+        .showAndFocus(dialogBinding.EditText, allowFullSize = true) { positiveButton ->
+            dialogBinding.EditText.doAfterTextChanged { text ->
+                positiveButton.isEnabled = !text.isNullOrEmpty()
+            }
+            positiveButton.isEnabled = oldValue.isNotEmpty()
+        }
+}
+
 fun Date.format(
     dateFormat: DateFormat = DateFormat.DD_MM_YY_GER,
     timeFormat: TimeFormat = TimeFormat.TWENTY_FOUR_H,

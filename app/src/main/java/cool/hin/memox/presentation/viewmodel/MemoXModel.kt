@@ -95,6 +95,8 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
 
     val labels = ArrayList<String>()
 
+    var folderId = ""
+
     var body: Editable = SpannableStringBuilder()
 
     val items = ArrayList<ListItem>()
@@ -408,6 +410,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                 modifiedTimestamp = baseNote.modifiedTimestamp
 
                 setLabels(baseNote.labels)
+                folderId = baseNote.folderId
 
                 body = baseNote.body.applySpans(baseNote.spans)
 
@@ -525,6 +528,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
             reminders.value,
             isPinnedToStatus,
             locked,
+            folderId,
         )
     }
 

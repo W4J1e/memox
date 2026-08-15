@@ -17,13 +17,17 @@
             android:icon="@drawable/archive"
             android:title="@string/archived" />
         <item
-            android:id="@+id/Deleted"
-            android:icon="@drawable/delete"
-            android:title="@string/deleted" />
+            android:id="@+id/Folders"
+            android:icon="@drawable/folder"
+            android:title="@string/folders" />
         <item
             android:id="@+id/Labels"
             android:icon="@drawable/label"
             android:title="@string/labels" />
+        <item
+            android:id="@+id/Deleted"
+            android:icon="@drawable/delete"
+            android:title="@string/deleted" />
         <item
             android:id="@+id/Settings"
             android:icon="@drawable/settings"

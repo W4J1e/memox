@@ -6,8 +6,10 @@ import cool.hin.memox.data.MemoXDatabase
 import cool.hin.memox.data.dao.BaseNoteDao.Companion.MAX_BODY_CHAR_LENGTH
 import cool.hin.memox.data.imports.ImportResult
 import cool.hin.memox.data.model.BaseNote
+import cool.hin.memox.data.model.FolderIdInBaseNote
 import cool.hin.memox.data.model.Label
 import cool.hin.memox.data.model.LabelsInBaseNote
+import cool.hin.memox.data.model.NoteFolder
 import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.data.model.createNoteUrl
@@ -43,6 +45,26 @@ abstract class CommonDao(private val database: MemoXDatabase) {
             }
         database.getBaseNoteDao().update(labelsInBaseNotes)
         database.getLabelDao().update(oldValue, newValue)
+    }
+
+    @Transaction
+    open suspend fun deleteFolder(name: String) {
+        val folderIdInBaseNotes =
+            database.getBaseNoteDao().getListOfBaseNotesByFolder(name).map { baseNote ->
+                FolderIdInBaseNote(baseNote.id, "")
+            }
+        database.getBaseNoteDao().updateFolderIds(folderIdInBaseNotes)
+        database.getFolderDao().delete(name)
+    }
+
+    @Transaction
+    open suspend fun updateFolder(oldName: String, newName: String) {
+        val folderIdInBaseNotes =
+            database.getBaseNoteDao().getListOfBaseNotesByFolder(oldName).map { baseNote ->
+                FolderIdInBaseNote(baseNote.id, newName)
+            }
+        database.getBaseNoteDao().updateFolderIds(folderIdInBaseNotes)
+        database.getFolderDao().update(oldName, newName)
     }
 
     @Transaction

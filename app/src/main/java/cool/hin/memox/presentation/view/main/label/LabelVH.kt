@@ -22,16 +22,10 @@ class LabelVH(private val binding: RecyclerLabelBinding, listener: LabelListener
             }
             EditButton.setOnClickListener { listener.onEdit(absoluteAdapterPosition) }
             DeleteButton.setOnClickListener { listener.onDelete(absoluteAdapterPosition) }
-            VisibilityButton.setOnClickListener {
-                listener.onToggleVisibility(absoluteAdapterPosition)
-            }
         }
     }
 
     fun bind(value: LabelData) {
         binding.LabelText.text = value.value
-        binding.VisibilityButton.setImageResource(
-            if (value.visibleInNavigation) R.drawable.visibility else R.drawable.visibility_off
-        )
     }
 }

@@ -14,6 +14,7 @@ import cool.hin.memox.data.model.Audio
 import cool.hin.memox.data.model.BaseNote
 import cool.hin.memox.data.model.FileAttachment
 import cool.hin.memox.data.model.Folder
+import cool.hin.memox.data.model.FolderIdInBaseNote
 import cool.hin.memox.data.model.LabelsInBaseNote
 import cool.hin.memox.data.model.ListItem
 import cool.hin.memox.data.model.Reminder
@@ -105,6 +106,8 @@ interface BaseNoteDao {
     @Insert suspend fun insert(baseNotes: List<BaseNote>): List<Long>
 
     @Update(entity = BaseNote::class) suspend fun update(labelsInBaseNotes: List<LabelsInBaseNote>)
+
+    @Update(entity = BaseNote::class) suspend fun updateFolderIds(folderIdInBaseNotes: List<FolderIdInBaseNote>)
 
     @Query("SELECT COUNT(*) FROM BaseNote") fun count(): Int
 
@@ -310,6 +313,29 @@ interface BaseNoteDao {
     )
     fun getBaseNotesWithoutLabel(folder: Folder): Flow<List<BaseNote>>
 
+    fun getBaseNotesByFolder(folderId: String): Flow<List<BaseNote>> {
+        return getBaseNotesByFolderImpl(folderId).map { list ->
+            list.filter { baseNote -> baseNote.folderId == folderId }
+        }
+    }
+
+    @Query(
+        "SELECT * FROM BaseNote WHERE folder = 'NOTES' AND folderId = :folderId ORDER BY pinned DESC, timestamp DESC"
+    )
+    fun getBaseNotesByFolderImpl(folderId: String): Flow<List<BaseNote>>
+
+    @Query("UPDATE BaseNote SET folderId = :folderId WHERE id = :id")
+    suspend fun updateFolderId(id: Long, folderId: String)
+
+    @Query("UPDATE BaseNote SET folderId = :folderId WHERE id IN (:ids)")
+    suspend fun updateFolderId(ids: LongArray, folderId: String)
+
+    @Query("UPDATE BaseNote SET folderId = '' WHERE id IN (:ids)")
+    suspend fun clearFolderId(ids: LongArray)
+
+    @Query("UPDATE BaseNote SET folderId = :newFolderId WHERE folderId = :oldFolderId")
+    suspend fun renameFolderId(oldFolderId: String, newFolderId: String)
+
     suspend fun getListOfBaseNotesByLabel(label: String): List<BaseNote> {
         val result = getListOfBaseNotesByLabelImpl(label)
         return result.filter { baseNote -> baseNote.labels.contains(label) }
@@ -317,6 +343,14 @@ interface BaseNoteDao {
 
     @Query("SELECT * FROM BaseNote WHERE labels LIKE '%' || :label || '%'")
     suspend fun getListOfBaseNotesByLabelImpl(label: String): List<BaseNote>
+
+    suspend fun getListOfBaseNotesByFolder(folderId: String): List<BaseNote> {
+        val result = getListOfBaseNotesByFolderImpl(folderId)
+        return result.filter { baseNote -> baseNote.folderId == folderId }
+    }
+
+    @Query("SELECT * FROM BaseNote WHERE folderId = :folderId")
+    suspend fun getListOfBaseNotesByFolderImpl(folderId: String): List<BaseNote>
 
     fun getBaseNotesByKeyword(
         keyword: String,

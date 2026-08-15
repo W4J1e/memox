@@ -27,6 +27,7 @@ data class BaseNote(
     val reminders: List<Reminder>,
     val isPinnedToStatus: Boolean,
     val locked: Boolean = false,
+    val folderId: String = "",
 ) : Item {
 
     companion object {
@@ -57,6 +58,7 @@ data class BaseNote(
         if (reminders != other.reminders) return false
         if (isPinnedToStatus != other.isPinnedToStatus) return false
         if (locked != other.locked) return false
+        if (folderId != other.folderId) return false
 
         return true
     }
@@ -88,6 +90,7 @@ data class BaseNote(
         result = 31 * result + reminders.hashCode()
         result = 31 * result + isPinnedToStatus.hashCode()
         result = 31 * result + locked.hashCode()
+        result = 31 * result + folderId.hashCode()
         return result
     }
 }

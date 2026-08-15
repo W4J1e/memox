@@ -167,15 +167,60 @@
                     android:layout_height="wrap_content"
                     />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/LabelGroup"
+                <LinearLayout
+                    android:id="@+id/FolderLabelsRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingStart="24dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="24dp"
-                    android:paddingBottom="8dp"
-                    android:alpha="@fraction/alpha_secondary" />
+                    android:orientation="horizontal"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="4dp"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:id="@+id/FolderChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginEnd="4dp"
+                            android:tint="?attr/colorOnSurfaceVariant"
+                            app:srcCompat="@drawable/folder"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:id="@+id/FolderName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:alpha="0.5"
+                            android:textSize="12sp"
+                            android:includeFontPadding="false"
+                            tools:text="文件夹名" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/LabelsText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="12sp"
+                        android:alpha="@fraction/alpha_secondary"
+                        tools:text="#标签" />
+
+                </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"

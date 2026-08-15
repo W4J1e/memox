@@ -206,6 +206,8 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                             val note = jsonToNote(json)
                             downloadAttachments(client, note)
                             dao.insertSafe(context, note)
+                            // 方案 B：云端有、本地没有的文件夹，导入时自动补齐
+                            database.getFolderDao().ensureFolder(note.folderId)
                             downloaded++
                         } catch (e: Exception) {
                             failed++
@@ -339,6 +341,8 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                     val note = jsonToNote(json)
                     downloadAttachments(client, note)
                     dao.insertSafe(context, note)
+                    // 方案 B：云端有、本地没有的文件夹，导入时自动补齐
+                    database.getFolderDao().ensureFolder(note.folderId)
                     downloaded++
                 } catch (_: Exception) {}
             }
@@ -364,6 +368,8 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                         val note = jsonToNote(remoteJson)
                         downloadAttachments(client, note)
                         dao.insertSafe(context, note)
+                        // 方案 B：云端有、本地没有的文件夹，导入时自动补齐
+                        database.getFolderDao().ensureFolder(note.folderId)
                         downloaded++
                     } catch (_: Exception) {}
                 }
@@ -415,6 +421,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
         json.put("timestamp", note.timestamp)
         json.put("modifiedTimestamp", note.modifiedTimestamp)
         json.put("labels", Converters.labelsToJson(note.labels))
+        json.put("folderId", note.folderId)
         json.put("body", note.body)
         json.put("spans", Converters.spansToJson(note.spans))
         json.put("items", Converters.itemsToJson(note.items))
@@ -447,6 +454,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
             reminders = Converters.jsonToReminders(JSONArray(json.optString("reminders", "[]"))),
             isPinnedToStatus = json.optBoolean("isPinnedToStatus", false),
             locked = json.optBoolean("locked", false),
+            folderId = json.optString("folderId", ""),
         )
     }
 

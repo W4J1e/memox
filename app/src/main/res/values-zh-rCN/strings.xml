@@ -8,6 +8,16 @@
     <string name="add">添加</string>
     <string name="add_item">添加项目</string>
     <string name="add_label">添加标签</string>
+    <string name="add_folder">添加文件夹</string>
+    <string name="move">移动</string>
+    <string name="folders">文件夹</string>
+    <string name="edit_folder">编辑文件夹</string>
+    <string name="delete_folder">删除文件夹？</string>
+    <string name="folder_exists">文件夹已存在</string>
+    <string name="empty_folders">还没有文件夹。创建一个？</string>
+    <string name="move_to_folder">移动到文件夹</string>
+    <string name="folder">文件夹</string>
+    <string name="no_folder">未分类</string>
     <string name="add_reminder">添加提醒</string>
     <string name="adding_files">添加文件中</string>
     <string name="adding_images">添加图片中</string>
@@ -222,7 +232,6 @@
     <string name="exporting_backup">正在导出备份</string>
     <string name="extracted_files">已提取文件</string>
     <string name="filter">过滤</string>
-    <string name="folder">文件夹</string>
     <string name="follow_system">系统主题</string>
     <string name="google_keep">Google Keep</string>
     <string name="google_keep_help">为了从 Google Keep 导入笔记，你必须下载 Google Takeout ZIP 文件。只选中”Keep\"数据即可。单击“帮助”获取更多信息。如果你已经有 Takeout ZIP 文件，单击“导入”并选中 这个 ZIP 文件</string>

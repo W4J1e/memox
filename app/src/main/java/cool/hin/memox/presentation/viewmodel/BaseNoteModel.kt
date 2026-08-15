@@ -21,6 +21,7 @@ import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
 import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.dao.CommonDao
 import cool.hin.memox.data.sync.SyncRouter
+import cool.hin.memox.data.dao.FolderDao
 import cool.hin.memox.data.dao.LabelDao
 import cool.hin.memox.data.dao.NoteReminder
 import cool.hin.memox.data.dao.moveBaseNotes
@@ -38,6 +39,7 @@ import cool.hin.memox.data.model.Folder
 import cool.hin.memox.data.model.Header
 import cool.hin.memox.data.model.Item
 import cool.hin.memox.data.model.Label
+import cool.hin.memox.data.model.NoteFolder
 import cool.hin.memox.data.model.SearchResult
 import cool.hin.memox.data.model.deepCopy
 import cool.hin.memox.presentation.activity.note.refreshStatusBarPin
@@ -94,14 +96,17 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     private lateinit var database: MemoXDatabase
     private lateinit var labelDao: LabelDao
+    private lateinit var folderDao: FolderDao
     private lateinit var commonDao: CommonDao
     private lateinit var baseNoteDao: BaseNoteDao
 
     private val labelCache = HashMap<String, Content>()
+    private val folderCache = HashMap<String, Content>()
 
     lateinit var selectedExportMimeType: ExportMimeType
 
     var labels: LiveData<List<Label>> = NotNullLiveData(mutableListOf())
+    var folders: LiveData<List<NoteFolder>> = NotNullLiveData(mutableListOf())
     var reminders: LiveData<List<NoteReminder>> = NotNullLiveData(mutableListOf())
     private var allNotes: LiveData<List<BaseNote>>? = NotNullLiveData(mutableListOf())
     private var allNotesObserver: Observer<List<BaseNote>>? = null
@@ -138,6 +143,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     val actionMode = ActionMode()
 
     private var labelsHiddenObserver: Observer<Set<String>>? = null
+    private var foldersHiddenObserver: Observer<Set<String>>? = null
 
     fun startObserving() {
         MemoXDatabase.getDatabase(app).observeForever(::init)
@@ -150,11 +156,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         this.database = database
         baseNoteDao = database.getBaseNoteDao()
         labelDao = database.getLabelDao()
+        folderDao = database.getFolderDao()
         commonDao = database.getCommonDao()
 
         labels = labelDao.getAll()
+        folders = folderDao.getAll()
         //        colors = baseNoteDao.getAllColorsAsync()
-        reminders = baseNoteDao.getAllRemindersAsync()
 
         allNotesObserver?.let { allNotes?.removeObserver(it) }
         allNotesObserver = Observer { list -> Cache.list = list }
@@ -162,14 +169,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         allNotes!!.observeForever(allNotesObserver!!)
 
         labelsHiddenObserver?.let { preferences.labelsHidden.removeObserver(it) }
-        labelsHiddenObserver = Observer { labelsHidden ->
+        labelsHiddenObserver = Observer {
             // Do NOT reassign `baseNotes` here: NotesFragment observes the existing
             // Content instance (model.baseNotes!!). Recreating it would orphan the
             // observed instance, so changes triggered by a background sync would not
             // reach the home list until the fragment is recreated.
-            initBaseNotes(labelsHidden)
+            initBaseNotes()
         }
         preferences.labelsHidden.observeForever(labelsHiddenObserver!!)
+
+        foldersHiddenObserver?.let { preferences.foldersHidden.removeObserver(it) }
+        foldersHiddenObserver = Observer { initBaseNotes() }
+        preferences.foldersHidden.observeForever(foldersHiddenObserver!!)
 
         if (deletedNotes == null) {
             deletedNotes = Content(baseNoteDao.getFrom(Folder.DELETED), ::transform)
@@ -200,10 +211,16 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun initBaseNotes(labelsHidden: Set<String>) {
+    private fun initBaseNotes() {
+        val labelsHidden = preferences.labelsHidden.value
+        val foldersHidden = preferences.foldersHidden.value
         val overviewNotes =
             baseNoteDao.getFrom(Folder.NOTES).map { list ->
-                list.filter { baseNote -> baseNote.labels.none { labelsHidden.contains(it) } }
+                list.filter { baseNote ->
+                    baseNote.labels.none { labelsHidden.contains(it) } &&
+                        (baseNote.folderId.isEmpty() ||
+                            !foldersHidden.contains(baseNote.folderId))
+                }
             }
         if (baseNotes == null) {
             baseNotes = Content(overviewNotes, ::transform)
@@ -218,6 +235,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 Content(baseNoteDao.getBaseNotesByLabel(label), ::transform, viewModelScope)
         }
         return requireNotNull(labelCache[label], { "labelCache has no '$label' value" })
+    }
+
+    fun getNotesByFolder(folderId: String): Content {
+        if (folderCache[folderId] == null) {
+            folderCache[folderId] =
+                Content(baseNoteDao.getBaseNotesByFolder(folderId), ::transform, viewModelScope)
+        }
+        return requireNotNull(folderCache[folderId], { "folderCache has no '$folderId' value" })
     }
 
     fun getNotesWithoutLabel(): Content {
@@ -624,6 +649,18 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateBaseNoteFolder(folderId: String, id: Long) {
+        updateBaseNoteFolder(folderId, longArrayOf(id))
+    }
+
+    fun updateBaseNoteFolder(folderId: String, ids: LongArray) {
+        actionMode.close(true)
+        viewModelScope.launch(Dispatchers.IO) {
+            baseNoteDao.updateFolderId(ids, folderId)
+            SyncRouter.syncNow(app)
+        }
+    }
+
     suspend fun deleteSelectedBaseNotes(): Collection<BaseNote> {
         return deleteBaseNotes(actionMode.selectedIds.toLongArray())
     }
@@ -721,6 +758,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun getAllLabels() = withContext(Dispatchers.IO) { labelDao.getArrayOfAll() }
 
+    suspend fun getAllFolders() = withContext(Dispatchers.IO) { folderDao.getArrayOfAll() }
+
     fun deleteLabel(value: String) {
         viewModelScope.launch(Dispatchers.IO) { commonDao.deleteLabel(value) }
         val labelsHiddenPreference = preferences.labelsHidden
@@ -761,6 +800,50 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             savePreference(labelsHiddenPreference, labelsHidden)
         }
     }
+
+    /**
+     * Folders are local-only (not synced across devices — only each note's `folderId` travels in
+     * the note JSON). Deleting a folder detaches its notes (folderId -> "") which DOES propagate
+     * via note sync, so trigger a sync here.
+     */
+    fun deleteFolder(name: String) {
+        viewModelScope.launch(Dispatchers.IO) { commonDao.deleteFolder(name) }
+        val foldersHiddenPreference = preferences.foldersHidden
+        val foldersHidden = foldersHiddenPreference.value.toMutableSet()
+        if (foldersHidden.contains(name)) {
+            foldersHidden.remove(name)
+            savePreference(foldersHiddenPreference, foldersHidden)
+        }
+        if (preferences.startView.value == name) {
+            savePreference(preferences.startView, START_VIEW_DEFAULT)
+        }
+        SyncRouter.syncNow(getApplication())
+    }
+
+    fun insertFolder(name: String, onComplete: (success: Boolean) -> Unit) =
+        executeAsyncWithCallback(
+            { folderDao.insert(NoteFolder(name, (folderDao.getMaxOrder() ?: -1) + 1)) },
+        ) { success -> onComplete(success) }
+
+    fun updateFolders(folders: List<NoteFolder>) {
+        viewModelScope.launch(Dispatchers.IO) { folderDao.update(folders) }
+    }
+
+    fun updateFolder(oldName: String, newName: String, onComplete: (success: Boolean) -> Unit) {
+        executeAsyncWithCallback({ commonDao.updateFolder(oldName, newName) }) { success ->
+            if (success) SyncRouter.syncNow(getApplication())
+            onComplete(success)
+        }
+        val foldersHiddenPreference = preferences.foldersHidden
+        val foldersHidden = foldersHiddenPreference.value.toMutableSet()
+        if (foldersHidden.contains(oldName)) {
+            foldersHidden.remove(oldName)
+            foldersHidden.add(newName)
+            savePreference(foldersHiddenPreference, foldersHidden)
+        }
+    }
+
+    suspend fun folderExists(name: String) = withContext(Dispatchers.IO) { folderDao.exists(name) }
 
     suspend fun resetPreferences(callback: (restartRequired: Boolean) -> Unit) {
         val publicFolder = preferences.dataInPublicFolder.value

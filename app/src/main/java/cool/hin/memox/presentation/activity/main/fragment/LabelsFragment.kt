@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cool.hin.memox.R
 import cool.hin.memox.data.model.Label
-import cool.hin.memox.data.sync.SyncRouter
 import cool.hin.memox.databinding.DialogInputBinding
 import cool.hin.memox.databinding.FragmentNotesBinding
 import cool.hin.memox.presentation.activity.main.fragment.DisplayLabelFragment.Companion.EXTRA_DISPLAYED_LABEL
@@ -139,24 +138,6 @@ class LabelsFragment : Fragment(), LabelListener {
     override fun onDelete(position: Int) {
         labelAdapter?.currentList?.get(position)?.let { labelData ->
             confirmDeletion(labelData.value)
-        }
-    }
-
-    override fun onToggleVisibility(position: Int) {
-        labelAdapter?.currentList?.get(position)?.let { value ->
-            val hiddenLabels = model.preferences.labelsHidden.value.toMutableSet()
-            if (value.visibleInNavigation) {
-                hiddenLabels.add(value.value)
-            } else {
-                hiddenLabels.remove(value.value)
-            }
-            model.savePreference(model.preferences.labelsHidden, hiddenLabels)
-            SyncRouter.syncNow(requireActivity().applicationContext)
-
-            val currentList = labelAdapter!!.currentList.toMutableList()
-            currentList[position] =
-                currentList[position].copy(visibleInNavigation = !value.visibleInNavigation)
-            labelAdapter!!.submitList(currentList)
         }
     }
 

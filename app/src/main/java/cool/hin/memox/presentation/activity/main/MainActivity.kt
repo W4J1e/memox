@@ -86,6 +86,7 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         R.id.Archive,
         R.id.Deleted,
         R.id.Labels,
+        R.id.Folders,
         R.id.Settings,
         R.id.SettingsAbout,
     )
@@ -473,11 +474,19 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
             }
             when (destination.id) {
                 R.id.Notes,
-                R.id.DisplayLabel -> {
+                R.id.DisplayLabel,
+                R.id.DisplayFolder -> {
                     binding.TakeNote.show()
+                    // #1: 视图/排序按钮只跟首页 Notes/DisplayLabel/DisplayFolder 共用一个顶部 Toolbar
+                    // 显示；其余顶层（Settings/About/Reminders/Archive/Labels/Folders/Deleted）都不显示
+                    if (!isSearchBarVisible()) {
+                        binding.HomeBar.visibility = View.VISIBLE
+                    }
                 }
                 else -> {
                     binding.TakeNote.hide()
+                    // 非首页：隐藏视图/排序按钮，避免 About/Settings 等页面误显
+                    binding.HomeBar.visibility = View.GONE
                 }
             }
             isStartViewFragment = isStartViewFragment(destination.id, bundle)
@@ -629,6 +638,9 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         if (binding.SearchPill.visibility != View.VISIBLE) {
             binding.SearchPill.visibility = View.VISIBLE
             binding.HomeBar.visibility = View.GONE
+            // Space 与 SearchPill 都是 weight=1，会各占 1/2；
+            // 搜索时让 Space 隐藏，SearchPill 自然占满剩余空间。
+            binding.ToolbarSpacer.visibility = View.GONE
         }
         if (clearText) {
             // 手动下拉呼出搜索框时清空上次残留内容：关掉/返回后再拉出应为空白，而非旧文本
@@ -649,6 +661,8 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         if (binding.SearchPill.visibility != View.GONE) {
             binding.SearchPill.visibility = View.GONE
             binding.HomeBar.visibility = View.VISIBLE
+            // 恢复 Space 把 HomeBar/Avatar 推回 toolbar 最右。
+            binding.ToolbarSpacer.visibility = View.VISIBLE
         }
     }
 

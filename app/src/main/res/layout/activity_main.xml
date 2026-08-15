@@ -29,12 +29,20 @@
                 android:paddingStart="4dp"
                 android:paddingEnd="4dp">
 
-                <!-- 常态栏：视图切换 / 排序，显示在头像左侧 -->
-                <LinearLayout
-                    android:id="@+id/HomeBar"
+                <!-- 弹性占位：把右侧 HomeBar/SearchPill/Avatar 整体推到 toolbar 最右。
+                     搜索时设为 GONE，让 SearchPill weight=1 占满剩余宽度（否则 Space 与 SearchPill
+                     各占 1/2，搜索框只剩半截）。 -->
+                <Space
+                    android:id="@+id/ToolbarSpacer"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1"
+                    android:layout_weight="1" />
+
+                <!-- 常态栏：视图切换 / 排序，紧贴 Avatar 左侧（wrap_content） -->
+                <LinearLayout
+                    android:id="@+id/HomeBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
                     android:orientation="horizontal"
                     android:gravity="center_vertical|end">
 
@@ -58,12 +66,15 @@
                         app:srcCompat="@drawable/sort_arrows" />
                 </LinearLayout>
 
-                <!-- 搜索栏：默认隐藏，首页下拉呼出 -->
+                <!-- 搜索栏：默认隐藏，首页下拉呼出。展开时 weight=1 占满剩余宽度。
+                     此时 HomeBar 隐藏，Space weight=1 + SearchPill weight=1 + Avatar，
+                     SearchPill 自然撑在中间左侧，Avatar 在最右。 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/SearchPill"
                     android:layout_width="0dp"
                     android:layout_height="44dp"
                     android:layout_weight="1"
+                    android:layout_marginStart="8dp"
                     android:visibility="gone"
                     app:cardCornerRadius="22dp"
                     app:cardElevation="2dp"
@@ -72,7 +83,6 @@
                     app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
                     app:contentPaddingStart="16dp"
                     app:contentPaddingEnd="4dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
@@ -110,6 +120,7 @@
                             android:id="@+id/ViewToggleButton"
                             android:layout_width="40dp"
                             android:layout_height="40dp"
+                            android:visibility="gone"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/view"
                             android:tint="?attr/colorOnSurfaceVariant"
@@ -119,6 +130,7 @@
                             android:id="@+id/SortButton"
                             android:layout_width="40dp"
                             android:layout_height="40dp"
+                            android:visibility="gone"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/notes_sorted_by"
                             android:tint="?attr/colorOnSurfaceVariant"

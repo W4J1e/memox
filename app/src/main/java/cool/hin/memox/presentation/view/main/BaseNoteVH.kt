@@ -23,7 +23,6 @@ import cool.hin.memox.data.model.SpanRepresentation
 import cool.hin.memox.data.model.Type
 import cool.hin.memox.databinding.RecyclerBaseNoteBinding
 import cool.hin.memox.presentation.applySpans
-import cool.hin.memox.presentation.bindLabels
 import cool.hin.memox.presentation.displayFormattedTimestamp
 import cool.hin.memox.presentation.dp
 import cool.hin.memox.presentation.extractColor
@@ -160,14 +159,18 @@ class BaseNoteVH(
             } else text = baseNote.title
         }
 
-        if (preferences.hideLabels) {
-            binding.LabelGroup.visibility = GONE
+        // #2/#7: 首页卡片显示所属文件夹（图标 + 名称，无则不显示），标签改为 "#标签" 文本跟随
+        if (baseNote.folderId.isNotEmpty()) {
+            binding.FolderName.text = baseNote.folderId
+            binding.FolderChip.visibility = VISIBLE
         } else {
-            binding.LabelGroup.bindLabels(
-                baseNote.labels,
-                preferences.textSize,
-                binding.Note.isVisible || binding.Title.isVisible,
-            )
+            binding.FolderChip.visibility = GONE
+        }
+        if (!preferences.hideLabels && baseNote.labels.isNotEmpty()) {
+            binding.LabelsText.text = baseNote.labels.joinToString(" ") { "#$it" }
+            binding.LabelsText.visibility = VISIBLE
+        } else {
+            binding.LabelsText.visibility = GONE
         }
 
         if (baseNote.isEmpty()) {

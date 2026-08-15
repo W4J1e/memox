@@ -31,6 +31,7 @@ class MoreNoteBottomSheet(
                 EditAction.PIN,
                 EditAction.REMINDERS,
                 EditAction.LABELS,
+                EditAction.FOLDER,
                 EditAction.EXPORT,
                 EditAction.DUPLICATE,
                 EditAction.SHARE,

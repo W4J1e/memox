@@ -11,6 +11,16 @@
     <string name="add_checkbox">Add checkbox</string>
     <string name="add_item">Add Item</string>
     <string name="add_label">Add label</string>
+    <string name="add_folder">Add folder</string>
+    <string name="move">Move</string>
+    <string name="folders">Folders</string>
+    <string name="edit_folder">Edit folder</string>
+    <string name="delete_folder">Delete folder?</string>
+    <string name="folder_exists">Folder exists</string>
+    <string name="empty_folders">No folders yet. Create one?</string>
+    <string name="move_to_folder">Move to folder</string>
+    <string name="folder">Folder</string>
+    <string name="no_folder">Uncategorized</string>
     <string name="add_reminder">Add Reminder</string>
     <string name="adding_files">Adding files</string>
     <string name="adding_images">Adding images</string>
@@ -227,7 +237,6 @@
     <string name="exporting_backup">Exporting backup</string>
     <string name="extracted_files">Files extracted</string>
     <string name="filter">Filter</string>
-    <string name="folder">Folder</string>
     <string name="follow_system">Follow system</string>
     <string name="google_keep">Google Keep</string>
     <string name="google_keep_help">In order to import your Notes from Google Keep you must download your Google Takeout ZIP file. Only select the \"Keep\" data. Click Help to get more information.\n\nIf you already have a Takeout ZIP file, click Import and choose the ZIP file.</string>

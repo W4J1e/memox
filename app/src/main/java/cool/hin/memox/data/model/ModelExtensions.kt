@@ -179,6 +179,7 @@ fun String.toBaseNote(): BaseNote {
         reminders,
         pinnedToStatusBar,
         locked,
+        folderId = jsonObject.getStringOrDefault("folderId", ""),
     )
 }
 
