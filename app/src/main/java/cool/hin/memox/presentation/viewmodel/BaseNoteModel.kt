@@ -21,6 +21,7 @@ import cool.hin.memox.data.MemoXDatabase.Companion.DATABASE_NAME
 import cool.hin.memox.data.dao.BaseNoteDao
 import cool.hin.memox.data.dao.CommonDao
 import cool.hin.memox.data.sync.SyncRouter
+import cool.hin.memox.data.sync.SyncStatus
 import cool.hin.memox.data.dao.FolderDao
 import cool.hin.memox.data.dao.LabelDao
 import cool.hin.memox.data.dao.NoteReminder
@@ -74,6 +75,7 @@ import cool.hin.memox.utils.deleteAttachments
 import cool.hin.memox.utils.getBackupDir
 import cool.hin.memox.utils.getCurrentImagesDirectory
 import cool.hin.memox.utils.getExternalMediaDirectory
+import cool.hin.memox.utils.ImageCompressor
 import cool.hin.memox.utils.log
 import cool.hin.memox.utils.migrateAllAttachments
 import cool.hin.memox.utils.security.DecryptionException
@@ -89,6 +91,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -372,6 +375,109 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     fun <T> savePreference(preference: BasePreference<T>, value: T) {
         viewModelScope.launch(Dispatchers.IO) { preference.save(value) }
+    }
+
+    /**
+     * 对**已有**笔记图片做一次批量「感知无损」压缩（仅当 [MemoXPreferences.compressExistingImages]
+     * 被开启时由设置页触发）。遍历所有笔记（含已删除）的图片附件，对超过阈值的图片重新编码；若换了
+     * 容器格式（如 PNG→WebP）则自动改名并回写数据库，保证文件名与 [FileAttachment] 始终一致。
+     *
+     * 注意：同一张图片文件可能被多条笔记引用（理论上本 App 不会，但稳妥起见按 localName 聚合后
+     * 对每条引用它的笔记都更新其附件记录），因此这里按「文件名 → 引用列表」聚合，再逐笔记累积改动，
+     * 避免一条笔记含多张大图时后处理的图覆盖先处理图的更新。
+     *
+     * 回写时会 **bump `modifiedTimestamp`**：图片字节确实变了，只有时间戳前进，下一次同步才会把
+     * 压好的小图上传覆盖远端（同步按时间戳比大小决定方向）；换了容器格式的旧远端文件会在同步末尾
+     * 的孤儿附件清理里被删掉，因此用户**不需要手动做任何上传动作**。
+     *
+     * @param onProgress 每处理完一个候选文件回调一次 `(已处理, 候选总数)`，用于灵动岛展示进度。
+     * @return 实际被压缩的图片数量。
+     */
+    suspend fun compressExistingImages(onProgress: ((Int, Int) -> Unit)? = null): Int {
+        return withContext(Dispatchers.IO) {
+            val dir = app.getCurrentImagesDirectory()
+            if (!dir.exists() || !dir.isDirectory) return@withContext 0
+            val notes = baseNoteDao.getAllNotesIncludingDeleted()
+            val notesById = notes.associateBy { it.id }
+
+            // localName -> 引用它的 (noteId, FileAttachment)
+            val byName = LinkedHashMap<String, MutableList<Pair<Long, FileAttachment>>>()
+            for (note in notes) {
+                for (att in note.images) {
+                    byName.getOrPut(att.localName) { ArrayList() }.add(note.id to att)
+                }
+            }
+
+            // 先筛出「体积超阈值」的候选，这样进度总数一开始就是确定的（而不是边压边变）。
+            val candidates =
+                byName.entries.filter { (localName, _) ->
+                    val file = File(dir, localName)
+                    file.isFile && file.length() > ImageCompressor.THRESHOLD_BYTES
+                }
+            val total = candidates.size
+            onProgress?.invoke(0, total)
+            if (total == 0) return@withContext 0
+
+            // noteId -> 压缩后累积的 images 列表
+            val updated = LinkedHashMap<Long, MutableList<FileAttachment>>()
+            var compressed = 0
+            var processed = 0
+
+            for ((localName, refs) in candidates) {
+                val file = File(dir, localName)
+                val sourceMime = refs.first().second.mimeType
+                val result = ImageCompressor.compressFile(file, sourceMime)
+                processed++
+                onProgress?.invoke(processed, total)
+                if (result == null) continue
+                compressed++
+
+                for ((noteId, att) in refs) {
+                    val baseNote = notesById[noteId] ?: continue
+                    val list = updated.getOrPut(noteId) { ArrayList(baseNote.images) }
+                    val newOriginal = renameOriginalExtension(att.originalName, result.extension)
+                    val newAtt = FileAttachment(result.localName, newOriginal, result.mimeType)
+                    val idx = list.indexOfFirst { it.localName == localName }
+                    if (idx >= 0) list[idx] = newAtt else list.add(newAtt)
+                }
+            }
+
+            val now = System.currentTimeMillis()
+            for ((noteId, images) in updated) {
+                baseNoteDao.updateImages(noteId, images, now)
+            }
+            compressed
+        }
+    }
+
+    /**
+     * 设置页触发的入口：在 **Activity 级** 的 [viewModelScope] 里跑批量压缩，
+     * 因此离开设置页、切到别的页面都不会中断；进度通过 [SyncStatus] 显示在灵动岛上，
+     * 结束后自动触发一次同步，把压好的小图推上云端。
+     */
+    fun startCompressExistingImages() {
+        viewModelScope.launch {
+            SyncStatus.setBusy(app.getString(R.string.compress_existing_progress, 0, 0))
+            val count =
+                compressExistingImages { done, total ->
+                    SyncStatus.setBusy(
+                        app.getString(R.string.compress_existing_progress, done, total)
+                    )
+                }
+            if (count > 0) {
+                SyncStatus.setDone(app.getString(R.string.compress_existing_done, count))
+                // 让「已压缩 N 张」先被看见，再让同步接管灵动岛文案。
+                delay(1500)
+                SyncRouter.syncNow(app)
+            } else {
+                SyncStatus.setDone(app.getString(R.string.compress_existing_none))
+            }
+        }
+    }
+
+    private fun renameOriginalExtension(original: String, newExt: String): String {
+        val dot = original.lastIndexOf('.')
+        return if (dot >= 0) original.substring(0, dot) + "." + newExt else "$original.$newExt"
     }
 
     fun exportBackup(uri: Uri, onComplete: (() -> Unit)? = null) {

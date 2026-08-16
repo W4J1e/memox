@@ -482,4 +482,16 @@
     <!-- 链接卡片展示开关 -->
     <string name="link_card_title">链接卡片展示</string>
     <string name="link_card_message">开启后，编辑器与笔记中的网页链接会以卡片（图标+标题+网址）形式展示；关闭则仅显示为可点击的纯文本链接。</string>
+
+    <!-- 插入图片压缩开关 -->
+    <string name="compress_images_title">插入图片时压缩</string>
+    <string name="compress_images_message">开启后，插入的图片若超过 1MB 会自动压缩到 1MB 以内，避免 web 端同步缓慢或失败。压缩会按图片内容自动选择格式：透明或文字截图类走无损压缩，照片类重新编码为高质量 JPEG，观感基本无差别（并非字节级无损）。仅对新插入的图片生效，已有图片不受影响。</string>
+
+    <!-- 压缩已有图片（一次性批量） -->
+    <string name="compress_existing_images_title">压缩已有图片</string>
+    <string name="compress_existing_images_message">把此开关拨到「是」后，会对所有大于 1MB 的已有笔记图片做一次批量压缩，避免 web 端同步缓慢或失败。压缩逻辑与「插入图片时压缩」一致（按内容自动选格式，并非字节级无损）。处理中请耐心等待，进度会显示在顶部灵动岛；完成后会自动触发一次同步覆盖云端的大图，无需手动上传，开关保持开启即可。</string>
+    <string name="compress_existing_confirm">将压缩所有大于 1MB 的已有笔记图片，可能耗时较久，且会改动图片文件。是否继续？</string>
+    <string name="compress_existing_progress">正在压缩已有图片 %1$d/%2$d</string>
+    <string name="compress_existing_done">已压缩 %1$d 张已有图片</string>
+    <string name="compress_existing_none">没有需要压缩的已有图片</string>
 </resources>

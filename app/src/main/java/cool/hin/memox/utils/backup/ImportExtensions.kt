@@ -32,6 +32,7 @@ import cool.hin.memox.presentation.showToast
 import cool.hin.memox.presentation.viewmodel.MemoXModel.FileType
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import cool.hin.memox.utils.FileError
+import cool.hin.memox.utils.ImageCompressor
 import cool.hin.memox.utils.SUBFOLDER_AUDIOS
 import cool.hin.memox.utils.SUBFOLDER_FILES
 import cool.hin.memox.utils.SUBFOLDER_IMAGES
@@ -440,12 +441,17 @@ fun Context.importPreferences(jsonFile: Uri, to: SharedPreferences.Editor): Bool
     }
 }
 
+/**
+ * @param allowCompression 是否允许对图片做插入即压缩（见 [ImageCompressor]）。只有用户主动插入图片的
+ *   路径才应传 `true`；备份 / 三方导入走的是既有存量文件，重编码既慢又会累积有损，故默认关闭。
+ */
 suspend fun Context.importFile(
     uri: Uri,
     directory: File,
     fileType: FileType,
     errorWhileRenaming: Int = R.string.error_while_renaming_file,
     proposedMimeType: String? = null,
+    allowCompression: Boolean = false,
 ): Pair<FileAttachment?, FileError?> {
     return withContext(Dispatchers.IO) {
         val document =
@@ -481,10 +487,35 @@ suspend fun Context.importFile(
                     if (mimeType != null) {
                         val extension = mimeType.mimeTypeToFileExtension()
                         if (extension != null) {
-                            val name = "${UUID.randomUUID()}.$extension"
+                            var finalMimeType: String = mimeType
+                            var finalExtension: String = extension
+                            var finalOriginalName: String? = originalName
+                            if (
+                                allowCompression &&
+                                    MemoXPreferences.getInstance(this@importFile)
+                                        .compressImagesOnInsert
+                                        .value
+                            ) {
+                                ImageCompressor.compress(temp, mimeType)?.let { compressed ->
+                                    finalMimeType = compressed.mimeType
+                                    finalExtension = compressed.extension
+                                    // 压缩可能换了格式，展示用的原始文件名后缀也要跟着换，
+                                    // 否则分享 / 导出出去的文件后缀与实际内容不符。
+                                    finalOriginalName =
+                                        originalName?.let { original ->
+                                            "${original.substringBeforeLast('.', original)}" +
+                                                ".${compressed.extension}"
+                                        }
+                                }
+                            }
+                            val name = "${UUID.randomUUID()}.$finalExtension"
                             if (temp.rename(name)) {
                                 return@withContext Pair(
-                                    FileAttachment(name, originalName ?: name, mimeType),
+                                    FileAttachment(
+                                        name,
+                                        finalOriginalName ?: name,
+                                        finalMimeType,
+                                    ),
                                     null,
                                 )
                             } else {

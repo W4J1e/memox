@@ -250,8 +250,10 @@ fun BaseNote.toHtml(showDateCreated: Boolean, imagesRootFolder: File?) = buildSt
                 val options = file.decodeToBitmap()
                 val width = options?.width
                 val height = options?.height
+                // 必须用附件真实的 mime，不能硬编码 image/jpeg——附件可能是 png / webp。
+                val mimeType = image.mimeType.ifBlank { "image/jpeg" }
                 append(
-                    "<img src=\"data:image/jpeg;base64,$base64String\" alt=\"${image.originalName}\"${options?.let { " width=\"$width\" height=\"$height\"" } ?: ""} />"
+                    "<img src=\"data:$mimeType;base64,$base64String\" alt=\"${image.originalName}\"${options?.let { " width=\"$width\" height=\"$height\"" } ?: ""} />"
                 )
             }
         }

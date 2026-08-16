@@ -238,6 +238,14 @@ interface BaseNoteDao {
     @Query("UPDATE BaseNote SET images = :images WHERE id = :id")
     suspend fun updateImages(id: Long, images: List<FileAttachment>)
 
+    /**
+     * 同时更新附件列表与修改时间。批量压缩存量图片时必须走这个重载：附件字节确实变了，
+     * 只有 bump `modifiedTimestamp` 才能保证下一次同步把新图上传（同步按 modifiedTimestamp
+     * 比大小决定上传/下载方向），否则远端若时间戳更新，本地压缩结果会被远端旧版覆盖。
+     */
+    @Query("UPDATE BaseNote SET images = :images, modifiedTimestamp = :timestamp WHERE id = :id")
+    suspend fun updateImages(id: Long, images: List<FileAttachment>, timestamp: Long)
+
     @Query("UPDATE BaseNote SET files = :files WHERE id = :id")
     suspend fun updateFiles(id: Long, files: List<FileAttachment>)
 

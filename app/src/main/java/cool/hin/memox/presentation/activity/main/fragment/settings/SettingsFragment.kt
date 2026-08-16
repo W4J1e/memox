@@ -373,6 +373,34 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        model.preferences.compressImagesOnInsert.observe(viewLifecycleOwner) { value ->
+            binding.CompressImages.setup(
+                model.preferences.compressImagesOnInsert,
+                value,
+                requireContext(),
+                layoutInflater,
+                R.string.compress_images_message,
+            ) { enabled ->
+                model.savePreference(model.preferences.compressImagesOnInsert, enabled)
+            }
+            // 依赖项：仅当主开关开启时才显示「压缩已有图片」。
+            binding.CompressExistingImages.root.visibility =
+                if (value) View.VISIBLE else View.GONE
+        }
+
+        model.preferences.compressExistingImages.observe(viewLifecycleOwner) { value ->
+            binding.CompressExistingImages.setup(
+                model.preferences.compressExistingImages,
+                value,
+                requireContext(),
+                layoutInflater,
+                R.string.compress_existing_images_message,
+            ) { enabled ->
+                model.savePreference(model.preferences.compressExistingImages, enabled)
+                if (enabled) confirmAndCompressExistingImages()
+            }
+        }
+
         startView.merge(model.labels).observe(viewLifecycleOwner) { (startViewValue, labelsValue) ->
             binding.StartView.setupStartView(
                 startView,
@@ -837,6 +865,21 @@ class SettingsFragment : Fragment() {
         val uri = link.toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri).wrapWithChooser(requireContext())
         startActivity(intent)
+    }
+
+    /**
+     * 把「压缩已有图片」拨到「是」时，先弹出确认框（这是一次性、可能耗时较久且会改动文件的动作）。
+     * 用户取消则把开关拨回「否」，避免停在「已开启但未执行」的尴尬状态。
+     */
+    private fun confirmAndCompressExistingImages() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.compress_existing_images_title)
+            .setMessage(R.string.compress_existing_confirm)
+            .setPositiveButton(R.string.continue_) { _, _ -> model.startCompressExistingImages() }
+            .setNegativeButton(R.string.cancel) { _, _ ->
+                model.savePreference(model.preferences.compressExistingImages, false)
+            }
+            .show()
     }
 
     private fun openDocsLink(docPath: String) {

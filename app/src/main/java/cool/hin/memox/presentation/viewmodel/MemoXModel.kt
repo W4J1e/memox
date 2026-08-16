@@ -175,7 +175,13 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
 
             uris.forEachIndexed { index, uri ->
                 val (fileAttachment, error) =
-                    app.importFile(uri, directory, fileType, errorWhileRenaming)
+                    app.importFile(
+                        uri,
+                        directory,
+                        fileType,
+                        errorWhileRenaming,
+                        allowCompression = fileType == FileType.IMAGE,
+                    )
                 fileAttachment?.let { successes.add(it) }
                 error?.let { errors.add(it) }
                 addingFiles.postValue(AddFilesProgress(index + 1, uris.size))
@@ -253,6 +259,7 @@ class MemoXModel(private val app: Application) : AndroidViewModel(app) {
                         directory,
                         FileType.IMAGE,
                         R.string.error_while_renaming_image,
+                        allowCompression = true,
                     )
                 fileAttachment?.let { successes.add(it) }
                 error?.let { errors.add(it) }

@@ -131,6 +131,15 @@
                 <include
                     android:id="@+id/LinkCard"
                     layout="@layout/preference" />
+
+                <include
+                    android:id="@+id/CompressImages"
+                    layout="@layout/preference" />
+
+                <include
+                    android:id="@+id/CompressExistingImages"
+                    layout="@layout/preference"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

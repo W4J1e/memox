@@ -34,6 +34,30 @@ class MemoXPreferences private constructor(private val context: Context) {
     /** 链接是否以卡片形式展示（关闭则仅保留可点击的纯文本链接）。 */
     val linkCardEnabled =
         BooleanPreference("linkCardEnabled", preferences, true, R.string.link_card_title)
+    /**
+     * 插入图片时，超过 1MB 的图片是否自动压缩（感知无损，格式按内容自动选择，见
+     * `cool.hin.memox.utils.ImageCompressor`）。仅影响新插入的图片，存量图片不受影响。
+     */
+    val compressImagesOnInsert =
+        BooleanPreference(
+            "compressImagesOnInsert",
+            preferences,
+            true,
+            R.string.compress_images_title,
+        )
+    /**
+     * 是否对**已有**笔记图片做一次批量压缩（见 `cool.hin.memox.utils.ImageCompressor` 与
+     * `cool.hin.memox.presentation.viewmodel.BaseNoteModel.compressExistingImages`）。
+     * 这是一个一次性动作：在设置里把它从「否」拨到「是」会触发一次全量压缩（带确认弹窗），
+     * 压缩完成后保持为「是」不影响日常；之后新插入的图片仍只受 [compressImagesOnInsert] 控制。
+     */
+    val compressExistingImages =
+        BooleanPreference(
+            "compressExistingImages",
+            preferences,
+            false,
+            R.string.compress_existing_images_title,
+        )
     val textSizeNoteEditor =
         FloatPreference(
             "textSizeNoteEditor",
@@ -332,6 +356,8 @@ class MemoXPreferences private constructor(private val context: Context) {
                 labelsHidden,
                 foldersHidden,
                 labelTagsHiddenInOverview,
+                compressImagesOnInsert,
+                compressExistingImages,
                 maxLabels,
                 backupPassword,
                 autoSaveAfterIdleTime,

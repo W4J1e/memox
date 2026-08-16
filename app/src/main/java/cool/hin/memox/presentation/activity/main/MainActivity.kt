@@ -344,14 +344,14 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
     }
 
     private fun setupSyncIsland() {
-        SyncStatus.state.observe(this) { state ->
-            when (state) {
+        SyncStatus.state.observe(this) { ui ->
+            when (ui.state) {
                 SyncState.SYNCING -> {
                     syncHideHandler.removeCallbacks(syncHideRunnable)
-                    showSyncIsland(syncing = true)
+                    showSyncIsland(syncing = true, message = ui.message)
                 }
                 SyncState.COMPLETED -> {
-                    showSyncIsland(syncing = false)
+                    showSyncIsland(syncing = false, message = ui.message)
                     syncHideHandler.removeCallbacks(syncHideRunnable)
                     syncHideHandler.postDelayed(syncHideRunnable, 3000)
                 }
@@ -363,11 +363,13 @@ class MainActivity : LockedActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun showSyncIsland(syncing: Boolean) {
+    /** [message] 非空时展示自定义文案（如批量压缩进度），否则回落到默认同步文案。 */
+    private fun showSyncIsland(syncing: Boolean, message: String? = null) {
         val island = binding.SyncIsland
         binding.SyncIslandText.text =
-            if (syncing) getString(R.string.sync_status_syncing)
-            else getString(R.string.sync_status_completed)
+            message
+                ?: if (syncing) getString(R.string.sync_status_syncing)
+                else getString(R.string.sync_status_completed)
         binding.SyncIslandSpinner.visibility = if (syncing) View.VISIBLE else View.GONE
         binding.SyncIslandDone.visibility = if (syncing) View.GONE else View.VISIBLE
         if (island.visibility != View.VISIBLE) {
