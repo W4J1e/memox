@@ -1,6 +1,6 @@
 {
-  "version": "1.2.4",
-  "versionCode": 1204,
-  "changelog": "更新说明：\n- 新增：文件夹 \n- 修复：其它界面也显示视图和排序按钮的问题",
+  "version": "1.2.5",
+  "versionCode": 1205,
+  "changelog": "更新说明：\n- 新增：笔记图片压缩功能，默认开启，支持压缩存量图片 \n- 说明：视觉无损，大于1MB的图片在插入式压缩",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }
