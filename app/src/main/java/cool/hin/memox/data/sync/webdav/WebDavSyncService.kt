@@ -413,7 +413,9 @@ class WebDavSyncService(private val context: ContextWrapper) {
                 val remoteJson = remoteNoteMap[id]!!
                 val remoteTimestamp = remoteJson.optLong("modifiedTimestamp", 0)
 
-                if (local.modifiedTimestamp >= remoteTimestamp) {
+                // 相等 = 两端内容一致，跳过上传。旧实现 `>=` 相等也重传，
+                // 只是被 WebDAV 的低延迟掩盖（一轮几秒），实为每轮全量重传。
+                if (local.modifiedTimestamp > remoteTimestamp) {
                     // Upload local version, also clean up old filename if title changed
                     val newFileName = noteFileName(local)
                     val oldFileNames = remoteNoteIdToFileNames[id] ?: emptyList()

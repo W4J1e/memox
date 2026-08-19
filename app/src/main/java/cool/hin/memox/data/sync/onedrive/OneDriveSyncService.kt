@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Handles synchronization with OneDrive via the Microsoft Graph API.
@@ -44,6 +45,10 @@ class OneDriveSyncService(private val context: ContextWrapper) {
         const val REMOTE_FILES_DIR = "memoX/attachments/files"
         const val REMOTE_SYNC_META = "memoX/sync_meta.json"
         const val REMOTE_LABELS_FILE = "memoX/labels.json"
+
+        /** 附件目录清单，用于一次性建立远端附件索引。 */
+        private val ATTACHMENT_DIRS =
+            listOf(REMOTE_IMAGES_DIR, REMOTE_FILES_DIR, REMOTE_AUDIOS_DIR)
 
         /** Generate a safe filename for a note: {title}_{id}.json or {id}.json */
         fun noteFileName(note: BaseNote): String {
@@ -70,6 +75,13 @@ class OneDriveSyncService(private val context: ContextWrapper) {
     }
 
     private val preferences: MemoXPreferences by lazy { MemoXPreferences.getInstance(context) }
+
+    /**
+     * 远端附件索引：目录 -> (文件名 -> 字节数)。
+     * 供上传/下载/孤儿清理共用，实现"同名+同大小跳过传输"的去重（对齐 WebDAV 版）。
+     * 为 null 表示索引不可用，此时退化为旧的"总是传输"行为，正确性不受影响。
+     */
+    private var remoteAttachmentIndex: Map<String, ConcurrentHashMap<String, Long>>? = null
 
     private fun createClient(): OneDriveClient? {
         if (!OneDriveAuthHelper.isLoggedIn(context)) return null
@@ -246,6 +258,7 @@ class OneDriveSyncService(private val context: ContextWrapper) {
         try {
             SyncLog.log("Starting OneDrive two-way sync...")
             ensureRemoteDirs(client)
+            loadRemoteAttachmentIndex(client)
 
             val database = MemoXDatabase.getDatabase(context, observePreferences = false).value
             val dao = database.getBaseNoteDao()
@@ -352,7 +365,9 @@ class OneDriveSyncService(private val context: ContextWrapper) {
                 val remoteJson = remoteNoteMap[id]!!
                 val remoteTimestamp = remoteJson.optLong("modifiedTimestamp", 0)
 
-                if (local.modifiedTimestamp >= remoteTimestamp) {
+                // 相等 = 两端内容一致（数据由同一份迁移而来），跳过上传。
+                // 旧实现用 `>=`，相等也重传，叠加附件无去重后每轮全量重传所有字节。
+                if (local.modifiedTimestamp > remoteTimestamp) {
                     val newFileName = noteFileName(local)
                     val oldFileNames = remoteNoteIdToFileNames[id] ?: emptyList()
                     uploadNote(client, local)
@@ -470,52 +485,74 @@ class OneDriveSyncService(private val context: ContextWrapper) {
 
     private suspend fun uploadAttachments(client: OneDriveClient, note: BaseNote) {
         for (img in note.images) {
-            val file = getLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
-            if (file != null && file.exists()) {
-                client.upload("$REMOTE_IMAGES_DIR/${img.localName}", file.readBytes())
-            }
+            uploadAttachment(client, REMOTE_IMAGES_DIR, SUBFOLDER_IMAGES, img.localName)
         }
         for (f in note.files) {
-            val file = getLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
-            if (file != null && file.exists()) {
-                client.upload("$REMOTE_FILES_DIR/${f.localName}", file.readBytes())
-            }
+            uploadAttachment(client, REMOTE_FILES_DIR, SUBFOLDER_FILES, f.localName)
         }
         for (audio in note.audios) {
-            val file = getLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
-            if (file != null && file.exists()) {
-                client.upload("$REMOTE_AUDIOS_DIR/${audio.name}", file.readBytes())
-            }
+            uploadAttachment(client, REMOTE_AUDIOS_DIR, SUBFOLDER_AUDIOS, audio.name)
+        }
+    }
+
+    /**
+     * 上传单个附件。远端已存在同名且字节数一致时直接跳过。
+     *
+     * 附件名由本地生成且唯一，"同名 + 同大小"即同一份内容。对齐 WebDAV 版：
+     * 旧实现没有任何校验，只要笔记被判定为需要上传，其全部附件就整体重传一遍，
+     * 在 Graph API 的高延迟下单轮同步可达数分钟，灵动岛长时间停在"同步中"。
+     */
+    private suspend fun uploadAttachment(
+        client: OneDriveClient,
+        remoteDir: String,
+        subfolder: String,
+        name: String,
+    ) {
+        val file = getLocalAttachmentFile(subfolder, name)
+        if (file == null || !file.exists()) return
+        val localSize = file.length()
+        val known = remoteAttachmentIndex?.get(remoteDir)
+        if (known != null && known[name] == localSize) return
+
+        val result = client.upload("$remoteDir/$name", file.readBytes())
+        if (result.isSuccess) {
+            known?.put(name, localSize)
+        } else {
+            Log.w(TAG, "uploadAttachment: failed $remoteDir/$name: ${result.exceptionOrNull()?.message}")
         }
     }
 
     private suspend fun downloadAttachments(client: OneDriveClient, note: BaseNote) {
         for (img in note.images) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_IMAGES, img.localName)
-            if (localFile != null) {
-                client.download("$REMOTE_IMAGES_DIR/${img.localName}").getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_IMAGES_DIR, SUBFOLDER_IMAGES, img.localName)
         }
         for (f in note.files) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_FILES, f.localName)
-            if (localFile != null) {
-                client.download("$REMOTE_FILES_DIR/${f.localName}").getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_FILES_DIR, SUBFOLDER_FILES, f.localName)
         }
         for (audio in note.audios) {
-            val localFile = ensureLocalAttachmentFile(SUBFOLDER_AUDIOS, audio.name)
-            if (localFile != null) {
-                client.download("$REMOTE_AUDIOS_DIR/${audio.name}").getOrNull()?.let { bytes ->
-                    localFile.parentFile?.mkdirs()
-                    localFile.writeBytes(bytes)
-                }
-            }
+            downloadAttachment(client, REMOTE_AUDIOS_DIR, SUBFOLDER_AUDIOS, audio.name)
+        }
+    }
+
+    /** 下载单个附件。本地已有同名非空文件（且大小与远端一致）时跳过。 */
+    private suspend fun downloadAttachment(
+        client: OneDriveClient,
+        remoteDir: String,
+        subfolder: String,
+        name: String,
+    ) {
+        val localFile = ensureLocalAttachmentFile(subfolder, name) ?: return
+        val remoteSize = remoteAttachmentIndex?.get(remoteDir)?.get(name)
+        if (
+            localFile.exists() &&
+                localFile.length() > 0 &&
+                (remoteSize == null || remoteSize == localFile.length())
+        ) {
+            return
+        }
+        client.download("$remoteDir/$name").getOrNull()?.let { bytes ->
+            localFile.parentFile?.mkdirs()
+            localFile.writeBytes(bytes)
         }
     }
 
@@ -547,12 +584,36 @@ class OneDriveSyncService(private val context: ContextWrapper) {
         }
     }
 
+    /**
+     * 一次性拉取三个附件目录的清单，建立索引（对齐 WebDAV 版）。
+     * 这些请求原本就要在清理孤儿附件时发一遍，现在提前发、全流程共用，总请求数反而更少。
+     */
+    private suspend fun loadRemoteAttachmentIndex(client: OneDriveClient) {
+        val index = mutableMapOf<String, ConcurrentHashMap<String, Long>>()
+        for (dir in ATTACHMENT_DIRS) {
+            val map = ConcurrentHashMap<String, Long>()
+            val files = client.listFiles(dir).getOrNull()
+            if (files != null) {
+                for (file in files) if (!file.isDirectory) map[file.name] = file.size
+            }
+            // 列不出来视为空目录（Graph 路径 PUT 会自动创建父目录，无需补建）
+            index[dir] = map
+        }
+        remoteAttachmentIndex = index
+    }
+
     private suspend fun cleanupOrphanedDir(client: OneDriveClient, dir: String, referencedNames: Set<String>) {
-        val files = client.listFiles(dir).getOrNull() ?: return
-        for (file in files) {
-            if (!file.isDirectory && file.name !in referencedNames) {
-                client.delete(file.path)
-                SyncLog.log("Deleted orphaned attachment: ${file.name}")
+        // 优先复用本次同步已建立的索引，避免重复发目录列表请求
+        val known = remoteAttachmentIndex?.get(dir)
+        val names =
+            known?.keys?.toList()
+                ?: client.listFiles(dir).getOrNull()?.filterNot { it.isDirectory }?.map { it.name }
+                ?: return
+        for (name in names) {
+            if (name !in referencedNames) {
+                client.delete("$dir/$name")
+                known?.remove(name)
+                SyncLog.log("Deleted orphaned attachment: $name")
             }
         }
     }
