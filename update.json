@@ -1,6 +1,6 @@
 {
-  "version": "1.2.61",
-  "versionCode": 12061,
-  "changelog": "更新说明：\n- 真修复：使用 oneDrive 同步时灵动岛卡同步状态的问题",
+  "version": "1.2.62",
+  "versionCode": 12062,
+  "changelog": "更新说明：\n- 修复：同步进行中的修改被忽略的问题",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }

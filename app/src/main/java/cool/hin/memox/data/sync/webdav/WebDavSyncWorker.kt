@@ -13,7 +13,6 @@ import cool.hin.memox.data.sync.SyncResult
 import cool.hin.memox.data.sync.SyncStatus
 import cool.hin.memox.presentation.viewmodel.preference.MemoXPreferences
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CancellationException
 
 class WebDavSyncWorker(
     context: Context,
@@ -21,32 +20,26 @@ class WebDavSyncWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return try {
-            val appContext = applicationContext as ContextWrapper
-            val preferences = MemoXPreferences.getInstance(appContext)
-            if (!preferences.webdavSyncEnabled.value || !preferences.webdavAutoSync.value) {
-                SyncStatus.setIdle()
-                return Result.success()
-            }
-
-            SyncStatus.setSyncing()
-            val syncService = WebDavSyncService(appContext)
-            when (val result = syncService.sync()) {
-                is SyncResult.Success -> {
-                    Log.i(TAG, "WebDAV auto sync succeeded")
-                    SyncStatus.setCompleted()
-                    Result.success()
-                }
-                is SyncResult.Error -> {
-                    Log.w(TAG, "WebDAV auto sync failed: ${result.message}")
-                    SyncStatus.setIdle()
-                    Result.retry()
-                }
-            }
-        } catch (e: CancellationException) {
-            // 被新同步请求取消或系统取消时收敛状态，避免灵动岛永远停在"同步中"
+        val appContext = applicationContext as ContextWrapper
+        val preferences = MemoXPreferences.getInstance(appContext)
+        if (!preferences.webdavSyncEnabled.value || !preferences.webdavAutoSync.value) {
             SyncStatus.setIdle()
-            throw e
+            return Result.success()
+        }
+
+        SyncStatus.setSyncing()
+        val syncService = WebDavSyncService(appContext)
+        return when (val result = syncService.sync()) {
+            is SyncResult.Success -> {
+                Log.i(TAG, "WebDAV auto sync succeeded")
+                SyncStatus.setCompleted()
+                Result.success()
+            }
+            is SyncResult.Error -> {
+                Log.w(TAG, "WebDAV auto sync failed: ${result.message}")
+                SyncStatus.setIdle()
+                Result.retry()
+            }
         }
     }
 
@@ -69,7 +62,7 @@ class WebDavSyncWorker(
                 .setInitialDelay(5, TimeUnit.SECONDS)
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME_IMMEDIATE, ExistingWorkPolicy.KEEP, request)
+                .enqueueUniqueWork(WORK_NAME_IMMEDIATE, ExistingWorkPolicy.REPLACE, request)
         }
 
         fun cancel(context: ContextWrapper) {
