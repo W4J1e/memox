@@ -126,9 +126,15 @@ class BaseNoteAdapter(
         position: Int,
         payloads: MutableList<Any>,
     ) {
-        if (payloads.isEmpty()) {
+        // payload 0 仅表示"选中勾状态变化"（来自 action mode 的 notifyItemChanged(position, 0)），
+        // 这种情况只需刷新勾选样式，无需重绑整张卡片。其它情况——含 SortedList 的内容变化（如锁定 /
+        // 置顶状态改变，其 payload 为 null 或非 0）——一律走完整 bind，确保卡片正文与图片预览随
+        // locked 等状态正确刷新。否则锁定时卡片仍会显示旧的正文/图片预览，只能重开 app 才会恢复。
+        if (payloads.isEmpty() || payloads.any { it != 0 }) {
             onBindViewHolder(holder, position)
-        } else handleCheck(holder, position)
+        } else {
+            handleCheck(holder, position)
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

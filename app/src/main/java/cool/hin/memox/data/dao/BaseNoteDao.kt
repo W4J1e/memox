@@ -217,6 +217,9 @@ interface BaseNoteDao {
     @Query("UPDATE BaseNote SET color = :newColor WHERE color = :oldColor")
     suspend fun updateColor(oldColor: String, newColor: String)
 
+    @Query("UPDATE BaseNote SET pinned = :pinned, modifiedTimestamp = :timestamp WHERE id IN (:ids)")
+    suspend fun updatePinned(ids: LongArray, pinned: Boolean, timestamp: Long)
+
     @Query("UPDATE BaseNote SET pinned = :pinned WHERE id IN (:ids)")
     suspend fun updatePinned(ids: LongArray, pinned: Boolean)
 
@@ -257,6 +260,9 @@ interface BaseNoteDao {
 
     @Query("UPDATE BaseNote SET locked = :locked WHERE id = :id")
     suspend fun updateLocked(id: Long, locked: Boolean)
+
+    @Query("UPDATE BaseNote SET locked = :locked, modifiedTimestamp = :timestamp WHERE id IN (:ids)")
+    suspend fun updateLocked(ids: LongArray, locked: Boolean, timestamp: Long)
 
     @Query("UPDATE BaseNote SET locked = :locked WHERE id IN (:ids)")
     suspend fun updateLocked(ids: LongArray, locked: Boolean)

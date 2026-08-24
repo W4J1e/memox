@@ -105,6 +105,10 @@ abstract class MemoXFragment : Fragment(), ItemListener {
         openNoteActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
+                    // 编辑器可能因生命周期竞态（finish 与 lifecycleScope 取消）未能即时刷新列表，
+                    // 这里强制整卡重绑，确保锁定/置顶等不影响排序位置的状态变化立即反映到卡片
+                    // （否则锁定笔记返回主页后仍显示旧的正文/图片预览，需重开 app 才恢复）。
+                    notesAdapter?.notifyDataSetChanged()
                     // If a note has been moved inside of EditActivity
                     // present snackbar to undo it
                     val data = result.data

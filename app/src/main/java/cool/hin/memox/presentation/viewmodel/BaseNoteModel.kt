@@ -691,13 +691,21 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     fun pinBaseNotes(pinned: Boolean) {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updatePinned(ids, pinned) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            baseNoteDao.updatePinned(ids, pinned, now)
+            SyncRouter.syncNow(app)
+        }
     }
 
     fun lockBaseNotes(locked: Boolean) {
         val ids = actionMode.selectedIds.toLongArray()
         actionMode.close(true)
-        viewModelScope.launch(Dispatchers.IO) { baseNoteDao.updateLocked(ids, locked) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            baseNoteDao.updateLocked(ids, locked, now)
+            SyncRouter.syncNow(app)
+        }
     }
 
     fun pinBaseNotesToStatusBar(activity: Activity, pinnedToStatusBar: Boolean) {
