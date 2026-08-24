@@ -1,6 +1,6 @@
 {
-  "version": "1.2.62",
-  "versionCode": 12062,
-  "changelog": "更新说明：\n- 修复：同步进行中的修改被忽略的问题",
+  "version": "1.2.63",
+  "versionCode": 12063,
+  "changelog": "更新说明：\n- 修复：笔记状态同步问题",
   "releaseUrl": "https://cnb.cool/hin/memoX/-/releases"
 }
